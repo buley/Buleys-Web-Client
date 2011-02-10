@@ -1,0 +1,31 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css" media="screen" />
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="jcarousellite_1.0.1c4.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+$(function() {
+	$(".topicTrending").jCarouselLite({
+		hoverPause:true,
+		visible: 3,
+		auto:500,
+		speed:1000
+	});
+});
+</script>
+
+</head>
+<body>
+<div id="newsticker-demo">    
+    <div class="title">Latest News</div>
+        <div class="topicTrending"><button class="prev">&lt;&lt;</button><ul id="trendingTopics">
+
+<li class="trend fancy"><a href="#" id="Facebook" class="tag Company">Facebook</a></li><li class="trend fancy"><a href="#" id="Twitter" class="tag Company">Twitter</a></li><li class="trend fancy"><a href="#" id="iPhone" class="tag Product">iPhone</a></li><li class="trend fancy"><a href="#" id="Android" class="tag OperatingSystem">Android</a></li><li class="trend fancy"><a href="#" id="Microsoft Windows" class="tag OperatingSystem">Microsoft Windows</a></li><li class="trend fancy"><a href="#" id="iPod" class="tag Product">iPod</a></li><li class="trend fancy"><a href="#" id="cellular telephone" class="tag Technology">cellular telephone</a></li><li class="trend fancy"><a href="#" id="operating system" class="tag Technology">operating system</a></li><li class="trend fancy"><a href="#" id="3G" class="tag Technology">3G</a></li><li class="trend fancy"><a href="#" id="bank" class="tag IndustryTerm">bank</a></li></ul></div><button class="next">&gt;&gt;</button>
+            
+</div>    
+    
+</div>
+
+</body>
+</html>
