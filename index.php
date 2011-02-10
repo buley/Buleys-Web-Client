@@ -1,11 +1,12 @@
 <?php
 header('HTTP/1.0 200 OK');
-#ini_set('user_agent', 'Buleys.com');
-$uri_path = $_SERVER['REQUEST_URI'];
-$pieces = explode("/",$uri_path);
-$typeID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[1]);
-if(empty($typeID)) { $typeID = "home"; }
-$itemID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[2]);
+   #ini_set('user_agent', 'Buleys.com');
+   $uri_path = $_SERVER['REQUEST_URI'];
+   $pieces = explode("/",$uri_path);
+   $typeID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[1]);
+   
+   if(empty($typeID)) { $typeID = "home"; }
+   $itemID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[2]);
 ?>
 <html>
 <head>
