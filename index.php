@@ -1,12 +1,13 @@
 <?php
-   header('HTTP/1.0 200 OK');
-   #ini_set('user_agent', 'Buleys.com');
-   $uri_path = $_SERVER['REQUEST_URI'];
-   $pieces = explode("/",$uri_path);
-   $typeID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[1]);
-   
-   if(empty($typeID)) { $typeID = "home"; }
-   $itemID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[2]);
+header('HTTP/1.0 200 OK');
+#ini_set('user_agent', 'Buleys.com');
+$uri_path = $_SERVER['REQUEST_URI'];
+$pieces = explode("/",$uri_path);
+$typeID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[1]);
+if(empty($typeID)) { $typeID = "home"; }
+$itemID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[2]);
+
+//next todos: vote up/downs
 ?>
 <html>
 <head>
@@ -383,10 +384,15 @@ var checker;
 	    $('.unfav_link').live('click', function(event) {
 	        //alert( $(this).parent().parent().parent().children('.headline').children('a').attr('href') );
 	        event.preventDefault();
-	        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
-	        $(this).removeClass('fav_link');
-	        $(this).addClass('unfav_link');
-	        $(this).parent().parent().addClass('favorited');
+	        
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+
+	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+	        
+	        
 	        remove_item_from_favorites_database($(this).attr('href'), slug, type);
 	        post_feedback('unstar', $(this).attr('href'), slug, type);
 	        send_to_console("<p>item removed from favorites</p>");
@@ -400,10 +406,18 @@ var checker;
 	        
 		        $.each( $('.selected'), function(i,item_to_mark) {
 		        	
-		
-			        $(item_to_mark).children('.favorite_status').children("a").children("img").attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
-			        $(item_to_mark).removeClass('unfavorited');
-			        $(item_to_mark).addClass('favorited');
+
+
+	        jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+
+	        jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+
+ 
+	        jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+	        jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
+	        
+
 			        add_item_to_favorites_database($(item_to_mark).children('a').attr('href'), slug, type);
 			        post_feedback('star',$(item_to_mark).children('a').attr('href'), slug, type);
 			        send_to_console("<p>item favorited</p>");
@@ -413,11 +427,17 @@ var checker;
 		        }); 
 			
 			} else {
-				
-	        $('.cursor img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
-	        $('.cursor').removeClass('unfavorited');
-	        $('.cursor').addClass('favorited');
-	        $('.cursor').removeClass('unfavorited');
+	        
+	        jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+
+	        jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+
+ 
+	        jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+	        jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
+	        
+	        
 	        add_item_to_favorites_database($('.cursor a').attr('href'), slug, type);
 	        post_feedback('star', $('.cursor a').attr('href'), slug, type);
 	        send_to_console("<p>item favorited</p>");
@@ -433,11 +453,16 @@ var checker;
 	        if( !is_in_cursor_mode() ) {
 	        
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	
-		        	$(item_to_mark).children('.favorite_status').children("a").children("img").attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
-			        $(item_to_mark).removeClass('favorited');
-			        $(item_to_mark).addClass('unfavorited');
-			        remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), slug, type);
+
+	        
+	        jQuery("#" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+
+	        jQuery("#favorite_" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#favorite_" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+	        
+	   	        	remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), slug, type);
 			        post_feedback('unstar', $(item_to_mark).children('a').attr('href'), slug, type);
 			        send_to_console("<p>item removed from favorites</p>");
 			        setTimeout('fade_console_message()', 1000);
@@ -448,9 +473,14 @@ var checker;
 			
 			} else {
 				
-				    $('.cursor img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
-			        $('.cursor').removeClass('favorited');
-			        $('.cursor').addClass('unfavorited');
+	        jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+
+	        jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+	        		
+			        
 			        remove_item_from_favorites_database($('.cursor > a').attr('href'), slug, type);
 			        post_feedback('unstar', $('.cursor > a').attr('href'), slug, type);
 			        send_to_console("<p>item removed from favorites</p>");
@@ -463,17 +493,16 @@ var checker;
 
 	    $('.fav_link').live('click', function(event) {
 	        event.preventDefault();
-	        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
-	        
-	       	        
-	        jQuery("#overlay" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).parent().children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
-	        jQuery("#overlay" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).parent().children('.fav_link').addClass('unfav_link');
-	        jQuery("#overlay" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).parent().children('.fav_link').removeClass('unfav_link');
 
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+
+ 
+	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
 	        
-	        $(this).removeClass('unfav_link');
-	        $(this).addClass('fav_link');
-	        $(this).parent().parent().removeClass('favorited');
 	        add_item_to_favorites_database($(this).attr('href'), slug, type);
 	        post_feedback('star', $(this).attr('href'), slug, type);
 	        send_to_console("<p>item favorited</p>");
@@ -2228,13 +2257,12 @@ function new_topics_transaction(){
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined' && typeof item_request.result.link == 'string') {
 
-			var html_snippit = '<div class="sidebar_close_link"><a href="#" class="close_sidebar_link" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div>' + "<div id='overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'>";
-			html_snippit = html_snippit + '<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>';
-				html_snippit = html_snippit + "<h3><a href='" + item_request.result.link + "'>" + item_request.result.title + "</a></h3>";
+			var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><a href="#" class="close_sidebar_link" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div>' + "<h3 id='overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item_request.result.link + "'>" + item_request.result.title + "</a></h3></div><div id='overlay_left'></div><div id='overlay_controls'><a href='" + item_url + "' class='favorite_item'>Favorite</a>&nbsp;<a href='" + item_url + "' class='unfavorite_item'>Unfavorite</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_read'>Mark as read</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unread'>Mark as unread</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_seen'>Mark as seen</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + item_url + "' class='archive_item'>Archive</a>&nbsp;<a href='" + item_url + "' class='delete_item'>Delete</a>&nbsp;<a href='" + item_url + "' class='unarchive_item'>Unarchive</a>&nbsp;<a href='" + item_url + "' class='vote_item_up'>Vote up</a>&nbsp;<a href='" + item_url + "' class='vote_item_down'>Vote down</a>&nbsp;<a href='" + item_url + "' class='close_item_preview'>Close preview</a></div>";
+			
+			//<div id='overlay_controls'><a href='" + item_url + "' class='favorite_item'>Favorite</a>&nbsp;<a href='" + item_url + "' class='unfavorite_item'>Unfavorite</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_read'>Mark as read</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unread'>Mark as unread</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_seen'>Mark as seen</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + item_url + "' class='archive_item'>Archive</a>&nbsp;<a href='" + item_url + "' class='delete_item'>Delete</a>&nbsp;<a href='" + item_url + "' class='unarchive_item'>Unarchive</a>&nbsp;<a href='" + item_url + "' class='vote_item_up'>Vote up</a>&nbsp;<a href='" + item_url + "' class='vote_item_down'>Vote down</a>&nbsp;<a href='" + item_url + "' class='close_item_preview'>Close preview</a></div>
 				if( typeof item_request.result.author !== 'undefined' &&  item_request.result.author.length > 0 ) { 
-					html_snippit = html_snippit + "<p>" + item_request.result.author + "</p>";
+					//html_snippit = html_snippit + "<p>" + item_request.result.author + "</p>";
 				}
-				html_snippit = html_snippit + "</div><div id='overlay_controls'><a href='" + item_url + "' class='favorite_item'>Favorite</a>&nbsp;<a href='" + item_url + "' class='unfavorite_item'>Unfavorite</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_read'>Mark as read</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unread'>Mark as unread</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_seen'>Mark as seen</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + item_url + "' class='archive_item'>Archive</a>&nbsp;<a href='" + item_url + "' class='delete_item'>Delete</a>&nbsp;<a href='" + item_url + "' class='unarchive_item'>Unarchive</a>&nbsp;<a href='" + item_url + "' class='vote_item_up'>Vote up</a>&nbsp;<a href='" + item_url + "' class='vote_item_down'>Vote down</a>&nbsp;<a href='" + item_url + "' class='close_item_preview'>Close preview</a></div>";
 				//////console.log("get_item_for_overlay(): sending to overlay: " + html_snippit);
 				send_to_overlay(html_snippit);
 			}
@@ -2504,9 +2532,9 @@ function new_topics_transaction(){
 		//////console.log("load_item_to_overlay: " + item_key);
 		get_item_for_overlay( item_key );
 		check_if_item_is_favorited_for_overlay( item_key );
+		check_item_vote_status_for_overlay( item_key );
 		//get_item_categories_for_overlay( item_key );
 		//next up
-		//get_item_votes_for_overlay( item_key );
 		
 		//get_item_favorites_for_overlay( item_key );
 
@@ -3296,14 +3324,19 @@ function new_topics_transaction(){
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
 				////console.log("check_if_item_is_favorited(): is favorite");
-				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
+//				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
+				jQuery("#overlay_left").prepend("<span class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
-				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('favorited');
+				jQuery("#overlay_left").parent().addClass('favorited');
+				//jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('favorited');
 
 			} else {
 				////console.log("check_if_item_is_favorited(): is NOT favorite");
-				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
-				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unfavorited');
+				jQuery("#overlay_left").prepend("<span class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
+
+//				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
+				//jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unfavorited');
+				jQuery("#overlay_left").parent().addClass('unfavorited');
 			}
 		};
 	
@@ -3331,14 +3364,14 @@ function new_topics_transaction(){
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
 				////console.log("check_if_item_is_favorited(): is favorite");
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
+				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('favorited');
+				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().addClass('favorited');
 
 			} else {
 				////console.log("check_if_item_is_favorited(): is NOT favorite");
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unfavorited');
+				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
+				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().addClass('unfavorited');
 			}
 		};
 	
@@ -4063,7 +4096,7 @@ function send_text_to_console(text_to_send) {
 }
 function send_text_to_overlay(text_to_send) {
 	////console.log(text_to_send);
-	jQuery("#overlay").html('').append("<p>" + text_to_send + "</p>");
+	jQuery("#overlay").html('').append(text_to_send);
 	
 	//fadeOut('fast');
 
@@ -4420,6 +4453,46 @@ function add_category_controls( event_context ) {
 	
 	}
 
+	
+	//current dev work
+	//02.10.11
+	function check_item_vote_status_for_overlay(item_url) {
+	
+		////console.log("check_if_item_is_favorited(): " + item_url);
+		new_votes_transaction();
+
+		var item_request = Buleys.objectStore.get(item_url);
+	
+		item_request.onsuccess = function(event){
+			////console.log("check_if_item_is_favorited(): done" + item_request);
+			 checker = item_request;
+			////console.log(item_request.result);
+			//Buleys.objectId = item_request.result.author;
+			if(typeof item_request.result != 'undefined') {
+				////console.log("check_if_item_is_favorited(): is favorite");
+//				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "").parent().prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				jQuery("#overlay_left").parent().addClass('voted');
+
+//				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('voted');
+
+			} else {
+//				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				jQuery("#overlay_left").parent().addClass('unvoted');
+
+//				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unvoted');
+			}
+		};
+	
+		item_request.onerror = function(e){
+			////console.log("check_if_item_is_favorited(): Could not get object");
+			////console.log(e);
+		};
+
+		
+	
+	}
 
 
 
@@ -5841,7 +5914,8 @@ ul {
 }
 #overlay_controls {
 	margin:20px 0 0 0;
-	clear: left;
+	clear: both;
+	
 }
 #overlay_controls a, #overlay_controls a:visited {
 	margin:0 10px 0 0;
@@ -5862,6 +5936,9 @@ ul {
 #overlay p {
 	font:normal normal normal 1.1em Georgia,Helvetica,serif;
 }
+#overlay h3 {
+	width:80%;
+}
 
 #overlay .category {
 	float:left;
@@ -5870,49 +5947,48 @@ ul {
 	font-size:1em;
 	line-height: 1.4em;
 }
+
 #overlay .vote_down_category. .vote_up_category {
 	float:left;
 	margin:0 0px 0px 0px;
 	padding:0 0px 0px 0px;
 	line-height: 1.4em;
 }
+
 #overlay .delete_category {
 	float:right;
 	margin:0 0px 0px 0px;
 	padding:0 0px 0px 7px;
 	line-height: 1.4em;
 }
+
 #overlay .selected_category {
 }
 
-
 .vote_context {
-clear:left;
-float:left;
-line-height: 24px;
-padding:0px 20px 10px 0;
-margin:auto 0 auto 0;
-vertical-align: middle;
+	clear:left;
+	float:left;
+	padding:10px 10px 0px 0;
+	margin:0;
+	vertical-align: middle;
 }
-
 
 .vote_context a {
-padding:6px 0 0 0;
+	padding:6px 0 0 0;
 }
-
 
 .sidebar_close_link {
-float:right;
-top:0px;
-margin:0px 12px 10px 6px;
-position:relative;
+	margin:10px 0px 0 0;
+	float: right;
+	position: relative;
 }
+
 .loading {
-height:11px;
-padding:10px;
-width:100%;
-background:url('/images/ajax-loader.gif') no-repeat;
-background-position:center;
+	height:11px;
+	padding:10px;
+	width:100%;
+	background:url('/images/ajax-loader.gif') no-repeat;
+	background-position:center;
 }
 
 .selected_category {
@@ -5923,29 +5999,27 @@ background-position:center;
 }
 
 .category_controls div {
-float:left;
-width:16px;
-height:16px;
-padding:0 2px 0 2px;
+	float:left;
+	width:16px;
+	height:16px;
+	padding:0 2px 0 2px;
 }
 
 #star_item {
-margin:10px 0px 10px 0px;
+	margin:10px 0px 10px 0px;
 }
 
-
-
 ul#result_controls {
-margin:0px 0 0px 0;
-padding:20px 20px 10px 20px;
-left:0px;
-bottom:0px;
-position:fixed;
-font-size:1.4em;
-border-top:1px solid #111;
+	margin:0px 0 0px 0;
+	padding:20px 20px 10px 20px;
+	left:0px;
+	bottom:0px;
+	position:fixed;
+	font-size:1.4em;
+	border-top:1px solid #111;
 	background:transparent url('/images/80percenttransparency.png') repeat;
-width:100%;
-color:#eee;
+	width:100%;
+	color:#eee;
 	z-index:1000;
 }
 ul#result_controls > li {
@@ -5981,15 +6055,16 @@ ul#results > li > a {
 	margin:0 10px 0 0;
 }
 div#overlay span.overlay_favorite_status a {
-padding:20px 0 20px 0;
+padding:10px 10px 10px 0;
 float:left;
-	margin:0 10px 0 0;
+	margin:0 0px 0 0;
 
 }
 
 .overlay_favorite_status {
-	margin:0 10px 0 0;
+	margin:0 0px 0 0;
 	float: left;
+	clear:left;
 	position: relative;
 }
 
@@ -6203,6 +6278,18 @@ padding:10px 0 0px 0;
           transition-property:         transform, opacity;
 }
 
+#overlay_left {
+	position: relative;
+	float:left;
+	margin:0 0 10px 0;
+}
+#overlay_right {
+	width:90%;
+	margin:0;
+	padding:0;
+	position: relative;
+	float:right;
+}
 
 </style>
 <body>
