@@ -2,10 +2,13 @@
 header('HTTP/1.0 200 OK');
 #ini_set('user_agent', 'Buleys.com');
 $uri_path = $_SERVER['REQUEST_URI'];
-$pieces = explode("/",$uri_path);
-$typeID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[1]);
+$pieces = explode("/",trim($uri_path,"/"));
+$typeID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[0]);
 if(empty($typeID)) { $typeID = "home"; }
-$itemID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[2]);
+$itemID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[1]);
+
+$pageID = preg_replace("/[^a-zA-Z0-9\s_]/", "", $pieces[2]);
+if(empty($pageID)) { $pageID = ""; }
 
 //next todos: vote up/downs
 ?>
@@ -62,6 +65,7 @@ var checker;
 	
 	var slug = <?php echo json_encode($itemID); ?>;
 	var type = <?php echo json_encode($typeID); ?>;
+	var page = <?php echo json_encode($pageID); ?>;
 	var session_token = '';
 	var debug;
 	Buleys.shortcuts.s_depressed = false;
@@ -387,7 +391,7 @@ var checker;
 	        
 	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
 	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link').addClass('fav_link');
 
 	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
 	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
@@ -455,12 +459,12 @@ var checker;
 		        $.each( $('.selected'), function(i,item_to_mark) {
 
 	        
-	        jQuery("#" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
-	        jQuery("#" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-	        jQuery("#" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+	        jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
+	        jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
 
-	        jQuery("#favorite_" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
-	        jQuery("#favorite_" + jQuery(item_to_mark).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+	        jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+	        jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
 	        
 	   	        	remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), slug, type);
 			        post_feedback('unstar', $(item_to_mark).children('a').attr('href'), slug, type);
@@ -497,7 +501,7 @@ var checker;
 	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
 
 	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('unfav_link');
+	        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.favorite_status').children('a').removeClass('fav_link').addClass('unfav_link');;
 
  
 	        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") ).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
@@ -586,8 +590,9 @@ var checker;
 		        	//////console.log("ITEM TO MARK: " + item_to_mark);
 					jQuery(item_to_mark).removeClass('unseen');
 					jQuery(item_to_mark).addClass('seen');
-
-					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unseen', '') ) );
+					if(typeof jQuery(item_to_mark).attr('status') !== 'undefined') {
+						jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unseen', '') ) );
+					}
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' seen') );
 
 
@@ -619,8 +624,10 @@ var checker;
 		        
 					jQuery(item_to_mark).removeClass('seen');
 					jQuery(item_to_mark).addClass('unseen');
-
-					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' seen', '') ) );
+					var pre_val =jQuery(item_to_mark).attr('status');
+					if(typeof pre_val !== "undefined") {
+					jQuery(item_to_mark).attr('status', pre_val.replace(' seen', '') );
+					}
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' unseen') );
 
 		        	mark_item_as_unseen( jQuery(item_to_mark).children('a').attr('href'), slug, type );
@@ -656,12 +663,12 @@ var checker;
 		        $.each( $('.selected'), function(i,item_to_mark) {
 		        	//////console.log(i);
 		        	jQuery(item_to_mark).removeClass('selected');
-					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
+					jQuery(item_to_mark).attr('status', jQuery(item_to_mark).attr('status').replace(' selected', '') );
 		        }); 
 			
 			} else {
 				jQuery('.cursor').removeClass('selected');
-				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
+				jQuery('.cursor').attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 			}
 	    });
 	    $('#select_inverse').live('click', function(event) {
@@ -1237,30 +1244,67 @@ var checker;
         var the_slug = $(this).attr('slug');
         var vote_key = "";
         vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g,"") + the_type.toLowerCase() + the_slug.toLowerCase();
-        add_or_update_vote(vote_key, 0);
+        add_or_update_vote(vote_key, -1);
         if(!$(this).hasClass('voted')) {
             post_feedback('category_downvote', the_url, the_type, the_slug);
         }
         $(this).addClass('voted');
-    });    
+    }); 
+       
     $('.vote_up').live('click', function(event) {
         event.preventDefault();
-        var the_url = $(this).attr('link');
-        add_or_update_vote(the_url.replace(/[^a-zA-Z0-9-_]+/g,"") + the_type.toLowerCase() + the_slug.toLowerCase(), 1);
-        if(!$(this).hasClass('voted')) {
-            post_feedback('item_upvote', the_url, type, slug);
+        var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g,"");
+        if( jQuery("#overlay_upvote_" + the_url).hasClass('vote') ) {
+ 
+	        jQuery("#overlay_upvote_" + the_url).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-up-empty.png');
+	        $('.vote').removeClass('vote');
+	        $(this).parent().removeClass('voted');
+	        post_feedback('item_remove_upvote', the_url, type, slug);
+	        remove_vote(the_url);
+ 
+        } else {
+        
+	        jQuery("#overlay_downvote_" + the_url).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-empty.png');
+	        jQuery("#overlay_upvote_" + the_url).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-up.png');
+	        $('.vote').removeClass('vote');
+	        $(this).parent().addClass('voted');
+	        $(this).addClass('vote');
+	        
+	        post_feedback('item_upvote', the_url, type, slug);
+	        add_or_update_vote(the_url, 1);
+        
         }
-        $(this).addClass('voted');
     });
     
     $('.vote_down').live('click', function(event) {
         event.preventDefault();
-        var the_url = $(this).attr('link');
-        add_or_update_vote(the_url.replace(/[^a-zA-Z0-9-_]+/g,"") + the_type.toLowerCase() + the_slug.toLowerCase(), 0);
-        if(!$(this).hasClass('voted')) {
-            post_feedback('item_downvote', the_url, type, slug);
+        var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g,"");
+        var the_url_slug = the_url.replace(/[^a-zA-Z0-9-_]+/g,"");
+        
+       if( jQuery("#overlay_downvote_" + the_url_slug).hasClass('vote') ) {
+ 
+	        jQuery("#overlay_downvote_" + the_url_slug).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-empty.png');
+	        $('.vote').removeClass('vote');
+	        $(this).parent().removeClass('voted');
+
+	        post_feedback('item_remove_downvote', the_url, type, slug);
+	        remove_vote(the_url);
+ 
+        } else {
+        
+	        jQuery("#overlay_downvote_" + the_url_slug).children('img').attr('src', '/images/icons/fugue-shadowless/thumb.png');
+	        jQuery("#overlay_upvote_" + the_url_slug).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-up-empty.png');
+
+	        $('.vote').removeClass('vote');
+	        $(this).parent().addClass('voted');
+	        $(this).addClass('vote');
+	        
+	        post_feedback('item_downvote', the_url, type, slug);
+	        add_or_update_vote(the_url, -1);
+        
         }
-        $(this).addClass('voted');
+ 
+
     });
     
 
@@ -1333,21 +1377,70 @@ var checker;
 		
 		//get_settings();
 
-		load_all_settings_into_dom();
-		load_all_queues_into_dom();
+		//load_all_settings_into_dom();
+		//load_all_queues_into_dom();
 		setTimeout('do_work()', 10000);
 		
+//		fire_off_request();
 		
-		load_profile_info();
+//		load_profile_info();
 		get_page_follow_status(type,slug);
 		get_page_subscription_status(type,slug);
 		get_page_topic_info(type,slug);
-		fire_off_request();
-		get_items(type,slug);
+//		get_items(type,slug);
+		if(typeof page !== "undefined") {
+		
+			if( typeof page == "undefined" || page == "" || page == "home" || page == "index" ) {
+			
+				//
+				get_items(type,slug);
+			
+			} else if ( page == "favorites" || page == "favs" ) {
+				
+				//
+				get_favorites(type,slug);
+
+			}  else if ( page == "archive" || page == "archived" ) {
+			
+				//
+				get_archived(type,slug);
+			
+			}  else if ( page == "trash" || page == "trashed" || page == "deleted" ) {
+			
+				//
+				get_deleted(type,slug);
+			
+			}  else if ( page == "read" ) {
+			
+				//
+				get_read(type,slug,null,null,false);
+			
+			}  else if ( page == "unread" ) {
+			
+				//
+				get_read(type,slug,null,null,true);
+			
+			}  else if ( page == "seen" ) {
+			
+				//
+				get_seen(type,slug,null,null,false);
+			
+			}  else if ( page == "unseen" ) {
+			
+				//
+				get_seen(type,slug,null,null,true);
+			
+			}  else {
+			
+				get_items(type,slug);
+			
+			}
+			
+		}
 
       var $container = $('#results');
 
-      
+      /*
       $container.isotope({
         itemSelector : 'li',
         getSortData : {
@@ -1361,7 +1454,7 @@ var checker;
             return $elem.text();
           }
         }
-      });
+      });*/
       
  
 
@@ -1439,6 +1532,7 @@ function is_in_cursor_mode() {
 		$.each(items, function(i,item){
 			//////console.log(item.link);
 			get_item(item.link);
+			
 		});
 	}
 	
@@ -1468,7 +1562,8 @@ function is_in_cursor_mode() {
 				
 				//////console.log( data.items );
 				populate_and_maybe_setup_indexeddbs( data.items );
-				get_data_for_items( data.items );
+				//get_data_for_items( data.items );
+				add_items(data.items, data.info.type, data.info.key);
 				load_page_title_info(data.info);
 				add_or_update_topic( ( data.info.type + "_" + data.info.key ) , data.info  );
 			}
@@ -2050,7 +2145,6 @@ function new_topics_transaction(){
 				
 				
 	function add_item_to_results(item) {
-
 				////console.log("add_item_to_results(): ", item);
 					var id = item.link.replace(/[^a-zA-Z0-9-_]+/g,"");
 					//////console.log("add_item_to_results(): " + jQuery("#" + id).length );
@@ -2058,6 +2152,7 @@ function new_topics_transaction(){
 					
 					
 						jQuery("<li class='item' modified= '" + item.modified + "'  index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item' href='http://buleys.com/images/icons/fugue-shadowless/magnifier.png'></a></li>").hide().prependTo("#results").fadeIn('slow');
+//						jQuery("<li class='item' modified= '" + item.modified + "'  index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item' href='http://buleys.com/images/icons/fugue-shadowless/magnifier.png'></a></li>").prependTo("#results");
 						
 						
 						
@@ -2069,16 +2164,28 @@ function new_topics_transaction(){
 	}
 	
 
-		function get_items(type, slug) {
+		function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
 	
-		console.log("get_items(): type: " + type + " slug: " + slug);
-	
-			if(type == "home") {
+			console.log("get_items(): type: " + type_filter + " slug: " + slug_filter);
 
-				  var begin_date =  new Date().getTime();
-				  begin_date = begin_date - 60*60*24*14*1000;
-				  var end_date =  new Date().getTime();
-				  
+			var begin_date = 0;
+			if(typeof begin_timeframe == "undefined") { 
+				begin_date =  0;//begin_date - 60*60*24*14*1000;
+			} else {
+				begin_date = parseInt( begin_timeframe );
+			}
+			
+			var end_date = 0;
+			if(typeof end_timeframe == "undefined") { 
+				end_date =  new Date().getTime();
+			} else {
+				end_date = parseInt( end_timeframe );
+			}
+			
+	
+			if( typeof slug_filter == "undefined" || type_filter == "home" ) {
+
+					  
 				  Buleys.keyRange = new IDBKeyRange.bound(begin_date, end_date, true, false);
 				  console.log("Range Defined", Buleys.keyRange);
 				  
@@ -2089,11 +2196,23 @@ function new_topics_transaction(){
 				    var request = Buleys.index.openCursor(Buleys.keyRange);
 				    request.onsuccess = function(event){
 				      console.log("CURSOR!",event,request);
-				      Buleys.cursor = request.result;
-				      console.log("CURSOR2!",Buleys.cursor.value);
-						get_item( Buleys.cursor.value.link );
-				      Buleys.cursor["continue"]();
-						//objectCursor["continue"]();
+				      
+				      if(typeof request.result !== "undefined") {
+				     		
+				     		Buleys.cursor = request.result;
+				      
+				      		console.log("CURSOR2!",Buleys.cursor);
+							console.log("get_items() cursor value ", Buleys.cursor.value );
+							get_item( Buleys.cursor.value.link );
+
+							if(typeof Buleys.cursor["continue"] == "function") {
+								Buleys.cursor["continue"]();
+							}
+							
+							
+					    }
+					    
+					    
 				    };
 				    request.onerror = function(event){
 				      console.log("Could not open cursor", Buleys.cursor);
@@ -2104,13 +2223,12 @@ function new_topics_transaction(){
 				    console.log("Cursor Created", Buleys.cursor);
 				  });
 
-	
 			} else {
-	
+
 				new_categories_transaction();
-				console.log("get_items objectStore",Buleys.objectStore);
+				console.log("get_items objectStore",slug_filter,Buleys.objectStore);
 	 			Buleys.index = Buleys.objectStore.index("slug");
-				cursorRequest = Buleys.index.getAll(slug);
+				var cursorRequest = Buleys.index.getAll(slug_filter);
 				console.log("get_items cursor_request",cursorRequest);
 				cursorRequest.onsuccess = function(event){
 					console.log("get_items(): event; ", event);
@@ -2118,9 +2236,9 @@ function new_topics_transaction(){
 					if (!objectCursor) {
 					  return;
 					}
-					
+
 					console.log("get_items(): Indexed on link; ", objectCursor);
-					
+
 					if(objectCursor.length > 1)  {
 						jQuery.each(objectCursor, function(k,item) {
 							console.log("get_items(): item: " + item.link);
@@ -2131,18 +2249,99 @@ function new_topics_transaction(){
 						get_item( objectCursor.link );
 					}
 				};
-				request.onerror = function(event){
+				cursorRequest.onerror = function(event){
 					console.log("get_items(): Could not open Object Store", event);
 				};
       
+      
 			}
-	
+
+		
 	}
 	
 	
 	//
 	function get_item( item_url ) {
-		//////console.log("get_item(): adding: " + item_url);
+		console.log("get_item(): adding: " + item_url);
+		
+		if(typeof item_url !== 'undefined') {
+		
+			new_deleted_transaction();
+			var item_request_0 = Buleys.objectStore.get(item_url);
+			item_request_0.onsuccess = function(event){
+			if(typeof item_request_0.result == 'undefined') {
+
+				new_item_transaction();
+				var item_request_1 = Buleys.objectStore.get(item_url);
+			
+				item_request_1.onsuccess = function(event){
+					//////console.log("get_item(): 1: done" + item_request_1);
+					//////console.log(event.result);
+					//Buleys.objectId = item_request.result.author;
+					if(typeof item_request_1.result != 'undefined') {
+		
+		
+						//check for archival
+						//xxx
+						console.log("get_item(): check_if_item_is_archived: " + item_url);
+				
+				new_archived_transaction();
+		
+				var item_request_2 = Buleys.objectStore.get(item_url);
+			
+				item_request_2.onsuccess = function(event){
+					//////console.log("get_item(): check_if_item_is_archived(): done" + item_request_2.result);
+					if(typeof item_request_2.result !== 'undefined') {
+						console.log("check_if_item_is_archived(): is archived" + event.result);
+		
+		
+					} else {
+						console.log("get_item(): check_if_item_is_archived: is NOT archived",item_request_1.result);
+							get_item_raw_no_trash( item_request_1.result.link );
+										
+						
+						
+					}
+				};
+			
+				item_request_2.onerror = function(e){
+					//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+					//////console.log(e);
+									
+						if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+							add_item_to_results( item_request_1.result );
+							check_if_item_is_favorited(item_request_1.result.link);				
+							check_if_item_is_read(item_request_1.result.link);
+							check_if_item_is_seen(item_request_1.result.link);
+						}
+		
+				};
+		
+		
+						//end xxx
+		
+						
+		
+		
+					}
+				};
+			
+				item_request_1.onerror = function(e){
+					////console.log("get_item(): Could not get object");
+					//////console.log(e);
+			
+				};
+			
+			}
+		
+			}
+		};
+	
+	}
+
+	//
+	function get_item_raw( item_url ) {
+		console.log("get_item_raw(): ", item_url);
 		
 		if(typeof item_url !== 'undefined') {
 
@@ -2150,7 +2349,59 @@ function new_topics_transaction(){
 			var item_request_1 = Buleys.objectStore.get(item_url);
 		
 			item_request_1.onsuccess = function(event){
-				//////console.log("get_item(): 1: done" + item_request_1);
+				//////console.log(event.result);
+				//Buleys.objectId = item_request.result.author;
+				if(typeof item_request_1.result != 'undefined') {
+
+					new_deleted_transaction();
+					var item_request_2 = Buleys.objectStore.get(item_url);
+				
+					item_request_2.onsuccess = function(event){
+						//////console.log(event.result);
+						//Buleys.objectId = item_request.result.author;
+						if(typeof item_request_2.result == 'undefined') {
+
+							//check for archival
+							//xxx
+							console.log("get_item_raw(): " + item_url);
+					
+														
+							if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+								add_item_to_results( item_request_1.result );
+								check_if_item_is_favorited(item_request_1.result.link);				
+								check_if_item_is_read(item_request_1.result.link);
+								check_if_item_is_seen(item_request_1.result.link);
+							}
+						}
+						
+					}
+				
+				}
+				
+				
+			};
+		
+			item_request_1.onerror = function(e){
+				//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+				//////console.log(e);
+	
+			};
+	
+			
+		}
+	
+	}
+
+	//
+	function get_item_raw_no_trash( item_url ) {
+		console.log("get_item(): ", item_url);
+		
+		if(typeof item_url !== 'undefined') {
+
+			new_item_transaction();
+			var item_request_1 = Buleys.objectStore.get(item_url);
+		
+			item_request_1.onsuccess = function(event){
 				//////console.log(event.result);
 				//Buleys.objectId = item_request.result.author;
 				if(typeof item_request_1.result != 'undefined') {
@@ -2158,33 +2409,20 @@ function new_topics_transaction(){
 	
 					//check for archival
 					//xxx
-					//////console.log("get_item(): check_if_item_is_archived: " + item_url);
+					console.log("get_item_raw(): " + item_url);
 			
-			new_archived_transaction();
-	
-			var item_request_2 = Buleys.objectStore.get(item_url);
-		
-			item_request_2.onsuccess = function(event){
-				//////console.log("get_item(): check_if_item_is_archived(): done" + item_request_2.result);
-				if(typeof item_request_2.result !== 'undefined') {
-					//////console.log("check_if_item_is_archived(): is archived" + event.result);
-	
-	
-				} else {
-					//////console.log("get_item(): check_if_item_is_archived: is NOT archived");
-	
-									
+												
 					if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 						add_item_to_results( item_request_1.result );
 						check_if_item_is_favorited(item_request_1.result.link);				
 						check_if_item_is_read(item_request_1.result.link);
 						check_if_item_is_seen(item_request_1.result.link);
 					}
-					
 				}
+				
 			};
 		
-			item_request_2.onerror = function(e){
+			item_request_1.onerror = function(e){
 				//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
 				//////console.log(e);
 								
@@ -2197,24 +2435,12 @@ function new_topics_transaction(){
 	
 			};
 	
-	
-					//end xxx
-	
-					
-	
-	
-				}
-			};
-		
-			item_request_1.onerror = function(e){
-				////console.log("get_item(): Could not get object");
-				//////console.log(e);
-		
-			};
-		
+			
 		}
 	
 	}
+
+
 
 	function get_item_for_console( item_url ) {
 		
@@ -2779,7 +3005,7 @@ function new_topics_transaction(){
 		
 		var data = {
 			"key": the_type.toLowerCase() + "_" + the_key.toLowerCase(),
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		//////console.log("add_follow_to_follows_database(): Trying to save...", data);
@@ -2849,10 +3075,10 @@ function new_topics_transaction(){
 			//////console.log("get_page_subscription_status(): "  + item_request.result);
 			if(typeof item_request.result == 'undefined' || item_request.result == "") {
 				//////console.log("get_page_subscription_status(): page is NOT being subscriptioned");
-				jQuery("#page_meta").append("<a href='#' class='subscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/inbox.png'/></a>");
+				jQuery("#page_meta").append("<a href='#' class='subscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/mail.png'/></a>");
 			} else {
 				//////console.log("get_page_subscription_status(): page is being subscriptioned");
-				jQuery("#page_meta").append("<a href='#' class='unsubscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/inbox-document.png'/></a>");
+				jQuery("#page_meta").append("<a href='#' class='unsubscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/mail-send.png'/></a>");
 			}
 		};
 	
@@ -2916,7 +3142,7 @@ function new_topics_transaction(){
 		
 		var data = {
 			"key": the_type.toLowerCase() + "_" + the_key.toLowerCase(),
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		//////console.log("add_subscription_to_subscriptions_database(): Trying to save...", data);
@@ -2991,18 +3217,18 @@ function new_topics_transaction(){
 	function add_item_if_new( item, type_to_get, company_to_get ) {
 	
 		new_item_transaction();
-		//console.log("add_item_if_new(): " + item.link);
+		console.log("add_item_if_new(): " + item.link);
 		var item_request = Buleys.objectStore.get(item.link);
 	
 		item_request.onsuccess = function(event1){
-			////console.log("add_item_if_new(): ", event1.target.result);
+			console.log("add_item_if_new(): ", event1.target.result);
 			//Buleys.objectId = item_request.result.author;
 			////////console.log(item_request.status);
 			if(typeof event1.target.result == 'undefined') {
 				////console.log("add_item_if_new(): doesn't exist! ", Buleys.queues.new_items);
 				
 				new_deleted_transaction();
-				//////console.log("add_item_if_doesnt_exist(): " + item.link);
+				console.log("add_item_if_doesnt_exist(): " + item.link);
 				var deleted_item_request = Buleys.objectStore.get(item.link);
 			
 				deleted_item_request.onsuccess = function(event){
@@ -3010,7 +3236,7 @@ function new_topics_transaction(){
 					//Buleys.objectId = item_request.result.author;
 					////////console.log(item_request.status);
 					if(typeof event.target.result == 'undefined') {
-						//console.log("add_item_if_new(): not deleted! adding", item);
+						console.log("add_item_if_new(): not deleted! adding", item);
 						add_item_to_items_database(item);
 						add_categories_to_categories_database(item.link, item.categories);	
 						send_to_console("<p>Added: <a href='" + item.link + "'>" + item.title + "</a></p>");
@@ -3073,7 +3299,7 @@ function new_topics_transaction(){
 	function add_item_if_doesnt_exist( item ) {
 	
 		new_item_transaction();
-		//////console.log("add_item_if_doesnt_exist(): " + item.link);
+		console.log("add_item_if_doesnt_exist(): " + item.link);
 		var item_request = Buleys.objectStore.get( item.link );
 	
 		item_request.onsuccess = function(event){
@@ -3164,8 +3390,11 @@ function new_topics_transaction(){
 						////console.log("add_item_to_items_database(): checking and against 2+ ",cat,slug,type);
 						if(type === "home" || typeof slug === "undefined" || typeof slug === "" ||  cat.key !== null && typeof cat.key !== "null" && cat.key === slug) {
 							////console.log("add_item_to_items_database() actually adding to results:",item);
-							add_item_to_results( get_data_object_for_item(item) );
+							if(typeof page == "undefined" || page !== "favorites" && page !== "seen" &&  page !== "read" &&  page !== "archive") {
+								add_item_to_results( get_data_object_for_item(item) );
+							}
 						}
+						
 					
 					});
 					
@@ -3208,13 +3437,13 @@ function new_topics_transaction(){
 
 	function add_categories_to_categories_database(item_url, categories) {
 	
-		////console.log("add_categories_to_categories_database(): ", item_url, categories);
+		console.log("add_categories_to_categories_database(): ", item_url, categories);
 		
 		jQuery.each(categories, function(c,the_category) {
-			////console.log("&& category.key !== null thing: ",the_category.key);
-			if( ( typeof the_category.key !== 'undefined' && the_category.key !== "undefined" && the_category.length > 0 ) || ( typeof the_category.key !== "undefined"  && the_category.length > 0  && the_category.key !== null ) ) {
+			console.log("&& category.key !== null thing: ",the_category.key);
+			if( typeof the_category.key !== 'undefined' ) {
 			
-				////console.log("add_categories_to_categories_database(): current category in each ", the_category.key);
+				console.log("add_categories_to_categories_database(): current category in each ", the_category.key);
 				
 				
 				new_categories_transaction();
@@ -3230,23 +3459,23 @@ function new_topics_transaction(){
 				};
 			
 				
-				//////console.log("add_categories_to_categories_database(): Trying to save...", data);
+				console.log("add_categories_to_categories_database(): Trying to save...", data);
 				var add_data_request = Buleys.objectStore.add(data);
 				add_data_request.onsuccess = function(event){
-					//////console.log("add_categories_to_categories_database(): Saved id ", add_data_request.result);
+					console.log("add_categories_to_categories_database(): Saved id ", add_data_request.result);
 					//Buleys.objectId = add_data_request.result;
 					if(typeof the_category.key !== 'undefined') {
 						var topic_key = the_category.type.toLowerCase()+"_"+the_category.key.toLowerCase();
 						if(typeof Buleys.queues.new_items[topic_key] == "undefined") {
-							////console.log("add_categories_to_categories_database(): key: ",topic_key);
-							//console.log("add_categories_to_categories_database(): count: ", Buleys.queues.new_items[topic_key]);
+							console.log("add_categories_to_categories_database(): key: ",topic_key);
+							console.log("add_categories_to_categories_database(): count: ", Buleys.queues.new_items[topic_key]);
 							Buleys.queues.new_items[topic_key] = 0;
 						}
 						Buleys.queues.new_items[topic_key] = Buleys.queues.new_items[topic_key] + 1;
 					}
 				};
 				add_data_request.onerror = function(e){
-					////console.log("add_categories_to_categories_database(): exists! " + e);
+					console.log("add_categories_to_categories_database(): exists! " + e);
 					//Buleys.transaction.abort();
 				};
 			
@@ -3268,7 +3497,7 @@ function new_topics_transaction(){
 		var data = {
 			"link": item.link,
 			"status": status,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("Trying to save...", data);
@@ -3294,7 +3523,7 @@ function new_topics_transaction(){
 		var data = {
 			"link": item_url,
 			"status": "favorite",
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_as_favorite(): Trying to save...", data);
@@ -3344,8 +3573,6 @@ function new_topics_transaction(){
 			////console.log("check_if_item_is_favorited(): Could not get object");
 			////console.log(e);
 		};
-
-		
 	
 	}
 
@@ -3393,7 +3620,7 @@ function new_topics_transaction(){
 			"item_link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_to_favorites_database(): Trying to save...", data);
@@ -3476,7 +3703,7 @@ function new_topics_transaction(){
 		
 		var data = {
 			"link": item_url,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_as_seen(): Trying to save...", data);
@@ -3532,7 +3759,7 @@ function new_topics_transaction(){
 			"item_link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_to_seens_database(): Trying to save...", data);
@@ -3575,7 +3802,7 @@ function new_topics_transaction(){
 		
 		var data = {
 			"link": item_url,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_as_archive(): Trying to save...", data);
@@ -3632,7 +3859,7 @@ function new_topics_transaction(){
 			"item_link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_to_archives_database(): Trying to save...", data);
@@ -3738,7 +3965,7 @@ function new_topics_transaction(){
 		
 		var data = {
 			"link": item_url,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		//console.log("delete_item(): Trying to delete...", data);
@@ -3773,7 +4000,7 @@ function new_topics_transaction(){
 		
 		
 		//console.log("add_item_as_delete():  remove_item_from_items_database");
-			remove_item_from_items_database(item_url, the_type, the_slug);
+			//remove_item_from_items_database(item_url, the_type, the_slug);
 			//console.log("add_item_as_delete():  remove_item_from_favorites_database");
 			remove_item_from_favorites_database(item_url, the_type, the_slug);
 			//console.log("add_item_as_delete():  remove_item_from_categories_database");
@@ -3831,7 +4058,7 @@ function new_topics_transaction(){
 			"item_link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_item_to_deletes_database(): Trying to save...", data);
@@ -3879,7 +4106,7 @@ function new_topics_transaction(){
 			"link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("mark_item_as_read(): Trying to save...", data);
@@ -3922,7 +4149,7 @@ function new_topics_transaction(){
 			"link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("mark_item_as_seen(): Trying to save...", data);
@@ -3965,7 +4192,7 @@ function new_topics_transaction(){
 			"link": item_url,
 			"topic_slug": item_slug,
 			"topic_type": item_type,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("mark_item_as_deleted(): Trying to save...", data);
@@ -4074,7 +4301,7 @@ function open_database( ) {
 
 	//Open database
 	////console.log("Trying to open database ...");
-	var database_open_request = window.indexedDB.open("Buleys-315");
+	var database_open_request = window.indexedDB.open("Buleys-317");
 	database_open_request.onsuccess = function(event){
 		database_is_open(database_open_request.result);
 	};
@@ -4248,7 +4475,7 @@ function add_category_controls( event_context ) {
 		var data = {
 			"option_name": option_name,
 			"option_value": option_value,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_setting_to_settings_database(): Trying to save...", data);
@@ -4272,7 +4499,7 @@ function add_category_controls( event_context ) {
 		var data = {
 			"option_name": option_name,
 			"option_value": option_value,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_setting_to_settings_database(): Trying to save...", data);
@@ -4289,8 +4516,6 @@ function add_category_controls( event_context ) {
 	}
 
 //
-
-//queues
 
 	function get_queues() {
 
@@ -4329,8 +4554,6 @@ function add_category_controls( event_context ) {
 
 	}
 
-
-//here
 	function remove_queue( queue_name ) {
 		////console.log("remove_queue(): " + " queue_name: " + queue_name);
 		new_queue_transaction();
@@ -4413,7 +4636,7 @@ function add_category_controls( event_context ) {
 		var data = {
 			"queue_name": queue_name,
 			"queue_value": queue_value,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_queue_to_queues_database(): Trying to save...", data);
@@ -4437,7 +4660,7 @@ function add_category_controls( event_context ) {
 		var data = {
 			"queue_name": queue_name,
 			"queue_value": queue_value,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_queue_to_queues_database(): Trying to save...", data);
@@ -4461,24 +4684,37 @@ function add_category_controls( event_context ) {
 		////console.log("check_if_item_is_favorited(): " + item_url);
 		new_votes_transaction();
 
-		var item_request = Buleys.objectStore.get(item_url);
+		var item_request = Buleys.objectStore.get(item_url.replace(/[^a-zA-Z0-9-_]+/g,""));
 	
 		item_request.onsuccess = function(event){
 			////console.log("check_if_item_is_favorited(): done" + item_request);
 			 checker = item_request;
-			////console.log(item_request.result);
+			console.log("Right here right now");
+			console.log("Right here right now");
+			console.log(event);
+			console.log(event.target.result);
+			console.log("Right here right now");
+			console.log("Right here right now");
 			//Buleys.objectId = item_request.result.author;
-			if(typeof item_request.result != 'undefined') {
+			if(typeof event.target.result !== 'undefined') {
 				////console.log("check_if_item_is_favorited(): is favorite");
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "").parent().prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
-				jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				if(event.target.result.vote_value == -1) {
+					jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up-empty.png"/></a><br><a href="#" class="vote_down" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				
+				} else if(event.target.result.vote_value == 1) {
+					jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb-empty.png"/></a></div>');
+				
+				} else {
+					jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up-empty.png"/></a><br><a href="#" class="vote_down" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb-empty.png"/></a></div>');
+				}
 				jQuery("#overlay_left").parent().addClass('voted');
 
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('voted');
 
 			} else {
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
-				jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
+				jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up-empty.png"/></a><br><a href="#" class="vote_down" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb-empty.png"/></a></div>');
 				jQuery("#overlay_left").parent().addClass('unvoted');
 
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unvoted');
@@ -4515,7 +4751,7 @@ function add_category_controls( event_context ) {
 				////console.log("get_vote_info(): vote info NOT found");
 			} else {
 				////console.log("get_vote_info(): vote info found");
-				if(typeof item_request.result.vote_value != 'undefined') {
+				if(typeof item_request.result != 'undefined') {
 				////console.log("get_vote_info(): vote_value: " + item_request.result.vote_value);
 
 					if( item_request.result.vote_value == 0 ) {
@@ -4592,7 +4828,7 @@ function add_category_controls( event_context ) {
 	}  	
 
 	function add_or_update_vote( vote_key, vote_value ) {
-	////console.log("add_or_update_vote(): key: " + vote_key + " value: " + vote_value );
+	console.log("add_or_update_vote(): key: " + vote_key + " value: " + vote_value );
 		
 		new_votes_transaction();
 		if( typeof vote_value == 'undefined' ) {
@@ -4601,7 +4837,7 @@ function add_category_controls( event_context ) {
 		var item_request = Buleys.objectStore.get( vote_key );
 	
 		item_request.onsuccess = function(event){
-			////console.log("add_or_update_vote(): " + event);
+			console.log("add_or_update_vote(): " + event);
 			//Buleys.objectId = item_request.result.author;
 			////console.log("add_or_update_vote(): " + item_request );
 			if(typeof item_request.result == 'undefined') {
@@ -4615,7 +4851,7 @@ function add_category_controls( event_context ) {
 	
 		item_request.onerror = function(e){
 			////console.log("add_setting_if_doesnt_exist(): Could not get object");
-			////console.log(e);
+			console.log(e);
 		};		
 	
 	}
@@ -4628,7 +4864,7 @@ function add_category_controls( event_context ) {
 		var data = {
 			"vote_key": vote_key,
 			"vote_value": vote_value,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_vote_to_votes_database(): Trying to save...", data);
@@ -4652,11 +4888,11 @@ function add_category_controls( event_context ) {
 		var data = {
 			"vote_key": vote_key,
 			"vote_value": vote_value,
-			"modified": new Date()
+			"modified": new Date().getTime()
 		};
 		
 		////console.log("add_vote_to_votes_database(): Trying to save...", data);
-		var add_data_request = Buleys.objectStore.update(data);
+		var add_data_request = Buleys.objectStore.put(data);
 		add_data_request.onsuccess = function(event){
 			////console.log("add_vote_to_votes_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
@@ -5843,6 +6079,770 @@ function nn_resize(){
   }
 }
 */
+
+
+// new 
+	function get_favorites(type_filter, slug_filter, begin_timeframe, end_timeframe) {
+	
+		console.log("get_favorites(): type: " + type + " slug: " + slug);
+	
+		var begin_date = 0;
+		if(typeof begin_timeframe == "undefined") { 
+			begin_date =  0;//begin_date - 60*60*24*14*1000;
+		} else {
+			begin_date = parseInt( begin_timeframe );
+		}
+		
+		var end_date = 0;
+		if(typeof end_timeframe == "undefined") { 
+			end_date =  new Date().getTime();
+		} else {
+			end_date = parseInt( end_timeframe );
+		}
+			
+			
+		new_categories_transaction();
+		console.log("get_items objectStore",slug_filter,Buleys.objectStore);
+			Buleys.index = Buleys.objectStore.index("slug");
+		var cursorRequest = Buleys.index.getAll(slug_filter);
+		console.log("get_items cursor_request",cursorRequest);
+		cursorRequest.onsuccess = function(event){
+			console.log("get_items(): event; ", event);
+			var objectCursor = cursorRequest.result;
+			if (!objectCursor) {
+			  return;
+			}
+
+			console.log("get_items(): Indexed on link; ", objectCursor);
+
+			if(objectCursor.length > 1)  {
+				jQuery.each(objectCursor, function(k,item) {
+				
+				
+					console.log("get_items(): item: ", item.link);
+					
+					console.log("get_item(): check_if_item_is_favorite(): ", item.link);
+					
+					new_favorite_transaction();
+			
+					var item_request_2 = Buleys.objectStore.get(item.link);
+				
+					item_request_2.onsuccess = function(event){
+						
+						console.log("get_item(): check_if_item_is_favorite(): done", item_request_2.result);
+						
+						new_item_transaction();
+
+						if(typeof item_request_2.result !== 'undefined') {
+							var item_request = Buleys.objectStore.get( item.link );
+						
+							item_request.onsuccess = function(event){
+								//xx
+								if(typeof item_request.result !== 'undefined') {
+									console.log("get_fav() value", item_request.result.value);
+										console.log("get_favorites(): check_if_item_is_favorite(): is favorite1", item_request.result);
+									if(typeof item_request.result.link !== 'undefined') {
+										console.log("get_favorites(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
+										
+										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+											get_item(item_request.result.link);
+										}			
+						
+									} else {
+										console.log("get_favorites(): check_if_item_is_favorite(): is NOT favorite");
+									}
+								}
+								//xx
+							};
+						}
+						
+					};
+				
+					item_request_2.onerror = function(e){
+						//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+						//////console.log(e);
+										
+							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+								add_item_to_results( item );
+								check_if_item_is_favorited(item.link);				
+								check_if_item_is_read(item.link);
+								check_if_item_is_seen(item.link);
+							}
+			
+					};	
+					
+					
+					//get_item( item.link );
+					
+					
+					
+				});				
+				//objectCursor["continue"]();
+			} else {
+				get_item( objectCursor.link );
+			}
+		};
+		cursorRequest.onerror = function(event){
+			console.log("get_items(): Could not open Object Store", event);
+		};
+
+
+			/*
+			
+		
+		Buleys.keyRange = new IDBKeyRange.bound(begin_date, end_date, true, false);
+		console.log("get_favorites(): Range Defined", Buleys.keyRange);
+		
+		Buleys.onCursor = function(callback){
+			new_favorite_transaction();
+			console.log("get_favorites(): callback objectStore",callback,Buleys.objectStore);
+			Buleys.index = Buleys.objectStore.index("modified");
+			var favorite_item_request = Buleys.index.openCursor(Buleys.keyRange);
+			
+			favorite_item_request.onsuccess = function(event){
+
+				console.log("get_favorites(): The event: ",event);
+				console.log("get_favorites(): The request: ",favorite_item_request);
+				
+				if(typeof favorite_item_request.result !== "undefined") {
+					console.log("get_favorites(): The request result: ",favorite_item_request.result);
+					console.log("get_favorites(): The request result value: ",favorite_item_request.result.value);
+					Buleys.cursor = favorite_item_request.result;
+					console.log("get_favorites(): The cursor: ",Buleys.cursor);
+					
+					console.log("get_favorites(): slugs: ",slug_filter,Buleys.cursor.value.topic_slug);
+					console.log("get_favorites(): types: ",type_filter,Buleys.cursor.value.topic_type);
+					
+					if (typeof type_filter !== 'undefined' && typeof slug_filter !== 'undefined' && type_filter == Buleys.cursor.value.topic_type && slug_filter == Buleys.cursor.value.topic_slug) { 
+					console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
+						get_item( Buleys.cursor.value.item_link );
+						
+					} else if (typeof type !== 'undefined' && type_filter == "favorites") {
+					console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
+						get_item( Buleys.cursor.value.item_link );
+					
+					//no slug filter, no type filter
+					} else if (typeof type_filter == 'undefined' && slug_filter == 'undefined') {
+					console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
+						get_item( Buleys.cursor.value.item_link );
+					
+					}  else {
+						console.log("get_favorites() didn't match the filter", type_filter, slug_filter);
+					}
+
+					Buleys.cursor["continue"]();
+				}
+			};
+							    
+			favorite_item_request.onerror = function(event){
+				console.log("get_favorites(): Could not open cursor", Buleys.cursor);
+				console.log(e);
+			};
+			
+			
+		Buleys.onCursor(function(){
+			console.log("Cursor Created", Buleys.cursor);
+		});
+		
+		
+		};
+			*/
+			
+		
+	}
+	
+	
+	//
+	function get_favorite( favorite_slug ) {
+		//////console.log("get_favorite(): adding: " + favorite_slug);
+		
+		if(typeof favorite_slug !== 'undefined') {
+
+			new_favorite_transaction();
+			var favorite_request_1 = Buleys.objectStore.get(favorite_slug);
+		
+			favorite_request_1.onsuccess = function(event){
+				//////console.log("get_favorite(): 1: done" + favorite_request_1);
+				//////console.log(event.result);
+				//Buleys.objectId = favorite_request.result.author;
+				if(typeof favorite_request_1.result != 'undefined') {
+	
+	
+					//check for archival
+					//xxx
+					//////console.log("get_favorite(): check_if_favorite_is_archived: " + favorite_slug);
+			
+			new_archived_transaction();
+	
+			var favorite_request_2 = Buleys.objectStore.get(favorite_slug);
+		
+			favorite_request_2.onsuccess = function(event){
+				//////console.log("get_favorite(): check_if_favorite_is_archived(): done" + favorite_request_2.result);
+				if(typeof favorite_request_2.result !== 'undefined') {
+					//////console.log("check_if_favorite_is_archived(): is archived" + event.result);
+	
+	
+				} else {
+					//////console.log("get_favorite(): check_if_favorite_is_archived: is NOT archived");
+	
+									
+					if(jQuery("#" + favorite_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+						add_favorite_to_results( favorite_request_1.result );
+						check_if_favorite_is_favorited(favorite_request_1.result.link);				
+						check_if_favorite_is_read(favorite_request_1.result.link);
+						check_if_favorite_is_seen(favorite_request_1.result.link);
+					}
+					
+				}
+			};
+		
+			favorite_request_2.onerror = function(e){
+				//////console.log("get_favorite(): check_if_favorite_is_archived(): Could not get object");
+				//////console.log(e);
+								
+					if(jQuery("#" + favorite_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+						add_favorite_to_results( favorite_request_1.result );
+						check_if_favorite_is_favorited(favorite_request_1.result.link);				
+						check_if_favorite_is_read(favorite_request_1.result.link);
+						check_if_favorite_is_seen(favorite_request_1.result.link);
+					}
+	
+			};
+	
+	
+					//end xxx
+	
+					
+	
+	
+				}
+			};
+		
+			favorite_request_1.onerror = function(e){
+				////console.log("get_favorite(): Could not get object");
+				//////console.log(e);
+		
+			};
+		
+		}
+	
+	}
+
+	function get_favorite_for_console( favorite_slug ) {
+		
+		new_favorite_transaction();
+		//////console.log("get_favorite_for_console: " + favorite_slug);
+		
+		////////console.log(favorite_slug);
+		var favorite_request = Buleys.objectStore.get(favorite_slug);
+	
+		favorite_request.onsuccess = function(event){
+			////////console.log(typeof favorite_request.result.id);
+			//Buleys.objectId = favorite_request.result.author;
+			if(typeof favorite_request.result != 'undefined' && typeof favorite_request.result.id == 'string') {
+				var html_snippit = "<div id='console_" + favorite_request.result.id.replace(/[^a-zA-Z0-9-_]+/g,"") + "'>";
+				html_snippit = html_snippit + "<h3><a href='" + favorite_request.result.id + "'>" + favorite_request.result.title + "</a></h3>";
+				html_snippit = html_snippit + "<p>" + favorite_request.result.author + "</p>";
+				html_snippit = html_snippit + "</div>";
+				
+				send_to_console(html_snippit);
+			}
+		};
+	
+		favorite_request.onerror = function(e){
+			//////console.log("Error: " + e);
+			////////console.log(e);
+		};
+	
+	}
+
+	function get_favorite_for_overlay( favorited_url ) {
+		
+		new_item_transaction();
+		//////console.log("get_favorite_for_overlay: " + favorite_slug);
+		
+		////////console.log(favorite_slug);
+		var favorite_request = Buleys.objectStore.get(( favorited_url ));
+	
+		favorite_request.onsuccess = function(event){
+			//////console.log("get_favorite_for_overlay(): type of result: " + typeof favorite_request.result.link);
+			//Buleys.objectId = favorite_request.result.author;
+			if(typeof favorite_request.result != 'undefined' && typeof favorite_request.result.link == 'string') {
+
+			var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><a href="#" class="close_sidebar_link" id="' + favorite_slug + '"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div>' + "<h3 id='overlay_" + favorite_slug.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + favorite_request.result.link + "'>" + favorite_request.result.title + "</a></h3></div><div id='overlay_left'></div><div id='overlay_controls'><a href='" + favorite_slug + "' class='favorite_favorite'>Favorite</a>&nbsp;<a href='" + favorite_slug + "' class='unfavorite_favorite'>Unfavorite</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_read'>Mark as read</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unread'>Mark as unread</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_seen'>Mark as seen</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + favorite_slug + "' class='archive_favorite'>Archive</a>&nbsp;<a href='" + favorite_slug + "' class='delete_favorite'>Delete</a>&nbsp;<a href='" + favorite_slug + "' class='unarchive_favorite'>Unarchive</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_up'>Vote up</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_down'>Vote down</a>&nbsp;<a href='" + favorite_slug + "' class='close_favorite_preview'>Close preview</a></div>";
+			
+			//<div id='overlay_controls'><a href='" + favorite_slug + "' class='favorite_favorite'>Favorite</a>&nbsp;<a href='" + favorite_slug + "' class='unfavorite_favorite'>Unfavorite</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_read'>Mark as read</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unread'>Mark as unread</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_seen'>Mark as seen</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + favorite_slug + "' class='archive_favorite'>Archive</a>&nbsp;<a href='" + favorite_slug + "' class='delete_favorite'>Delete</a>&nbsp;<a href='" + favorite_slug + "' class='unarchive_favorite'>Unarchive</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_up'>Vote up</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_down'>Vote down</a>&nbsp;<a href='" + favorite_slug + "' class='close_favorite_preview'>Close preview</a></div>
+				if( typeof favorite_request.result.author !== 'undefined' &&  favorite_request.result.author.length > 0 ) { 
+					//html_snippit = html_snippit + "<p>" + favorite_request.result.author + "</p>";
+				}
+				//////console.log("get_favorite_for_overlay(): sending to overlay: " + html_snippit);
+				send_to_overlay(html_snippit);
+			}
+		};
+	
+		favorite_request.onerror = function(e){
+			//////console.log("Error: " + e);
+			////////console.log(e);
+		};
+	
+	}
+
+
+				
+	function add_favorite_to_results(item) {
+
+				////console.log("add_item_to_results(): ", item);
+					var id = item.link.replace(/[^a-zA-Z0-9-_]+/g,"");
+					//////console.log("add_item_to_results(): " + jQuery("#" + id).length );
+					if( !( jQuery("#" + id ).length ) ) {
+					
+					
+						jQuery("<li class='item' modified= '" + item.modified + "'  index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item' href='http://buleys.com/images/icons/fugue-shadowless/magnifier.png'></a></li>").hide().prependTo("#results").fadeIn('slow');
+						
+						
+						
+					} else {
+						//////console.log("add_item_to_results(): duplicate!");
+						//should report the dupe
+						//https://www.pivotaltracker.com/story/show/9307085 in pivotal
+					}
+	}
+	
+
+
+//
+
+// new 
+	function get_archived(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
+	
+		console.log("get_archived(): type: " + type + " slug: " + slug);
+		
+		if(typeof make_inverse == "undefined") {
+			make_inverse = false;
+		}
+	
+		var begin_date = 0;
+		if(typeof begin_timeframe == "undefined" || begin_timeframe == null) { 
+			begin_date =  0;//begin_date - 60*60*24*14*1000;
+		} else {
+			begin_date = parseInt( begin_timeframe );
+		}
+		
+		var end_date = 0;
+		if(typeof end_timeframe == "undefined" || end_timeframe == null) { 
+			end_date =  new Date().getTime();
+		} else {
+			end_date = parseInt( end_timeframe );
+		}
+			
+			
+		new_categories_transaction();
+		console.log("get_archived objectStore",slug_filter,Buleys.objectStore);
+			Buleys.index = Buleys.objectStore.index("slug");
+		var cursorRequest = Buleys.index.getAll(slug_filter);
+		console.log("get_archived cursor_request",cursorRequest);
+		cursorRequest.onsuccess = function(event){
+			console.log("get_archived(): event; ", event);
+			var objectCursor = cursorRequest.result;
+			if (!objectCursor) {
+			  return;
+			}
+
+			console.log("get_archived(): Indexed on link; ", objectCursor);
+
+			if(objectCursor.length > 1)  {
+				jQuery.each(objectCursor, function(k,item) {
+				
+				
+					console.log("get_archived(): item: ", item.link);
+					
+					console.log("get_archived(): check_if_item_is_favorite(): ", item.link);
+					
+					new_archived_transaction();
+			
+					var item_request_2 = Buleys.objectStore.get(item.link);
+					item_request_2.onsuccess = function(event){
+						
+						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
+							console.log("get_archived(): check_if_item_is_archived(): done", item_request_2.result);
+							
+							new_item_transaction();
+
+							var item_request = Buleys.objectStore.get( item_request_2.result.link );
+						
+							item_request.onsuccess = function(event){
+								//xx
+								if(typeof item_request.result !== 'undefined') {
+									console.log("get_fav() value", item_request.result.value);
+										console.log("get_archived(): check_if_item_is_favorite(): is favorite1", item_request.result);
+									if(typeof item_request.result.link !== 'undefined') {
+										console.log("get_archived(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
+										
+										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+											get_item_raw(item_request.result.link);
+										}			
+						
+									} else {
+										console.log("get_archived(): check_if_item_is_favorite(): is NOT favorite");
+									}
+								}
+								//xx
+							};
+						} else if ( make_inverse == true ) {
+
+							new_item_transaction();
+
+							var item_request = Buleys.objectStore.get( item.link );
+						
+							item_request.onsuccess = function(event){
+								//xx
+								if(typeof item_request.result !== 'undefined') {
+									console.log("get_fav() value", item_request.result.value);
+										console.log("get_archived(): get_item(): is favorite1", item_request.result);
+									if(typeof item_request.result !== 'undefined') {
+										console.log("get_archived(): get_item(): is favorite2", item_request.result.value);
+										
+										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+											get_item_raw(item_request.result.link);
+										}			
+						
+									} else {
+										console.log("get_archived(): get_item(): is NOT favorite");
+									}
+								}
+								//xx
+							};
+						
+						}
+						
+					};
+					
+					
+					
+					
+					//get_item( item.link );
+					
+					
+					
+				});				
+				//objectCursor["continue"]();
+			} else {
+				get_item( objectCursor.link );
+			}
+		};
+		cursorRequest.onerror = function(event){
+			console.log("get_items(): Could not open Object Store", event);
+		};
+
+			
+		
+	}
+
+
+
+// new 
+	function get_deleted(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
+	
+		console.log("get_deleted(): type: " + type + " slug: " + slug);
+		
+		if(typeof make_inverse == "undefined") {
+			make_inverse = false;
+		}
+	
+		var begin_date = 0;
+		if(typeof begin_timeframe == "undefined" || begin_timeframe == null) { 
+			begin_date =  0;//begin_date - 60*60*24*14*1000;
+		} else {
+			begin_date = parseInt( begin_timeframe );
+		}
+		
+		var end_date = 0;
+		if(typeof end_timeframe == "undefined" || end_timeframe == null) { 
+			end_date =  new Date().getTime();
+		} else {
+			end_date = parseInt( end_timeframe );
+		}
+			
+		new_categories_transaction();
+		console.log("get_deleted objectStore",slug_filter,Buleys.objectStore);
+			Buleys.index = Buleys.objectStore.index("slug");
+		var cursorRequest = Buleys.index.getAll(slug_filter);
+		console.log("get_deleted cursor_request",cursorRequest);
+		cursorRequest.onsuccess = function(event){
+			console.log("get_deleted(): event; ", event);
+			var objectCursor = cursorRequest.result;
+			if (!objectCursor) {
+			  return;
+			}
+
+			console.log("get_deleted(): Indexed on link; ", objectCursor);
+
+			if(objectCursor.length > 1)  {
+				jQuery.each(objectCursor, function(k,item) {
+				
+				
+					console.log("get_deleted(): item: ", item.link);
+					
+					console.log("get_deleted(): check_if_item_is_deleted: ", item.link);
+					
+					new_deleted_transaction();
+			
+					var item_request_2 = Buleys.objectStore.get(item.link);
+					item_request_2.onsuccess = function(event){
+						
+						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
+							console.log("get_deleted(): check_if_item_is_deleted: done", item_request_2.result);
+							
+							new_item_transaction();
+
+							var item_request = Buleys.objectStore.get( item_request_2.result.link );
+						 
+							item_request.onsuccess = function(event){
+								//xx
+								if(typeof item_request.result !== 'undefined' && make_inverse !== true) {
+									console.log("get_fav() value", item_request.result.value);
+								
+										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+											get_item_raw_no_trash(item_request.result.link);
+										}			
+						
+								}
+								
+							};
+						} else if ( typeof item_request_2.result == 'undefined' && make_inverse == true ) {
+
+							new_item_transaction();
+
+							var item_request = Buleys.objectStore.get( item.link );
+						
+							item_request.onsuccess = function(event){
+								//xx
+								if(typeof item_request.result !== 'undefined') {
+									console.log("get_fav() value", item_request.result.value);
+										console.log("get_deleted(): get_item(): is favorite1", item_request.result);
+									if(typeof item_request.result !== 'undefined') {
+										console.log("get_deleted(): get_item(): is favorite2", item_request.result.value);
+										
+										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+											get_item_raw(item_request.result.link);
+										}			
+						
+									} else {
+										console.log("get_deleted(): get_item(): is NOT favorite");
+									}
+								}
+								//xx
+							};
+						
+						}
+						
+					};
+					
+					
+					
+					
+					//get_item( item.link );
+					
+					
+					
+				});				
+				//objectCursor["continue"]();
+			} else {
+				get_item( objectCursor.link );
+			}
+		};
+		cursorRequest.onerror = function(event){
+			console.log("get_items(): Could not open Object Store", event);
+		};
+
+			
+		
+	}
+
+
+// new 
+	function get_read(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
+	
+		console.log("get_read(): type: " + type + " slug: " + slug);
+		
+		if(typeof make_inverse == "undefined") {
+			make_inverse = false;
+		}
+	
+		var begin_date = 0;
+		if(typeof begin_timeframe == "undefined" || begin_timeframe == null) { 
+			begin_date =  0;//begin_date - 60*60*24*14*1000;
+		} else {
+			begin_date = parseInt( begin_timeframe );
+		}
+		
+		var end_date = 0;
+		if(typeof end_timeframe == "undefined" || end_timeframe == null) { 
+			end_date =  new Date().getTime();
+		} else {
+			end_date = parseInt( end_timeframe );
+		}
+			
+		new_categories_transaction();
+		console.log("get_read objectStore",slug_filter,Buleys.objectStore);
+			Buleys.index = Buleys.objectStore.index("slug");
+		var cursorRequest = Buleys.index.getAll(slug_filter);
+		console.log("get_read cursor_request",cursorRequest);
+		cursorRequest.onsuccess = function(event){
+			console.log("get_read(): event; ", event);
+			var objectCursor = cursorRequest.result;
+			if (!objectCursor) {
+			  return;
+			}
+
+			console.log("get_read(): Indexed on link; ", objectCursor);
+
+			if(objectCursor.length > 1)  {
+				jQuery.each(objectCursor, function(k,item) {
+				
+				
+					console.log("get_read(): item: ", item.link);
+					
+					console.log("get_read(): check_if_item_is_read: ", item.link);
+					
+					new_status_transaction();
+			
+					var item_request_2 = Buleys.objectStore.get(item.link);
+					item_request_2.onsuccess = function(event){
+						
+						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
+							console.log("get_read(): check_if_item_is_read: done", item_request_2.result);
+							
+							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+								get_item(item_request_2.result.link);
+							}			
+			
+						} else if ( typeof item_request_2.result == 'undefined' && make_inverse == true ) {
+
+				
+							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+								get_item(item.link);
+							}			
+												
+						}
+						
+					};
+					
+					
+					
+					
+					//get_item( item.link );
+					
+					
+					
+				});				
+				//objectCursor["continue"]();
+			} else {
+				get_item( objectCursor.link );
+			}
+		};
+		cursorRequest.onerror = function(event){
+			console.log("get_items(): Could not open Object Store", event);
+		};
+
+			
+		
+	}
+
+
+// new 
+	function get_seen(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
+	
+		console.log("get_seen(): type: " + type + " slug: " + slug);
+		
+		if(typeof make_inverse == "undefined") {
+			make_inverse = false;
+		}
+	
+		var begin_date = 0;
+		if(typeof begin_timeframe == "undefined" || begin_timeframe == null) { 
+			begin_date =  0;//begin_date - 60*60*24*14*1000;
+		} else {
+			begin_date = parseInt( begin_timeframe );
+		}
+		
+		var end_date = 0;
+		if(typeof end_timeframe == "undefined" || end_timeframe == null) { 
+			end_date =  new Date().getTime();
+		} else {
+			end_date = parseInt( end_timeframe );
+		}
+			
+		new_categories_transaction();
+		console.log("get_seen objectStore",slug_filter,Buleys.objectStore);
+			Buleys.index = Buleys.objectStore.index("slug");
+		var cursorRequest = Buleys.index.getAll(slug_filter);
+		console.log("get_seen cursor_request",cursorRequest);
+		cursorRequest.onsuccess = function(event){
+			console.log("get_seen(): event; ", event);
+			var objectCursor = cursorRequest.result;
+			if (!objectCursor) {
+			  return;
+			}
+
+			console.log("get_seen(): Indexed on link; ", objectCursor);
+
+			if(objectCursor.length > 1)  {
+				jQuery.each(objectCursor, function(k,item) {
+				
+				
+					console.log("get_seen(): item: ", item.link);
+					
+					console.log("get_seen(): check_if_item_is_seen: ", item.link);
+					
+					new_seen_transaction();
+			
+					var item_request_2 = Buleys.objectStore.get(item.link);
+					item_request_2.onsuccess = function(event){
+						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
+							console.log("get_seen(): check_if_item_is_seen: item is seen done", item_request_2.result);
+							
+							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+								get_item(item_request_2.result.link);
+							}			
+			
+							
+						} else if ( typeof item_request_2.result == 'undefined' && make_inverse == true ) {
+
+							console.log("get_seen(): get_item(): is unseen2", item_request_2.result);
+										
+										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
+											get_item(item.link);
+										}			
+						
+							
+						
+						}
+						
+					};
+					
+					
+					
+					
+					//get_item( item.link );
+					
+					
+					
+				});				
+				//objectCursor["continue"]();
+			} else {
+				get_item( objectCursor.link );
+			}
+		};
+		cursorRequest.onerror = function(event){
+			console.log("get_items(): Could not open Object Store", event);
+		};
+
+			
+		
+	}
+
+
 </script>
 
 </head>
@@ -5864,7 +6864,7 @@ margin:0;
 	font:normal normal normal 1.4em Helvetica,Georgia,serif;
 }
 body {
-background: #ECEDF2 ;
+background: #fff;
 }
 ul {
 	list-style-type:none;
@@ -5872,17 +6872,20 @@ ul {
 	margin:0;
 }
 #main {
+	right:6%;
 	position:absolute;
-	margin:80px 1% 0 1%;
+	margin:4.5% 1% 0 1%;
+	clear:right;
 	width:50%;
 }
 #console_wrapper {
+	left:8%;
 	width:45%;
-	right:8%;
 	bottom:5%;
 	background:url('/images/20percenttransparency.png') repeat;
 	z-index: 10000;
 	position: fixed;
+	clear:left;
 }
 #console {
 	float:left;
@@ -5903,13 +6906,13 @@ ul {
 }
 #overlay {
 	padding: 10px 20px 20px 20px;
-	margin:82px 0 0 0;
-	width:35.5%;
-	right:8%;
+	margin:4.5% 0% 0 0%;
+	width:38%;
+	left:1%;
 	z-index:999;
 	position:fixed;
-	background:url('/images/2percenttransparency.png') repeat;
-	border:1px solid #999;
+	background:url('/images/5percenttransparency.png') repeat;
+	border:1px solid #eee;
 
 }
 #overlay_controls {
@@ -6055,7 +7058,7 @@ ul#results > li > a {
 	margin:0 10px 0 0;
 }
 div#overlay span.overlay_favorite_status a {
-padding:10px 10px 10px 0;
+padding:0px 00px 0px 0;
 float:left;
 	margin:0 0px 0 0;
 
@@ -6093,7 +7096,7 @@ color:#999;
 }
 
 #login_box {
-	top:20%;
+	top:16%;
 	right:0;
 	position: fixed;
 	background:url('/images/80percenttransparency.png') repeat;
@@ -6101,7 +7104,7 @@ color:#999;
 	border-left:1px solid #111;
 	border-top:1px solid #111;
 	border-bottom:1px solid #111;
-	padding:2%;
+	padding:2.35%;
 	color:#eee;
 }
 
@@ -6110,7 +7113,6 @@ color:#999;
 }
 
 #inbox_box {
-	top:40%;
 	right:0;
 	position: fixed;
 	background:url('/images/80percenttransparency.png') repeat;
@@ -6118,7 +7120,7 @@ color:#999;
 	border-left:1px solid #111;
 	border-top:1px solid #111;
 	border-bottom:1px solid #111;
-	padding:2%;
+	padding:2.35%;
 	color:#eee;
 }
 
@@ -6178,22 +7180,24 @@ position: fixed;
 top:0;
 right:0;
 left:0;
-height:5%;
-padding:1% 1% 1% 5%;
+padding:1% 1% 0% 1%;
 z-index: 10000;
-background:url('/images/80percenttransparency.png') repeat;
-color:#eee;
+background:url('/images/5percenttransparency.png') repeat;
+color:#000;
 border-bottom:1% solid #111;
 
 }
 a.logo {
-color:#eee;
+color:#000;
 text-decoration: none;
 font-size:150%;
-margin:0 1% 0 1%;
+margin:-.25% 1% 1% 1%;
 text-transform: uppercase;
+font-weight: 100#;
 text-shadow: #000 0 1% 0;
 float:left;
+border:1px solid #000;
+padding:.25% .5% 0 .5%;
 }
 #page_meta {
 font-size:125%;
@@ -6201,22 +7205,22 @@ padding-top:3px;
 float:left;
 }
 #page_meta a {
-color:#fff;
+color:#000;
 }
 #page_meta a:visited {
-color:#fff;
+color:#000;
 }
 #main li a {
 	color:#000;
 }
 #main li.seen a {
-	color:#a1a1a1;
+	color:#333;
 }
 #main li.read a {
-	color:#555;
+	color:#222;
 }
 #main li.favorited a {
-	color:#000;
+	color:#111;
 }
 
 #result_controls { 
@@ -6224,16 +7228,15 @@ color:#fff;
 }
 
 #main li.selected {
-	background:url('/images/10percenttransparency.png') repeat;
+	background:url('/images/5percenttransparency.png') repeat;
 	color:#000;
 	margin:0px;
 	width:96%;
-border-bottom:1px dotted #111;
 
 }
 
 #main li.cursor {
-border-right:10px solid #a60000;
+border-left:10px solid #a60000;
 
 }
 
@@ -6246,7 +7249,7 @@ border-right:10px solid #a60000;
 	border-left:1px solid #111;
 	border-top:1px solid #111;
 	border-bottom:1px solid #111;
-	padding:2%;
+	padding:2.35%;
 	color:#eee;
 }
 
@@ -6281,7 +7284,7 @@ padding:10px 0 0px 0;
 #overlay_left {
 	position: relative;
 	float:left;
-	margin:0 0 10px 0;
+	margin:1% 0 1% 0;
 }
 #overlay_right {
 	width:90%;
@@ -6432,9 +7435,7 @@ padding:10px 0 0px 0;
 		
 		</ul>
 
-	<div id='main'>
-		<ul id='results'></ul>
-	</div>
+
 	<div id='console_wrapper'>
 		<div id='console'></div>
 		<div id='console_controls'>
@@ -6442,6 +7443,9 @@ padding:10px 0 0px 0;
 				<img src='http://buleys.com/images/icons/fugue-shadowless/cross-button.png'/></div>
 			</div>
 		</div>
+	</div>
+	<div id='main'>
+		<ul id='results'></ul>
 	</div>
 	<div id='overlay'></div>
 	<div id='login_box'>
