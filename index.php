@@ -1,4 +1,4 @@
-<?php
+<!-- This code is copyright, in all of its sloppy glory, by its shameless author Taylor Buley --><?php
 header('HTTP/1.0 200 OK');
 #ini_set('user_agent', 'Buleys.com');
 $uri_path = $_SERVER['REQUEST_URI'];
@@ -45,7 +45,7 @@ var checker;
 	} else if ('mozIndexedDB' in window) {
 	  window.indexedDB = window.mozIndexedDB;
 	}
-	////console.log("Supported? ", typeof window['indexedDB'] );
+	//////console.log("Supported? ", typeof window['indexedDB'] );
 	
 	var Buleys = {};
 	Buleys.db = {};
@@ -53,6 +53,8 @@ var checker;
 	Buleys.settings = {};
 	Buleys.mouse = {};
 	Buleys.shortcuts = {};
+	Buleys.history = {};
+	Buleys.view = {};
 	
 	Buleys.debug = {};
 	Buleys.debug.database = false;
@@ -85,13 +87,94 @@ var checker;
 	Buleys.mouse.mouse_y_snapshot = 0;
 	Buleys.mouse.mouse_x_snapshot = 0;
 
+	function set_page_vars() {
+	
+		console.log( "Setting page vars: ", location.pathname );
+		
+		var string_for_split = location.pathname;
+		string_for_split = string_for_split.replace(/^\//,"");
+    	string_for_split = string_for_split.replace(/\/$/,"");
+		
+		var splitted = string_for_split.split("/");
+			Buleys.view.type = splitted[0];
+			Buleys.view.slug = splitted[1];
+			Buleys.view.page = splitted[2];
+	
+	}
+	
+	function load_current_page() {
+	
+		set_page_vars();
+		console.log("load_current_page(): ",Buleys.view.type, Buleys.view.slug, Buleys.view.page);
+
+		
+			if ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs"  ) {
+				
+				//
+				get_favorites(Buleys.view.type,Buleys.view.slug);
+
+			}  else if ( Buleys.view.type == "archive" || Buleys.view.page == "archive" || Buleys.view.page == "archived" ) {
+			
+				//
+				get_archived(Buleys.view.type,Buleys.view.slug);
+			
+			}  else if ( Buleys.view.type == "trash" || Buleys.view.page == "trash" || Buleys.view.page == "trashed" || Buleys.view.page == "deleted" ) {
+			
+				//
+				get_deleted(Buleys.view.type,Buleys.view.slug);
+			
+			}  else if ( Buleys.view.type == "read" || Buleys.view.page == "read" ) {
+			
+				//
+				get_read(Buleys.view.type,Buleys.view.slug,null,null,false);
+			
+			}  else if ( Buleys.view.type == "unread" || Buleys.view.page == "unread" ) {
+			
+				//
+				get_read(Buleys.view.type,Buleys.view.slug,null,null,true);
+			
+			}  else if ( Buleys.view.type == "seen" || Buleys.view.page == "seen" ) {
+			
+				//
+				get_seen(Buleys.view.type,Buleys.view.slug,null,null,false);
+			
+			}  else if ( Buleys.view.type == "unseen" || Buleys.view.page == "unseen" ) {
+			
+				//
+				get_seen(Buleys.view.type,Buleys.view.slug,null,null,true);
+			
+			}  else if( typeof Buleys.view.page == "undefined" || Buleys.view.page == "" || Buleys.view.page == "home" || Buleys.view.page == "index" ) {
+			
+				//
+				get_items(Buleys.view.type,Buleys.view.slug);
+			
+			} else  {
+			
+				get_items(Buleys.view.type,Buleys.view.slug);
+			
+			}
+
+	
+	}
+	
+	function clear_page() {
+	
+		jQuery("#results").fadeOut().html('').fadeIn();
+			
+	}
+	
+	function reload_results() {
+		//
+		clear_page();
+		//
+		load_current_page();
+	}
 	
 	$(document).ready(function () {
 		
-
-
-	//
-	send_to_console("Loading...");
+		set_page_vars();
+		//
+		send_to_console("Loading...");
 	
 	
 		//get_item("http://www.readwriteweb.com/archives/us_announces_120000_ipad_users_had_data_stolen_att_hack.php");
@@ -105,7 +188,7 @@ var checker;
     
     	$('a#get_inbox').live('click', function(event) {
        		event.preventDefault();
-       		console.log("#get_inbox was clicked");
+       		//console.log("#get_inbox was clicked");
 		        $('#mini_inbox_box').html('<div id="mini_inbox_wrapper"><div id="minimize_mini_inbox_controls"><a href="#" id="minimize_inbox"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div><ul id="mini_inbox_list"><li>Loading...</li></ul></div>');
 		       add_topics_to_mini_inbox();
 		       //<br/><br/><a href="#" class="mini_box_icon" id="go_to_main_inbox"><img src="/images/icons/fugue-shadowless/inbox--arrow.png"></a>
@@ -154,9 +237,38 @@ var checker;
    	Buleys.shortcuts.shift_depressed = false;
    //spacebar is 32
    
-   //n
-   } else if ( e.keyCode == 78 ) {
+   //Buleys.shortcuts.shift_depressed
+   
+   //h
+   } else if ( e.keyCode == 72 ) {
 
+    	if(Buleys.shortcuts.s_depressed) {
+    	} else if(Buleys.shortcuts.d_depressed) {
+    	} else if(Buleys.shortcuts.shift_depressed) {
+        	$('#view_index').click();
+    	} else {
+	      	$('#close_item_preview').click();
+    	}
+
+   //l
+    }  else if ( e.keyCode == 76 ) {
+
+    	if(Buleys.shortcuts.s_depressed) {
+    	} else if(Buleys.shortcuts.d_depressed) {
+    	} else if(Buleys.shortcuts.shift_depressed) {
+    	    	$('#view_index').click();
+    	} else {
+    		$('#preview_item').click();
+    	
+	    	if( jQuery('.cursor').length > 0) {
+	    		alert( jQuery('.cursor').text() );
+	    	}
+	    	
+    	}
+
+   //n
+    }    else if ( e.keyCode == 78 ) {
+    	$('#preview_item').click();
 		if( jQuery('.selected').length > 0) {
     		jQuery('#results li.selected:first').addClass('cursor');
     	} else {
@@ -223,6 +335,8 @@ var checker;
     		$('#select_unread').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     		$('#deselect_unread').click();
+    	} else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_unread').click();
     	} else {
     		$('#mark_unread').click();
     	}
@@ -246,6 +360,8 @@ var checker;
     		$('#select_read').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     		$('#deselect_read').click();
+    	}  else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_read').click();
     	} else {
     		$('#mark_read').click();
     	}   	
@@ -255,6 +371,8 @@ var checker;
     	if(Buleys.shortcuts.s_depressed) {
     		$('#select_none').click();
     	} else if(Buleys.shortcuts.d_depressed) {
+    	} else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_trash').click();
     	} else {
     		$('#delete').click();
     	}
@@ -266,6 +384,8 @@ var checker;
     		$('#select_archived').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     		$('#deselect_archived').click();
+    	} else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_archive').click();
     	} else {
     		$('#archive').click();
     	}
@@ -286,6 +406,8 @@ var checker;
     		$('#select_favorite').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     		$('#deselect_favorite').click();
+    	} else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_favorites').click();
     	} else {
     		$('#favorite').click();
     	}
@@ -306,6 +428,8 @@ var checker;
     		$('#select_seen').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     		$('#deselect_seen').click();
+    	} else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_seen').click();
     	} else {
     		$('#mark_seen').click();
     	}
@@ -316,6 +440,8 @@ var checker;
     		$('#select_unseen').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     		$('#deselect_unseen').click();
+    	}  else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_unseen').click();
     	} else {
     		$('#mark_unseen').click();
     	}  	
@@ -326,6 +452,7 @@ var checker;
     		$('#select_inverse').click();
     	} else if(Buleys.shortcuts.d_depressed) {
     	} else if(Buleys.shortcuts.shift_depressed) {
+    		$('#view_index').click();
     	} else {
     		$('#refresh').click();
     	}  	
@@ -363,19 +490,149 @@ var checker;
 
 
 
-     
-    
-    
+		$(window).bind("popstate", function(e) {
+		    console.log( location.pathname );
+		});
+
+        $('#view_seen').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_seen clicked");
+			//implies typeof page != 'undefined' && typeof type != 'undefined' && typeof slug != 'undefined'
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/seen";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/seen";
+			} else {
+				urlString = "http://buleys.com/seen";
+			}
+			history.pushState(stateObj, "view_seen", urlString);
+			reload_results();
+		}); 
+
+        $('#view_unseen').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_unseen clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/unseen";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/unseen";
+			} else {
+				urlString = "http://buleys.com/unseen";
+			}
+			history.pushState(stateObj, "view_unseen", urlString);
+			reload_results();
+		});     
+		
+         $('#view_read').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_read clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/read";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/read";
+			} else {
+				urlString = "http://buleys.com/read";
+			}
+			history.pushState(stateObj, "view_read", urlString);
+			reload_results();
+		}); 
+
+        $('#view_unread').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_unread clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/unread";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/unread";
+			} else {
+				urlString = "http://buleys.com/unread";
+			}
+			history.pushState(stateObj, "view_unread", urlString);
+			reload_results();
+		});     
+       
+        $('#view_trash').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_trash clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/trash";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/trash";
+			} else {
+				urlString = "http://buleys.com/trash";
+			}
+			history.pushState(stateObj, "view_trash", urlString);
+			reload_results();
+		}); 
+
+        $('#view_archive').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_archive clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/archive";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/archive";
+			} else {
+				urlString = "http://buleys.com/archive";
+			}
+			history.pushState(stateObj, "view_archive", urlString);
+			reload_results();
+		});  
+
+        $('#view_favorites').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_favorites clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof page != 'undefined' && page != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/favorites";
+			} else if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/favorites";
+			} else {
+				urlString = "http://buleys.com/favorites";
+			}
+			history.pushState(stateObj, "view_favorites", urlString);
+			reload_results();
+		});  
+
+        $('#view_index').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_index clicked");
+			jQuery("#page_meta").html('');
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			history.pushState(stateObj, "view_index", "http://buleys.com/");
+			reload_results();
+		});
     
     
  		$('#dologinsubmit').live('click', function(event) {
         	event.preventDefault();
-			//////console.log("Requesting login");
+			////////console.log("Requesting login");
 	        if( $('[name="password"]').val()  ) {
-				//////console.log("Requesting login for email " + $('[name="email"]'));
+				////////console.log("Requesting login for email " + $('[name="email"]'));
 				request_login( $('[name="email"]').val(), $('[name="password"]').val() );
 			} else {
-				//////console.log("No password");
+				////////console.log("No password");
 			}
 			
     	});
@@ -551,7 +808,7 @@ var checker;
 	        //here
 	        var item_to_work_from = jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") );
 	        
-			//////console.log( item_to_work_from );
+			////////console.log( item_to_work_from );
 			if( item_to_work_from.hasClass('read') ) {
 				item_to_work_from.removeClass('read');
 				item_to_work_from.addClass('unread');
@@ -564,10 +821,10 @@ var checker;
 
 	    $('#mark_all_items_as_read').live('click', function(event) {
 	        event.preventDefault();
-	        //////console.log('marking ' + jQuery(".unread").length + "as read");
+	        ////////console.log('marking ' + jQuery(".unread").length + "as read");
 	        jQuery.each( jQuery(".unread"), function(k,item_to_mark) {
 	        
-	        	//////console.log("ITEM TO MARK: " + item_to_mark);
+	        	////////console.log("ITEM TO MARK: " + item_to_mark);
 		        var item_to_work_from = jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") );
 	        	if( item_to_work_from.hasClass('unread') ) {
 					item_to_work_from.removeClass('unread');
@@ -584,10 +841,10 @@ var checker;
 	        
 	        if( !is_in_cursor_mode() ) {
 	        
-		        //////console.log('marking ' + jQuery(".unread").length + "as read");
+		        ////////console.log('marking ' + jQuery(".unread").length + "as read");
 		        jQuery.each( jQuery(".selected"), function(k,item_to_mark) {
 		        
-		        	//////console.log("ITEM TO MARK: " + item_to_mark);
+		        	////////console.log("ITEM TO MARK: " + item_to_mark);
 					jQuery(item_to_mark).removeClass('unseen');
 					jQuery(item_to_mark).addClass('seen');
 					if(typeof jQuery(item_to_mark).attr('status') !== 'undefined') {
@@ -619,7 +876,7 @@ var checker;
 
 	        if( !is_in_cursor_mode() ) {
 	        
-		        //////console.log('marking ' + jQuery(".unread").length + "as read");
+		        ////////console.log('marking ' + jQuery(".unread").length + "as read");
 		        jQuery.each( jQuery(".selected"), function(k,item_to_mark) {
 		        
 					jQuery(item_to_mark).removeClass('seen');
@@ -661,7 +918,7 @@ var checker;
 	        if( !is_in_cursor_mode() ) {
 	        
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	jQuery(item_to_mark).removeClass('selected');
 					jQuery(item_to_mark).attr('status', jQuery(item_to_mark).attr('status').replace(' selected', '') );
 		        }); 
@@ -724,7 +981,7 @@ var checker;
 	      $('#deselect_seen').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.seen'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 
 	        	jQuery(item_to_mark).removeClass('selected');
 
@@ -735,7 +992,7 @@ var checker;
 	      $('#deselect_unseen').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unseen'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 
 	        	jQuery(item_to_mark).removeClass('selected');
 
@@ -746,7 +1003,7 @@ var checker;
 	      $('#deselect_favorites').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.favorited'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -754,7 +1011,7 @@ var checker;
 	      $('#deselect_read').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.read'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -762,7 +1019,7 @@ var checker;
 	      $('#deselect_unread').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unread'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -770,7 +1027,7 @@ var checker;
 	      $('#deselect_archived').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.archived'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -778,7 +1035,7 @@ var checker;
 	      $('#deselect_unarchived').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unarchived'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -786,7 +1043,7 @@ var checker;
 	      $('#deselect_unseen').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unseen'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -794,7 +1051,7 @@ var checker;
 	      $('#deselect_unread').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unread'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -802,7 +1059,7 @@ var checker;
 	      $('#deselect_unarchived').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unarchived'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).removeClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 	        }); 
@@ -812,7 +1069,7 @@ var checker;
 	      $('#select_seen').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.seen'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).addClass('selected');
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 	        }); 
@@ -820,7 +1077,7 @@ var checker;
 	      $('#select_unseen').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unseen'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).addClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 	        }); 
@@ -828,7 +1085,7 @@ var checker;
 	      $('#select_read').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.read'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).addClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 	        }); 
@@ -836,7 +1093,7 @@ var checker;
 	      $('#select_unread').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unread'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).addClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 	        }); 
@@ -844,7 +1101,7 @@ var checker;
 	      $('#select_archived').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.archived'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).addClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 	        }); 
@@ -852,7 +1109,7 @@ var checker;
 	      $('#select_unarchived').live('click', function(event) {
 	        event.preventDefault();
 	        $.each( $('.unarchived'), function(i,item_to_mark) {
-	        	//////console.log(i);
+	        	////////console.log(i);
 	        	jQuery(item_to_mark).addClass('selected');
 				jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 	        }); 
@@ -863,7 +1120,7 @@ var checker;
 	        if( !is_in_cursor_mode() ) {
 	        
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	delete_item( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 		        	jQuery(item_to_mark).remove();
 		        }); 
@@ -886,14 +1143,14 @@ var checker;
 	        if( is_in_cursor_mode() ) {
 	        
 		        $.each( $('.cursor'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	jQuery(item_to_mark).addClass('selected');
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 		        }); 
 		    } else {
 
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	jQuery(item_to_mark).addClass('selected');
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected') );
 		        }); 
@@ -907,14 +1164,14 @@ var checker;
 	        if( is_in_cursor_mode() ) {
 	        
 		        $.each( $('.cursor'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	jQuery(item_to_mark).removeClass('selected');
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 		        }); 
 		    } else {
 
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	jQuery(item_to_mark).removeClass('selected');
 					jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')) );
 		        }); 
@@ -927,7 +1184,7 @@ var checker;
 	        if( !is_in_cursor_mode() ) {
 	        
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	archive_item( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 		        	jQuery(item_to_mark).remove();
 		        }); 
@@ -955,7 +1212,7 @@ var checker;
 	        if( !is_in_cursor_mode() ) {
 	        
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	var new_window = window.open(jQuery(item_to_mark).children('a').attr('href'), jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,""));
 		        	mark_item_as_read( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 		        	jQuery(item_to_mark).addClass('read');
@@ -985,7 +1242,7 @@ var checker;
 	        event.preventDefault();
 	        if( !is_in_cursor_mode() ) {
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	unarchive_item( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 		        }); 
 			} else {
@@ -1002,7 +1259,7 @@ var checker;
 	        event.preventDefault();
 	        if( !is_in_cursor_mode() ) {
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(i);
+		        	////////console.log(i);
 		        	mark_item_as_read( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 		        	jQuery(item_to_mark).addClass('read');
 		        	jQuery(item_to_mark).removeClass('unread');
@@ -1028,7 +1285,7 @@ var checker;
 	        if( !is_in_cursor_mode() ) {
 	
 		        $.each( $('.selected'), function(i,item_to_mark) {
-		        	//////console.log(jQuery(item_to_mark).children('a').attr('href'));
+		        	////////console.log(jQuery(item_to_mark).children('a').attr('href'));
 		        	
 		        	remove_item_from_read_database( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 		        	jQuery(item_to_mark).addClass('unread');
@@ -1053,7 +1310,7 @@ var checker;
 
 	    $('#mark_all_items_as_unread').live('click', function(event) {
 	        event.preventDefault();
-	        //////console.log('marking ' + jQuery(".read").length + " as unead");
+	        ////////console.log('marking ' + jQuery(".read").length + " as unead");
 	        jQuery.each( jQuery(".read"), function(k,item_to_mark) {
 	        
 		        var item_to_work_from = jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g,"") );
@@ -1084,7 +1341,7 @@ var checker;
 	
 
 	jQuery(".submitthelogin").live("click", function(event) {
-		//////console.log("submit_login");
+		////////console.log("submit_login");
 		//request_login( jQuery("#login_box password").val(), jQuery("#login_box email").val() );
 	});
 
@@ -1218,10 +1475,6 @@ var checker;
 	    $(this).removeClass('unsubscribe_topic');
 	    $(this).addClass('subscribe_topic');
 	});
-
-    
-    
-          
     
     $('.vote_up_category').live('click', function(event) {
         event.preventDefault();
@@ -1306,9 +1559,6 @@ var checker;
  
 
     });
-    
-
-
 
 	    jQuery("#console_wrapper").stop(true).animate({
 			opacity: 0,
@@ -1320,8 +1570,7 @@ var checker;
 		}, 0, function() {
 		} ).html('');
 
-	
-		
+
 	    $('#overlay .category').live('mouseenter', function(event) {
 	        event.preventDefault();
 	    	add_category_controls( jQuery(this) );    
@@ -1332,12 +1581,10 @@ var checker;
 			jQuery("#overlay .vote_up_category").remove();    
 			jQuery("#overlay .vote_down_category").remove();    
 			jQuery("#overlay .delete_category").remove();    
-			
-			  
 	    });
 	    
 	});
-
+	//end document.ready (?)
 	
 	function load_profile_info() {
 	    
@@ -1369,9 +1616,9 @@ var checker;
 	}	
 	
 	function database_is_open(open_result) {
-		//////console.log('database_is_open(): setting:' + open_result);
+		////////console.log('database_is_open(): setting:' + open_result);
 		Buleys.db = open_result;
-		////////console.log("add_or_update_setting(): name");
+		//////////console.log("add_or_update_setting(): name");
 		//add_or_update_setting("name","Taylor");
 
 		
@@ -1379,7 +1626,7 @@ var checker;
 
 		//load_all_settings_into_dom();
 		//load_all_queues_into_dom();
-		setTimeout('do_work()', 10000);
+		//setTimeout('do_work()', 10000);
 		
 //		fire_off_request();
 		
@@ -1388,55 +1635,9 @@ var checker;
 		get_page_subscription_status(type,slug);
 		get_page_topic_info(type,slug);
 //		get_items(type,slug);
-		if(typeof page !== "undefined") {
-		
-			if( typeof page == "undefined" || page == "" || page == "home" || page == "index" ) {
-			
-				//
-				get_items(type,slug);
-			
-			} else if ( page == "favorites" || page == "favs" ) {
-				
-				//
-				get_favorites(type,slug);
 
-			}  else if ( page == "archive" || page == "archived" ) {
-			
-				//
-				get_archived(type,slug);
-			
-			}  else if ( page == "trash" || page == "trashed" || page == "deleted" ) {
-			
-				//
-				get_deleted(type,slug);
-			
-			}  else if ( page == "read" ) {
-			
-				//
-				get_read(type,slug,null,null,false);
-			
-			}  else if ( page == "unread" ) {
-			
-				//
-				get_read(type,slug,null,null,true);
-			
-			}  else if ( page == "seen" ) {
-			
-				//
-				get_seen(type,slug,null,null,false);
-			
-			}  else if ( page == "unseen" ) {
-			
-				//
-				get_seen(type,slug,null,null,true);
-			
-			}  else {
-			
-				get_items(type,slug);
-			
-			}
-			
-		}
+		load_current_page();
+
 
       var $container = $('#results');
 
@@ -1530,7 +1731,7 @@ function is_in_cursor_mode() {
 	
 	function get_data_for_items(items) {
 		$.each(items, function(i,item){
-			//////console.log(item.link);
+			////////console.log(item.link);
 			get_item(item.link);
 			
 		});
@@ -1560,7 +1761,7 @@ function is_in_cursor_mode() {
 				slug = data.info.key;
 				type = data.info.type;
 				
-				//////console.log( data.items );
+				////////console.log( data.items );
 				populate_and_maybe_setup_indexeddbs( data.items );
 				//get_data_for_items( data.items );
 				add_items(data.items, data.info.type, data.info.key);
@@ -1582,26 +1783,26 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["items"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				////////console.log("Transaction Complete");
+				//////////console.log("Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				////////console.log("Transaction Aborted");
+				//////////console.log("Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("items");
-			////////console.log("New Transaction", Buleys.objectStore);
+			//////////console.log("New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_item_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_item_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			
-			//////console.log("new_item_transaction(): Create object store; db: " + Buleys.db);
+			////////console.log("new_item_transaction(): Create object store; db: " + Buleys.db);
 			//Create object store
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("items", {
 					"keyPath": "link"
 				}, false);
@@ -1612,10 +1813,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_item_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_item_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_item_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_item_transaction(): Could not set the version, so cannot create database", e);
 			};
 			
 		};
@@ -1625,20 +1826,20 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["categories"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				////////console.log("Transaction Complete");
+				//////////console.log("Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				////////console.log("Transaction Aborted");
+				//////////console.log("Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("categories");
-			////////console.log("New Transaction", Buleys.objectStore);
+			//////////console.log("New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_categories_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_categories_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 
-		//////console.log("new_categories_transaction(): Create object store ver:" + parseInt(Buleys.db.version));
+		////////console.log("new_categories_transaction(): Create object store ver:" + parseInt(Buleys.db.version));
 			//Create object store
 			var ver_to_set = 0;
 			if(! (Buleys.db.version > 0) ) {
@@ -1648,7 +1849,7 @@ function is_in_cursor_mode() {
 			}
 			var request = Buleys.db.setVersion( ver_to_set );
 			request.onsuccess = function(e){
-				//////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				
 				Buleys.objectStore = Buleys.db.createObjectStore("categories", {
 					"keyPath": "id"
@@ -1659,11 +1860,11 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex( "type", "type", { unique: false } );
 				Buleys.objectStore.createIndex( "modified", "modified", { unique: false } );
 				
-				//////console.log("new_categories_transaction(): Object store created: ", Buleys.CategoriesObjectStore);
+				////////console.log("new_categories_transaction(): Object store created: ", Buleys.CategoriesObjectStore);
 				
 			};
 			request.onerror = function(e){
-				//////console.log("new_categories_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_categories_transaction(): Could not set the version, so cannot create database", e);
 			};
 			
 		};
@@ -1674,23 +1875,23 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["favorites"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_favorite_transaction(): Transaction Complete");
+				////////console.log("new_favorite_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_favorite_transaction(): Transaction Aborted");
+				////////console.log("new_favorite_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("favorites");
-			//////console.log("new_favorite_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_favorite_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_favorite_transaction(): Could not open objectStore. You may have to create it first");
-			////////console.log(e);
-			//////console.log("new_favorite_transaction(): Create object store; current ver:" + Buleys.db.version);
+			////////console.log("new_favorite_transaction(): Could not open objectStore. You may have to create it first");
+			//////////console.log(e);
+			////////console.log("new_favorite_transaction(): Create object store; current ver:" + Buleys.db.version);
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_status_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_status_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("favorites", {
 					"keyPath": "item_link"
 				}, true);
@@ -1700,10 +1901,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_favorite_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_favorite_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_favorite_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_favorite_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 		};
@@ -1713,23 +1914,23 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["status"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_status_transaction(): Transaction Complete");
+				////////console.log("new_status_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_status_transaction(): Transaction Aborted");
+				////////console.log("new_status_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("status");
-			//////console.log("new_status_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_status_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_status_transaction(): Could not open objectStore. You may have to create it first");
-			////////console.log(e);
-			//////console.log("new_status_transaction(): Create object store; current ver:" + Buleys.db.version);
+			////////console.log("new_status_transaction(): Could not open objectStore. You may have to create it first");
+			//////////console.log(e);
+			////////console.log("new_status_transaction(): Create object store; current ver:" + Buleys.db.version);
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_status_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_status_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("status", {
 					"keyPath": "link"
 				}, true);
@@ -1739,10 +1940,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_status_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_status_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_status_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_status_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 		};
@@ -1752,23 +1953,23 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["deleted"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_deleted_transaction(): Transaction Complete");
+				////////console.log("new_deleted_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_deleted_transaction(): Transaction Aborted");
+				////////console.log("new_deleted_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("deleted");
-			//////console.log("new_deleted_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_deleted_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_deleted_transaction(): Could not open objectStore. You may have to create it first");
-			////////console.log(e);
-			//////console.log("new_deleted_transaction(): Create object store; current ver:" + Buleys.db.version);
+			////////console.log("new_deleted_transaction(): Could not open objectStore. You may have to create it first");
+			//////////console.log(e);
+			////////console.log("new_deleted_transaction(): Create object store; current ver:" + Buleys.db.version);
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_deleted_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_deleted_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("deleted", {
 					"keyPath": "link"
 				}, true);
@@ -1778,10 +1979,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_deleted_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_deleted_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_deleted_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_deleted_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 		};
@@ -1791,23 +1992,23 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["seen"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_seen_transaction(): Transaction Complete");
+				////////console.log("new_seen_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_seen_transaction(): Transaction Aborted");
+				////////console.log("new_seen_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("seen");
-			//////console.log("new_seen_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_seen_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_seen_transaction(): Could not open objectStore. You may have to create it first");
-			////////console.log(e);
-			//////console.log("new_seen_transaction(): Create object store; current ver:" + Buleys.db.version);
+			////////console.log("new_seen_transaction(): Could not open objectStore. You may have to create it first");
+			//////////console.log(e);
+			////////console.log("new_seen_transaction(): Create object store; current ver:" + Buleys.db.version);
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_seen_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_seen_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("seen", {
 					"keyPath": "link"
 				}, true);
@@ -1817,10 +2018,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_seen_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_seen_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_seen_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_seen_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 		};
@@ -1830,23 +2031,23 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["archive"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_archived_transaction(): Transaction Complete");
+				////////console.log("new_archived_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_archived_transaction(): Transaction Aborted");
+				////////console.log("new_archived_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("archive");
-			//////console.log("new_archived_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_archived_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_archived_transaction(): Could not open objectStore. You may have to create it first");
-			////////console.log(e);
-			//////console.log("new_archived_transaction(): Create object store; current ver:" + Buleys.db.version);
+			////////console.log("new_archived_transaction(): Could not open objectStore. You may have to create it first");
+			//////////console.log(e);
+			////////console.log("new_archived_transaction(): Create object store; current ver:" + Buleys.db.version);
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_archived_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_archived_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("archive", {
 					"keyPath": "link"
 				}, true);
@@ -1856,10 +2057,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_archived_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_archived_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_archived_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_archived_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 		};
@@ -1871,24 +2072,24 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["votes"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_votes_transaction(): Transaction Complete");
+				////////console.log("new_votes_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_votes_transaction(): Transaction Aborted");
+				////////console.log("new_votes_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("votes");
-			//////console.log("new_votes_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_votes_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_votes_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_votes_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("votes", {
 					"keyPath": "vote_key"
 				}, false);
@@ -1897,10 +2098,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_votes_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_votes_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_votes_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_votes_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 			
@@ -1911,24 +2112,24 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["subscriptions"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_subscriptions_transaction(): Transaction Complete");
+				////////console.log("new_subscriptions_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_subscriptions_transaction(): Transaction Aborted");
+				////////console.log("new_subscriptions_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("subscriptions");
-			//////console.log("new_subscriptions_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_subscriptions_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_subscriptions_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_subscriptions_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("subscriptions", {
 					"keyPath": "key"
 				}, true);
@@ -1936,10 +2137,10 @@ function is_in_cursor_mode() {
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("new_subscriptions_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_subscriptions_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_subscriptions_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_subscriptions_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 			
@@ -1951,35 +2152,35 @@ function is_in_cursor_mode() {
 			//
 			var transaction = Buleys.db.transaction(["follows"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_follows_transaction(): Transaction Complete");
+				////////console.log("new_follows_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			//
 			transaction.onabort = function(e){
-				//////console.log("new_follows_transaction(): Transaction Aborted");
+				////////console.log("new_follows_transaction(): Transaction Aborted");
 			};
 			//
 			Buleys.objectStore = transaction.objectStore("follows");
-			//////console.log("new_follows_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_follows_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
 			//
-			//////console.log("new_follows_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_follows_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			//
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_follows_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_follows_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("follows", {
 					"keyPath": "key"
 				}, true);
 
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 				
-				//////console.log("new_follows_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_follows_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_follows_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_follows_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 			
@@ -1990,34 +2191,34 @@ function is_in_cursor_mode() {
 		try {
 			var transaction = Buleys.db.transaction(["settings"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_settings_transaction(): Transaction Complete");
+				////////console.log("new_settings_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_settings_transaction(): Transaction Aborted");
+				////////console.log("new_settings_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("settings");
-			//////console.log("new_settings_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_settings_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_settings_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_settings_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_settings_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_settings_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("settings", {
 					"keyPath": "option_name"
 				}, true);
 
 				Buleys.objectStore.createIndex("option_value", "option_value", { unique: false });
 				
-				//////console.log("new_settings_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_settings_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_settings_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_settings_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 			
@@ -2028,24 +2229,24 @@ function new_topics_transaction(){
 		try {
 			var transaction = Buleys.db.transaction(["topic"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_topic_transaction(): Transaction Complete");
+				////////console.log("new_topic_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_topic_transaction(): Transaction Aborted");
+				////////console.log("new_topic_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("topic");
-			//////console.log("new_topic_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_topic_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_topic_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_topic_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_topic_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_topic_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("topic", {
 					"keyPath": "topic_key"
 				}, true);
@@ -2054,10 +2255,10 @@ function new_topics_transaction(){
 				Buleys.objectStore.createIndex("type", "type", { unique: false });
 				Buleys.objectStore.createIndex("last_updated", "last_updated", { unique: false });
 				
-				//////console.log("new_topic_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_topic_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_topic_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_topic_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 			
@@ -2069,34 +2270,34 @@ function new_topics_transaction(){
 		try {
 			var transaction = Buleys.db.transaction(["queue"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("new_settings_transaction(): Transaction Complete");
+				////////console.log("new_settings_transaction(): Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("new_settings_transaction(): Transaction Aborted");
+				////////console.log("new_settings_transaction(): Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("queue");
-			//////console.log("new_settings_transaction(): New Transaction", Buleys.objectStore);
+			////////console.log("new_settings_transaction(): New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_settings_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_settings_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("new_settings_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("new_settings_transaction(): Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("queue", {
 					"keyPath": "queue_name"
 				}, true);
 
 				Buleys.objectStore.createIndex("queue_value", "queue_value", { unique: false });
 				
-				//////console.log("new_settings_transaction(): Object store created: ", Buleys.objectStore);
+				////////console.log("new_settings_transaction(): Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("new_settings_transaction(): Could not set the version, so cannot create database", e);
+				////////console.log("new_settings_transaction(): Could not set the version, so cannot create database", e);
 			};
 
 			
@@ -2107,23 +2308,23 @@ function new_topics_transaction(){
 		try {
 			var transaction = Buleys.db.transaction(["social"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
-				//////console.log("Transaction Complete");
+				////////console.log("Transaction Complete");
 				delete Buleys.objectStore;
 			};
 			transaction.onabort = function(e){
-				//////console.log("Transaction Aborted");
+				////////console.log("Transaction Aborted");
 			};
 			Buleys.objectStore = transaction.objectStore("social");
-			//////console.log("New Transaction", Buleys.objectStore);
+			////////console.log("New Transaction", Buleys.objectStore);
 		}
 		catch (e) {
-			//////console.log("new_social_transaction(): Could not open objectStore. You may have to create it first");
-			//////console.log(e);
+			////////console.log("new_social_transaction(): Could not open objectStore. You may have to create it first");
+			////////console.log(e);
 			
 			//
 			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 			request.onsuccess = function(e){
-				//////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
 				Buleys.objectStore = Buleys.db.createObjectStore("social", {
 					"keyPath": "link"
 				}, true);
@@ -2133,10 +2334,10 @@ function new_topics_transaction(){
 				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
 
 				
-				//////console.log("Object store created: ", Buleys.objectStore);
+				////////console.log("Object store created: ", Buleys.objectStore);
 			};
 			request.onerror = function(e){
-				//////console.log("Could not set the version, so cannot create database", e);
+				////////console.log("Could not set the version, so cannot create database", e);
 			};
 
 
@@ -2145,9 +2346,9 @@ function new_topics_transaction(){
 				
 				
 	function add_item_to_results(item) {
-				////console.log("add_item_to_results(): ", item);
+				//////console.log("add_item_to_results(): ", item);
 					var id = item.link.replace(/[^a-zA-Z0-9-_]+/g,"");
-					//////console.log("add_item_to_results(): " + jQuery("#" + id).length );
+					////////console.log("add_item_to_results(): " + jQuery("#" + id).length );
 					if( !( jQuery("#" + id ).length ) ) {
 					
 					
@@ -2157,7 +2358,7 @@ function new_topics_transaction(){
 						
 						
 					} else {
-						//////console.log("add_item_to_results(): duplicate!");
+						////////console.log("add_item_to_results(): duplicate!");
 						//should report the dupe
 						//https://www.pivotaltracker.com/story/show/9307085 in pivotal
 					}
@@ -2166,7 +2367,7 @@ function new_topics_transaction(){
 
 		function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
 	
-			console.log("get_items(): type: " + type_filter + " slug: " + slug_filter);
+			//console.log("get_items(): type: " + type_filter + " slug: " + slug_filter);
 
 			var begin_date = 0;
 			if(typeof begin_timeframe == "undefined") { 
@@ -2187,22 +2388,22 @@ function new_topics_transaction(){
 
 					  
 				  Buleys.keyRange = new IDBKeyRange.bound(begin_date, end_date, true, false);
-				  console.log("Range Defined", Buleys.keyRange);
+				  //console.log("Range Defined", Buleys.keyRange);
 				  
 				  Buleys.onCursor = function(callback){
 					new_item_transaction();
-					console.log("get_items callback objectStore",callback,Buleys.objectStore);
+					//console.log("get_items callback objectStore",callback,Buleys.objectStore);
 		 			Buleys.index = Buleys.objectStore.index("published_date");
 				    var request = Buleys.index.openCursor(Buleys.keyRange);
 				    request.onsuccess = function(event){
-				      console.log("CURSOR!",event,request);
+				      //console.log("CURSOR!",event,request);
 				      
 				      if(typeof request.result !== "undefined") {
 				     		
 				     		Buleys.cursor = request.result;
 				      
-				      		console.log("CURSOR2!",Buleys.cursor);
-							console.log("get_items() cursor value ", Buleys.cursor.value );
+				      		//console.log("CURSOR2!",Buleys.cursor);
+							//console.log("get_items() cursor value ", Buleys.cursor.value );
 							get_item( Buleys.cursor.value.link );
 
 							if(typeof Buleys.cursor["continue"] == "function") {
@@ -2215,33 +2416,33 @@ function new_topics_transaction(){
 					    
 				    };
 				    request.onerror = function(event){
-				      console.log("Could not open cursor", Buleys.cursor);
-				      console.log(e);
+				      //console.log("Could not open cursor", Buleys.cursor);
+				      //console.log(e);
 				    };
 				  };
 				  Buleys.onCursor(function(){
-				    console.log("Cursor Created", Buleys.cursor);
+				    //console.log("Cursor Created", Buleys.cursor);
 				  });
 
 			} else {
 
 				new_categories_transaction();
-				console.log("get_items objectStore",slug_filter,Buleys.objectStore);
+				//console.log("get_items objectStore",slug_filter,Buleys.objectStore);
 	 			Buleys.index = Buleys.objectStore.index("slug");
 				var cursorRequest = Buleys.index.getAll(slug_filter);
-				console.log("get_items cursor_request",cursorRequest);
+				//console.log("get_items cursor_request",cursorRequest);
 				cursorRequest.onsuccess = function(event){
-					console.log("get_items(): event; ", event);
+					//console.log("get_items(): event; ", event);
 					var objectCursor = cursorRequest.result;
 					if (!objectCursor) {
 					  return;
 					}
 
-					console.log("get_items(): Indexed on link; ", objectCursor);
+					//console.log("get_items(): Indexed on link; ", objectCursor);
 
 					if(objectCursor.length > 1)  {
 						jQuery.each(objectCursor, function(k,item) {
-							console.log("get_items(): item: " + item.link);
+							//console.log("get_items(): item: " + item.link);
 							get_item( item.link );
 						});				
 						//objectCursor["continue"]();
@@ -2250,7 +2451,7 @@ function new_topics_transaction(){
 					}
 				};
 				cursorRequest.onerror = function(event){
-					console.log("get_items(): Could not open Object Store", event);
+					//console.log("get_items(): Could not open Object Store", event);
 				};
       
       
@@ -2262,7 +2463,7 @@ function new_topics_transaction(){
 	
 	//
 	function get_item( item_url ) {
-		console.log("get_item(): adding: " + item_url);
+		//console.log("get_item(): adding: " + item_url);
 		
 		if(typeof item_url !== 'undefined') {
 		
@@ -2275,28 +2476,28 @@ function new_topics_transaction(){
 				var item_request_1 = Buleys.objectStore.get(item_url);
 			
 				item_request_1.onsuccess = function(event){
-					//////console.log("get_item(): 1: done" + item_request_1);
-					//////console.log(event.result);
+					////////console.log("get_item(): 1: done" + item_request_1);
+					////////console.log(event.result);
 					//Buleys.objectId = item_request.result.author;
 					if(typeof item_request_1.result != 'undefined') {
 		
 		
 						//check for archival
 						//xxx
-						console.log("get_item(): check_if_item_is_archived: " + item_url);
+						//console.log("get_item(): check_if_item_is_archived: " + item_url);
 				
 				new_archived_transaction();
 		
 				var item_request_2 = Buleys.objectStore.get(item_url);
 			
 				item_request_2.onsuccess = function(event){
-					//////console.log("get_item(): check_if_item_is_archived(): done" + item_request_2.result);
+					////////console.log("get_item(): check_if_item_is_archived(): done" + item_request_2.result);
 					if(typeof item_request_2.result !== 'undefined') {
-						console.log("check_if_item_is_archived(): is archived" + event.result);
+						//console.log("check_if_item_is_archived(): is archived" + event.result);
 		
 		
 					} else {
-						console.log("get_item(): check_if_item_is_archived: is NOT archived",item_request_1.result);
+						//console.log("get_item(): check_if_item_is_archived: is NOT archived",item_request_1.result);
 							get_item_raw_no_trash( item_request_1.result.link );
 										
 						
@@ -2305,8 +2506,8 @@ function new_topics_transaction(){
 				};
 			
 				item_request_2.onerror = function(e){
-					//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
-					//////console.log(e);
+					////////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+					////////console.log(e);
 									
 						if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 							add_item_to_results( item_request_1.result );
@@ -2327,8 +2528,8 @@ function new_topics_transaction(){
 				};
 			
 				item_request_1.onerror = function(e){
-					////console.log("get_item(): Could not get object");
-					//////console.log(e);
+					//////console.log("get_item(): Could not get object");
+					////////console.log(e);
 			
 				};
 			
@@ -2341,7 +2542,7 @@ function new_topics_transaction(){
 
 	//
 	function get_item_raw( item_url ) {
-		console.log("get_item_raw(): ", item_url);
+		//console.log("get_item_raw(): ", item_url);
 		
 		if(typeof item_url !== 'undefined') {
 
@@ -2349,7 +2550,7 @@ function new_topics_transaction(){
 			var item_request_1 = Buleys.objectStore.get(item_url);
 		
 			item_request_1.onsuccess = function(event){
-				//////console.log(event.result);
+				////////console.log(event.result);
 				//Buleys.objectId = item_request.result.author;
 				if(typeof item_request_1.result != 'undefined') {
 
@@ -2357,13 +2558,13 @@ function new_topics_transaction(){
 					var item_request_2 = Buleys.objectStore.get(item_url);
 				
 					item_request_2.onsuccess = function(event){
-						//////console.log(event.result);
+						////////console.log(event.result);
 						//Buleys.objectId = item_request.result.author;
 						if(typeof item_request_2.result == 'undefined') {
 
 							//check for archival
 							//xxx
-							console.log("get_item_raw(): " + item_url);
+							//console.log("get_item_raw(): " + item_url);
 					
 														
 							if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
@@ -2382,8 +2583,8 @@ function new_topics_transaction(){
 			};
 		
 			item_request_1.onerror = function(e){
-				//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
-				//////console.log(e);
+				////////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+				////////console.log(e);
 	
 			};
 	
@@ -2394,7 +2595,7 @@ function new_topics_transaction(){
 
 	//
 	function get_item_raw_no_trash( item_url ) {
-		console.log("get_item(): ", item_url);
+		//console.log("get_item(): ", item_url);
 		
 		if(typeof item_url !== 'undefined') {
 
@@ -2402,14 +2603,14 @@ function new_topics_transaction(){
 			var item_request_1 = Buleys.objectStore.get(item_url);
 		
 			item_request_1.onsuccess = function(event){
-				//////console.log(event.result);
+				////////console.log(event.result);
 				//Buleys.objectId = item_request.result.author;
 				if(typeof item_request_1.result != 'undefined') {
 	
 	
 					//check for archival
 					//xxx
-					console.log("get_item_raw(): " + item_url);
+					//console.log("get_item_raw(): " + item_url);
 			
 												
 					if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
@@ -2423,8 +2624,8 @@ function new_topics_transaction(){
 			};
 		
 			item_request_1.onerror = function(e){
-				//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
-				//////console.log(e);
+				////////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+				////////console.log(e);
 								
 					if(jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 						add_item_to_results( item_request_1.result );
@@ -2445,13 +2646,13 @@ function new_topics_transaction(){
 	function get_item_for_console( item_url ) {
 		
 		new_item_transaction();
-		//////console.log("get_item_for_console: " + item_url);
+		////////console.log("get_item_for_console: " + item_url);
 		
-		////////console.log(item_url);
+		//////////console.log(item_url);
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			////////console.log(typeof item_request.result.id);
+			//////////console.log(typeof item_request.result.id);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined' && typeof item_request.result.id == 'string') {
 				var html_snippit = "<div id='console_" + item_request.result.id.replace(/[^a-zA-Z0-9-_]+/g,"") + "'>";
@@ -2464,8 +2665,8 @@ function new_topics_transaction(){
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Error: " + e);
-			////////console.log(e);
+			////////console.log("Error: " + e);
+			//////////console.log(e);
 		};
 	
 	}
@@ -2473,13 +2674,13 @@ function new_topics_transaction(){
 	function get_item_for_overlay( item_url ) {
 		
 		new_item_transaction();
-		//////console.log("get_item_for_overlay: " + item_url);
+		////////console.log("get_item_for_overlay: " + item_url);
 		
-		////////console.log(item_url);
+		//////////console.log(item_url);
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			//////console.log("get_item_for_overlay(): type of result: " + typeof item_request.result.link);
+			////////console.log("get_item_for_overlay(): type of result: " + typeof item_request.result.link);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined' && typeof item_request.result.link == 'string') {
 
@@ -2489,14 +2690,14 @@ function new_topics_transaction(){
 				if( typeof item_request.result.author !== 'undefined' &&  item_request.result.author.length > 0 ) { 
 					//html_snippit = html_snippit + "<p>" + item_request.result.author + "</p>";
 				}
-				//////console.log("get_item_for_overlay(): sending to overlay: " + html_snippit);
+				////////console.log("get_item_for_overlay(): sending to overlay: " + html_snippit);
 				send_to_overlay(html_snippit);
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Error: " + e);
-			////////console.log(e);
+			////////console.log("Error: " + e);
+			//////////console.log(e);
 		};
 	
 	}
@@ -2504,7 +2705,7 @@ function new_topics_transaction(){
 	jQuery("#results li").live('mouseenter', function(event) {
 		
 		var item_to_work_from = jQuery(this);
-		////////console.log( jQuery(this).attr('id') );
+		//////////console.log( jQuery(this).attr('id') );
 		if( item_to_work_from.hasClass('unseen') ) {
 			item_to_work_from.removeClass('unseen');
 			item_to_work_from.addClass('seen');
@@ -2529,7 +2730,7 @@ function new_topics_transaction(){
 		
 				
 					var item_to_work_from = jQuery(item_to_mark);
-					////////console.log( jQuery(this).attr('id') );
+					//////////console.log( jQuery(this).attr('id') );
 					if( item_to_work_from.hasClass('unseen') ) {
 						item_to_work_from.removeClass('unseen');
 						item_to_work_from.addClass('seen');
@@ -2553,7 +2754,7 @@ function new_topics_transaction(){
 			} else if ($('.selected').length > 0) {
 				
 				var item_to_work_from = jQuery('.cursor');
-				////////console.log( jQuery(this).attr('id') );
+				//////////console.log( jQuery(this).attr('id') );
 				if( item_to_work_from.hasClass('unseen') ) {
 					item_to_work_from.removeClass('unseen');
 					item_to_work_from.addClass('seen');
@@ -2590,7 +2791,7 @@ function new_topics_transaction(){
 		
 				var item_to_work_from = jQuery(item_to_mark);
 		var url_to_preview = item_to_work_from.children('a').attr('href');
-		////////console.log( jQuery(this).attr('id') );
+		//////////console.log( jQuery(this).attr('id') );
 		if( item_to_work_from.hasClass('unread') ) {
 			item_to_work_from.removeClass('unread');
 			item_to_work_from.addClass('read');
@@ -2612,7 +2813,7 @@ function new_topics_transaction(){
 		
 				
 					var item_to_work_from = jQuery(item_to_mark);
-					////////console.log( jQuery(this).attr('id') );
+					//////////console.log( jQuery(this).attr('id') );
 					if( item_to_work_from.hasClass('unseen') ) {
 						item_to_work_from.removeClass('unseen');
 						item_to_work_from.addClass('seen');
@@ -2650,7 +2851,7 @@ function new_topics_transaction(){
 				
 		
 				var item_to_work_from = jQuery('.cursor');
-						////////console.log( jQuery(this).attr('id') );
+						//////////console.log( jQuery(this).attr('id') );
 						if( item_to_work_from.hasClass('unseen') ) {
 							item_to_work_from.removeClass('unseen');
 							item_to_work_from.addClass('seen');
@@ -2665,7 +2866,7 @@ function new_topics_transaction(){
 				
 				if( jQuery( thekey ).length > 0 ) {
 		
-				////console.log( jQuery(thekey).length, jQuery(thekey) );
+				//////console.log( jQuery(thekey).length, jQuery(thekey) );
 
 					jQuery("#overlay").stop(true).animate({
 						opacity: 0,
@@ -2690,7 +2891,7 @@ function new_topics_transaction(){
 		
 		var item_to_work_from = jQuery(this);
 		var url_to_preview = item_to_work_from.children('a').attr('href');
-		////////console.log( jQuery(this).attr('id') );
+		//////////console.log( jQuery(this).attr('id') );
 		if( item_to_work_from.hasClass('unread') ) {
 			item_to_work_from.removeClass('unread');
 			item_to_work_from.addClass('read');
@@ -2737,7 +2938,7 @@ function new_topics_transaction(){
 	$("#results li").live('mouseleave', function(event) {
 		
 		/*
-		//////console.log( jQuery(this).attr('id') );
+		////////console.log( jQuery(this).attr('id') );
 		jQuery("#overlay").stop(true).animate({
 			opacity: 0,
 						
@@ -2749,13 +2950,13 @@ function new_topics_transaction(){
 	});
 	
 	function load_item_to_console(item_key) {
-		//////console.log("load_item_to_console: " + item_key);
+		////////console.log("load_item_to_console: " + item_key);
 		get_item_for_console( item_key );
 	
 	}
 
 	function load_item_to_overlay(item_key) {
-		//////console.log("load_item_to_overlay: " + item_key);
+		////////console.log("load_item_to_overlay: " + item_key);
 		get_item_for_overlay( item_key );
 		check_if_item_is_favorited_for_overlay( item_key );
 		check_item_vote_status_for_overlay( item_key );
@@ -2799,7 +3000,7 @@ function new_topics_transaction(){
 	function get_item_categories_for_overlay( item_url ) {
 	
 		new_categories_transaction();
-		//////console.log(item_url);
+		////////console.log(item_url);
 		var item_request = Buleys.objectStore.get(item_url);
 		
 		    try {
@@ -2814,8 +3015,8 @@ function new_topics_transaction(){
 					  return;
 					}
 					
-					//////console.log("get_item_categories_for_overlay(): Indexed on link; ", objectCursor);
-					//////console.log("get_item_categories_for_overlay(): cursor: " + objectCursor.length);
+					////////console.log("get_item_categories_for_overlay(): Indexed on link; ", objectCursor);
+					////////console.log("get_item_categories_for_overlay(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
@@ -2839,29 +3040,29 @@ function new_topics_transaction(){
 							jQuery( "#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") ).append( html_snippit );
 						}
 						debug = cursorRequest.result;
-					//////console.log("x:" + cursorRequest.result);
+					////////console.log("x:" + cursorRequest.result);
 						var cat_snippit = "<li class='category_list_item' link='" + item_url + "' type='" + cursorRequest.result.type.toLowerCase() + "' slug='" + cursorRequest.result.slug.toLowerCase() + "'><a href='/" + cursorRequest.result.type.toLowerCase() + "/" + cursorRequest.result.slug + "'>" + cursorRequest.result.value + "</a></li>";
 						jQuery( "#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") ).append( cat_snippit );
 					}
 					*/
 				};
 				request.onerror = function(event){
-					//////console.log("get_item_categories_for_overlay(): Could not open Object Store", event);
+					////////console.log("get_item_categories_for_overlay(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      //////console.log("get_item_categories_for_overlay(): Could not open Index, create it first");
-		      //////console.log(e);
+		      ////////console.log("get_item_categories_for_overlay(): Could not open Index, create it first");
+		      ////////console.log(e);
 		    }
     
 	/*
 		item_request.onsuccess = function(event){
-			//////console.log(item_request.status);
-			//////console.log(item_request.result);
+			////////console.log(item_request.status);
+			////////console.log(item_request.result);
 			if(typeof item_request.result != 'undefined') {
-				//////console.log("get_item_categories_for_overlay(): item has categories");
-				//////console.log("get_item_categories_for_overlay(): type: " + item_request.result.type);
+				////////console.log("get_item_categories_for_overlay(): item has categories");
+				////////console.log("get_item_categories_for_overlay(): type: " + item_request.result.type);
 				if(jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).length < 1) {
 					var html_snippit = "<div id='categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'></div>";
 					jQuery( "#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") ).append( html_snippit );
@@ -2869,14 +3070,14 @@ function new_topics_transaction(){
 				var cat_snippit = "<a href='/" + item_request.result.type + "/" + item_request.result.slug + "'>" + item_request.result.value + "</a>";
 				jQuery( "#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") ).append( cat_snippit );
 			} else {
-				//////console.log("get_item_categories_for_overlay(): item does not have categories");
+				////////console.log("get_item_categories_for_overlay(): item does not have categories");
 				
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	*/
 	}
@@ -2898,8 +3099,8 @@ function new_topics_transaction(){
 					  return;
 					}
 					
-					//////console.log("get_follows(): Indexed on link; ", objectCursor);
-					//////console.log("get_follows(): cursor: " + objectCursor.length);
+					////////console.log("get_follows(): Indexed on link; ", objectCursor);
+					////////console.log("get_follows(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
@@ -2909,13 +3110,13 @@ function new_topics_transaction(){
 
 				};
 				request.onerror = function(event){
-					//////console.log("get_follows(): Could not open Object Store", event);
+					////////console.log("get_follows(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      //////console.log("get_follows(): Could not open Index, create it first");
-		      //////console.log(e);
+		      ////////console.log("get_follows(): Could not open Index, create it first");
+		      ////////console.log(e);
 		    }
     
 
@@ -2925,27 +3126,27 @@ function new_topics_transaction(){
 	function get_page_follow_status( the_type, the_key ) {
 	
 		new_follows_transaction();
-		//////console.log("get_page_follow_status(): type: " + the_type + " key: " + the_key);
-		//////console.log("get_page_follow_status(): " + the_key.toLowerCase() + "_" + the_type.toLowerCase() );
+		////////console.log("get_page_follow_status(): type: " + the_type + " key: " + the_key);
+		////////console.log("get_page_follow_status(): " + the_key.toLowerCase() + "_" + the_type.toLowerCase() );
 		var item_request = Buleys.objectStore.get(the_type.toLowerCase() + "_" + the_key.toLowerCase());
 
 	
 		item_request.onsuccess = function(event){
-			//////console.log("get_page_follow_status(): " + event);
+			////////console.log("get_page_follow_status(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			//////console.log("get_page_follow_status(): "  + item_request);
+			////////console.log("get_page_follow_status(): "  + item_request);
 			if(typeof item_request.result == 'undefined' || item_request.result == "") {
-				//////console.log("get_page_follow_status(): page is NOT being followed");
+				////////console.log("get_page_follow_status(): page is NOT being followed");
 				jQuery("#page_meta").append("<a href='#' class='follow_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/heart-empty.png'/></a>");
 			} else {
-				//////console.log("get_page_follow_status(): page is being followed");
+				////////console.log("get_page_follow_status(): page is being followed");
 				jQuery("#page_meta").append("<a href='#' class='follow_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/heart.png'/></a>");
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -2955,16 +3156,16 @@ function new_topics_transaction(){
 	function remove_follow( the_type, the_key ) {
 	
 		if(typeof the_type !== 'undefined' && typeof the_key !== 'undefined') {
-			//////console.log("remove_follow(): " + " key: " +  the_key + " type: " + the_type);
+			////////console.log("remove_follow(): " + " key: " +  the_key + " type: " + the_type);
 			new_follows_transaction();
 			//
 			var request = Buleys.objectStore["delete"]( the_type.toLowerCase() + "_" + the_key.toLowerCase() );
 				request.onsuccess = function(event){
-				//////console.log("remove_follow(): Removed id ", request.result);
+				////////console.log("remove_follow(): Removed id ", request.result);
 				delete Buleys.objectId;
 			};
 			request.onerror = function(){
-				//////console.log("remove_follow(): Could not delete object");
+				////////console.log("remove_follow(): Could not delete object");
 			};
 		}
 		
@@ -2975,24 +3176,24 @@ function new_topics_transaction(){
 		
 		if(typeof the_type !== 'undefined' && typeof the_key !== 'undefined' ) {
 			new_follows_transaction();
-			//////console.log("add_follow_if_doesnt_exist(): type: " + the_type + " key: " + the_key);
+			////////console.log("add_follow_if_doesnt_exist(): type: " + the_type + " key: " + the_key);
 			var item_request = Buleys.objectStore.get(the_type.toLowerCase() + "_" + the_key.toLowerCase());
 		
 			item_request.onsuccess = function(event){
-				//////console.log("add_follow_if_doesnt_exist(): " + event);
+				////////console.log("add_follow_if_doesnt_exist(): " + event);
 				//Buleys.objectId = item_request.result.author;
-				//////console.log("add_follow_if_doesnt_exist(): " + item_request );
+				////////console.log("add_follow_if_doesnt_exist(): " + item_request );
 				if(typeof item_request.result == 'undefined') {
-					//////console.log("add_follow_if_doesnt_exist(): doesn't exist! ");
+					////////console.log("add_follow_if_doesnt_exist(): doesn't exist! ");
 					add_follow_to_follows_database( the_type, the_key );
 				} else {
-					//////console.log("add_follow_if_doesnt_exist(): DOES exist");
+					////////console.log("add_follow_if_doesnt_exist(): DOES exist");
 				}
 			};
 		
 			item_request.onerror = function(e){
-				//////console.log("add_follow_if_doesnt_exist(): Could not get object");
-				//////console.log(e);
+				////////console.log("add_follow_if_doesnt_exist(): Could not get object");
+				////////console.log(e);
 			};
 		}
 	
@@ -3000,7 +3201,7 @@ function new_topics_transaction(){
 	
 	function add_follow_to_follows_database( the_type, the_key ) {
 	
-		//////console.log("add_follow_to_follows_database(): type" + the_type + " key: " + the_key);
+		////////console.log("add_follow_to_follows_database(): type" + the_type + " key: " + the_key);
 		new_follows_transaction();
 		
 		var data = {
@@ -3008,14 +3209,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		//////console.log("add_follow_to_follows_database(): Trying to save...", data);
+		////////console.log("add_follow_to_follows_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			//////console.log("add_follow_to_follows_database(): Saved id ", add_data_request.result);
+			////////console.log("add_follow_to_follows_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			//////console.log(e);
+			////////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3037,24 +3238,24 @@ function new_topics_transaction(){
 					  return;
 					}
 					
-					//////console.log("get_subscriptions(): Indexed on link; ", objectCursor);
-					//////console.log("get_subscriptions(): cursor: " + objectCursor.length);
+					////////console.log("get_subscriptions(): Indexed on link; ", objectCursor);
+					////////console.log("get_subscriptions(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-							//////console.log("get_subscriptions(): " + item);							
+							////////console.log("get_subscriptions(): " + item);							
 						});				
 					}
 
 				};
 				request.onerror = function(event){
-					//////console.log("get_subscriptions(): Could not open Object Store", event);
+					////////console.log("get_subscriptions(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      //////console.log("get_subscriptions(): Could not open Index, create it first");
-		      //////console.log(e);
+		      ////////console.log("get_subscriptions(): Could not open Index, create it first");
+		      ////////console.log(e);
 		    }
     
 
@@ -3064,27 +3265,27 @@ function new_topics_transaction(){
 	function get_page_subscription_status( the_type, the_key ) {
 	
 		new_subscriptions_transaction();
-		//////console.log("get_page_subscription_status(): type: " + the_type + " key: " + the_key);
-		//////console.log("get_page_subscription_statusx(): " + the_type.toLowerCase() + "_" + the_key.toLowerCase() );
+		////////console.log("get_page_subscription_status(): type: " + the_type + " key: " + the_key);
+		////////console.log("get_page_subscription_statusx(): " + the_type.toLowerCase() + "_" + the_key.toLowerCase() );
 		var item_request = Buleys.objectStore.get(the_type.toLowerCase() + "_" + the_key.toLowerCase());
 
 	
 		item_request.onsuccess = function(event){
-			//////console.log("get_page_subscription_status(): " + event);
+			////////console.log("get_page_subscription_status(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			//////console.log("get_page_subscription_status(): "  + item_request.result);
+			////////console.log("get_page_subscription_status(): "  + item_request.result);
 			if(typeof item_request.result == 'undefined' || item_request.result == "") {
-				//////console.log("get_page_subscription_status(): page is NOT being subscriptioned");
+				////////console.log("get_page_subscription_status(): page is NOT being subscriptioned");
 				jQuery("#page_meta").append("<a href='#' class='subscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/mail.png'/></a>");
 			} else {
-				//////console.log("get_page_subscription_status(): page is being subscriptioned");
+				////////console.log("get_page_subscription_status(): page is being subscriptioned");
 				jQuery("#page_meta").append("<a href='#' class='unsubscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/mail-send.png'/></a>");
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -3093,16 +3294,16 @@ function new_topics_transaction(){
 	//.delete(			
 	function remove_subscription( the_type, the_key ) {
 	
-		//////console.log("remove_subscription(): " + " key: " +  the_key + " type: " + the_type);
+		////////console.log("remove_subscription(): " + " key: " +  the_key + " type: " + the_type);
 		new_subscriptions_transaction();
 		//
 		var request = Buleys.objectStore["delete"]( the_type.toLowerCase() + "_" + the_key.toLowerCase() );
 			request.onsuccess = function(event){
-			//////console.log("remove_subscription(): Removed id ", request.result);
+			////////console.log("remove_subscription(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			//////console.log("remove_subscription(): Could not delete object");
+			////////console.log("remove_subscription(): Could not delete object");
 		};
 		
 	
@@ -3112,24 +3313,24 @@ function new_topics_transaction(){
 	
 		if(typeof the_type !== 'undefined' && typeof the_key !== 'undefined') {
 			new_subscriptions_transaction();
-			//////console.log("add_subscription_if_doesnt_exist(): type: " + the_type + " key: " + the_key);
+			////////console.log("add_subscription_if_doesnt_exist(): type: " + the_type + " key: " + the_key);
 			var item_request = Buleys.objectStore.get(the_type.toLowerCase() + "_" + the_key.toLowerCase());
 		
 			item_request.onsuccess = function(event){
-				//////console.log("add_subscription_if_doesnt_exist(): " + event);
+				////////console.log("add_subscription_if_doesnt_exist(): " + event);
 				//Buleys.objectId = item_request.result.author;
-				//////console.log("add_subscription_if_doesnt_exist(): " +item_request);
+				////////console.log("add_subscription_if_doesnt_exist(): " +item_request);
 				if(typeof item_request.result == 'undefined') {
-					//////console.log("add_subscription_if_doesnt_exist(): doesn't exist! ");
+					////////console.log("add_subscription_if_doesnt_exist(): doesn't exist! ");
 					add_subscription_to_subscriptions_database( the_type, the_key );
 				} else {
-					//////console.log("add_subscription_if_doesnt_exist(): DOES exist");
+					////////console.log("add_subscription_if_doesnt_exist(): DOES exist");
 				}
 			};
 		
 			item_request.onerror = function(e){
-				//////console.log("add_subscription_if_doesnt_exist(): Could not get object");
-				//////console.log(e);
+				////////console.log("add_subscription_if_doesnt_exist(): Could not get object");
+				////////console.log(e);
 			};
 		}
 	
@@ -3137,7 +3338,7 @@ function new_topics_transaction(){
 	
 	function add_subscription_to_subscriptions_database( the_type, the_key ) {
 	
-		//////console.log("add_subscription_to_subscriptions_database(): type" + the_type + " key: " + the_key);
+		////////console.log("add_subscription_to_subscriptions_database(): type" + the_type + " key: " + the_key);
 		new_subscriptions_transaction();
 		
 		var data = {
@@ -3145,14 +3346,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		//////console.log("add_subscription_to_subscriptions_database(): Trying to save...", data);
+		////////console.log("add_subscription_to_subscriptions_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			//////console.log("add_subscription_to_subscriptions_database(): Saved id ", add_data_request.result);
+			////////console.log("add_subscription_to_subscriptions_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			//////console.log(e);
+			////////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3160,26 +3361,26 @@ function new_topics_transaction(){
 	function check_if_item_is_seen( item_url ) {
 	
 		new_seen_transaction();
-		//////console.log(item_url);
+		////////console.log(item_url);
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			//////console.log(event);
+			////////console.log(event);
 			//Buleys.objectId = item_request.result.author;
-				//////console.log(item_request.status);
+				////////console.log(item_request.status);
 			if(typeof item_request.result != 'undefined') {
-				//////console.log("check_if_item_is_seen(): item is seen");
+				////////console.log("check_if_item_is_seen(): item is seen");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass("seen");
 			} else {
-				//////console.log("check_if_item_is_seen(): item is unseen");
+				////////console.log("check_if_item_is_seen(): item is unseen");
 				//jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass("unseen");
 				
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -3187,26 +3388,26 @@ function new_topics_transaction(){
 	function check_if_item_is_read( item_url ) {
 	
 		new_status_transaction();
-		//////console.log(item_url);
+		////////console.log(item_url);
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			//////console.log(event);
+			////////console.log(event);
 			//Buleys.objectId = item_request.result.author;
-				//////console.log(item_request.status);
+				////////console.log(item_request.status);
 			if(typeof item_request.result != 'undefined') {
-				//////console.log("check_if_item_is_read(): item is unread");
+				////////console.log("check_if_item_is_read(): item is unread");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass("read");
 			} else {
-				//////console.log("check_if_item_is_read(): item is unread");
+				////////console.log("check_if_item_is_read(): item is unread");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass("unread");
 				
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -3217,26 +3418,26 @@ function new_topics_transaction(){
 	function add_item_if_new( item, type_to_get, company_to_get ) {
 	
 		new_item_transaction();
-		console.log("add_item_if_new(): " + item.link);
+		//console.log("add_item_if_new(): " + item.link);
 		var item_request = Buleys.objectStore.get(item.link);
 	
 		item_request.onsuccess = function(event1){
-			console.log("add_item_if_new(): ", event1.target.result);
+			//console.log("add_item_if_new(): ", event1.target.result);
 			//Buleys.objectId = item_request.result.author;
-			////////console.log(item_request.status);
+			//////////console.log(item_request.status);
 			if(typeof event1.target.result == 'undefined') {
-				////console.log("add_item_if_new(): doesn't exist! ", Buleys.queues.new_items);
+				//////console.log("add_item_if_new(): doesn't exist! ", Buleys.queues.new_items);
 				
 				new_deleted_transaction();
-				console.log("add_item_if_doesnt_exist(): " + item.link);
+				//console.log("add_item_if_doesnt_exist(): " + item.link);
 				var deleted_item_request = Buleys.objectStore.get(item.link);
 			
 				deleted_item_request.onsuccess = function(event){
-					////console.log("add_item_if_new(): ", event.target.result);
+					//////console.log("add_item_if_new(): ", event.target.result);
 					//Buleys.objectId = item_request.result.author;
-					////////console.log(item_request.status);
+					//////////console.log(item_request.status);
 					if(typeof event.target.result == 'undefined') {
-						console.log("add_item_if_new(): not deleted! adding", item);
+						//console.log("add_item_if_new(): not deleted! adding", item);
 						add_item_to_items_database(item);
 						add_categories_to_categories_database(item.link, item.categories);	
 						send_to_console("<p>Added: <a href='" + item.link + "'>" + item.title + "</a></p>");
@@ -3244,24 +3445,24 @@ function new_topics_transaction(){
 						if(typeof Buleys.queues.new_items[item_key] == "undefined") { Buleys.queues.new_items[item_key] = 0; }
 						Buleys.queues.new_items[item_key] = Buleys.queues.new_items[item_key] + 1;
 					} else {
-						////console.log("add_item_if_new(): already deleted! ");
+						//////console.log("add_item_if_new(): already deleted! ");
 					}
 				};
 			
 				item_request.onerror = function(e){
-					//////console.log("Could not get object");
-					//////console.log(e);
+					////////console.log("Could not get object");
+					////////console.log(e);
 				};
 				
 								
 			} else {
-				//console.log("add_item_if_doesnt_exist(): DOES exist", item.link);
+				////console.log("add_item_if_doesnt_exist(): DOES exist", item.link);
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -3271,26 +3472,26 @@ function new_topics_transaction(){
 	function add_item_if_doesnt_exist_old( item ) {
 	
 		new_item_transaction();
-		//////console.log("add_item_if_doesnt_exist(): " + item.link);
+		////////console.log("add_item_if_doesnt_exist(): " + item.link);
 		var item_request = Buleys.objectStore.get(item.link);
 	
 		item_request.onsuccess = function(event){
-			////////console.log(event);
+			//////////console.log(event);
 			//Buleys.objectId = item_request.result.author;
-			////////console.log(item_request.status);
+			//////////console.log(item_request.status);
 			if(typeof item_request.result == 'undefined') {
 				
-				////console.log("add_item_if_doesnt_exist(): doesn't exist! ", Buleys.queues.new_items);
+				//////console.log("add_item_if_doesnt_exist(): doesn't exist! ", Buleys.queues.new_items);
 				add_item_to_items_database(item);
 				add_categories_to_categories_database(item.link, item.categories);	
 			} else {
-				////console.log("add_item_if_doesnt_exist(): DOES exist");
+				//////console.log("add_item_if_doesnt_exist(): DOES exist");
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -3299,24 +3500,24 @@ function new_topics_transaction(){
 	function add_item_if_doesnt_exist( item ) {
 	
 		new_item_transaction();
-		console.log("add_item_if_doesnt_exist(): " + item.link);
+		//console.log("add_item_if_doesnt_exist(): " + item.link);
 		var item_request = Buleys.objectStore.get( item.link );
 	
 		item_request.onsuccess = function(event){
-			////////console.log(event);
+			//////////console.log(event);
 			//Buleys.objectId = item_request.result.author;
-			////////console.log(item_request.status);
+			//////////console.log(item_request.status);
 			if(typeof item_request.result == 'undefined') {
-				////console.log("add_item_if_doesnt_exist(): doesn't exist! ", item.categories);
+				//////console.log("add_item_if_doesnt_exist(): doesn't exist! ", item.categories);
 				add_item_to_items_database(item);
 				add_categories_to_categories_database(item.link, item.categories);
 				//					
 
 				if(item.categories.length > 0) {
 					$.each(item.categories, function(cat_key,cat) {
-						////console.log("add_item_if_doesnt_exist(): checking and against",cat,slug,type);
+						//////console.log("add_item_if_doesnt_exist(): checking and against",cat,slug,type);
 						if(type === "home" || typeof slug === "undefined" || typeof slug === "" ||  cat.key !== null && typeof cat.key !== "null" && cat.key === slug && cat.type === type) {
-							////console.log("add_item_if_doesnt_exist():",item);
+							//////console.log("add_item_if_doesnt_exist():",item);
 							add_item_to_results( get_data_object_for_item(item) );
 							check_if_item_is_favorited(item.link);				
 							check_if_item_is_read(item.link);
@@ -3326,18 +3527,18 @@ function new_topics_transaction(){
 					
 					});
 				} else {
-					////console.log("add_item_if_doesnt_exist(): no cats to go through");
+					//////console.log("add_item_if_doesnt_exist(): no cats to go through");
 				}
 				
 					
 			} else {
-				////console.log("add_item_if_doesnt_exist(): DOES exist");
+				//////console.log("add_item_if_doesnt_exist(): DOES exist");
 			}
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("Could not get object");
-			//////console.log(e);
+			////////console.log("Could not get object");
+			////////console.log(e);
 		};
 	
 	}
@@ -3356,7 +3557,7 @@ function new_topics_transaction(){
 	
 	function add_item_to_items_database(item) {
 	
-		////////console.log("item: " + item.link);
+		//////////console.log("item: " + item.link);
 		
 		var data = get_data_object_for_item( item );
 		
@@ -3365,31 +3566,31 @@ function new_topics_transaction(){
 		var item_request = Buleys.objectStore.get(item.link);
 	
 		item_request.onsuccess = function(event){
-			//////console.log("check_if_item_is_deleted(): done" + item_request);
+			////////console.log("check_if_item_is_deleted(): done" + item_request);
 			 checker = item_request;
-			//////console.log(item_request.result);
+			////////console.log(item_request.result);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
 
-				//////console.log("add_item_to_items_database(): item is in trash");
+				////////console.log("add_item_to_items_database(): item is in trash");
 			} else {
-				//////console.log("add_item_to_items_database(): item NOT in trash");
+				////////console.log("add_item_to_items_database(): item NOT in trash");
 
 				new_item_transaction();
 
 //xxhre we are.. new titles don't work
-				//////console.log("Trying to save...", data);
+				////////console.log("Trying to save...", data);
 				//xxxhere
 				var add_data_request = Buleys.objectStore.add(data);
 				add_data_request.onsuccess = function(event){
-					////////console.log("Saved id ", add_data_request.result);
+					//////////console.log("Saved id ", add_data_request.result);
 //					Buleys.objectId = add_data_request.result;
 
 				if(item.categories.length > 1 && typeof item.categories.type === "undefined" && typeof item.categories.key === "undefined" ) {
 					$.each(item.categories, function(cat_key,cat) {
-						////console.log("add_item_to_items_database(): checking and against 2+ ",cat,slug,type);
+						//////console.log("add_item_to_items_database(): checking and against 2+ ",cat,slug,type);
 						if(type === "home" || typeof slug === "undefined" || typeof slug === "" ||  cat.key !== null && typeof cat.key !== "null" && cat.key === slug) {
-							////console.log("add_item_to_items_database() actually adding to results:",item);
+							//////console.log("add_item_to_items_database() actually adding to results:",item);
 							if(typeof page == "undefined" || page !== "favorites" && page !== "seen" &&  page !== "read" &&  page !== "archive") {
 								add_item_to_results( get_data_object_for_item(item) );
 							}
@@ -3399,24 +3600,24 @@ function new_topics_transaction(){
 					});
 					
 				} else if (item.categories.length == 1 && typeof item.categories.key !== "undefined"  ) {
-					////console.log("add_item_to_items_database(): checking and against 1 ",item.categories[0],slug,type);
+					//////console.log("add_item_to_items_database(): checking and against 1 ",item.categories[0],slug,type);
 					if(type === "home" || item.categories[0].key.toLowerCase() === slug && item.categories[0].type.toLowerCase() === type) {
-						////console.log("add_item_to_items_database():",item);
+						//////console.log("add_item_to_items_database():",item);
 						add_item_to_results( get_data_object_for_item(item) );
 						
 					}
 				} else {
-					////console.log("add_item_to_items_database(): no cats to go through");
+					//////console.log("add_item_to_items_database(): no cats to go through");
 				}
 
 
-					//////console.log("add_item_to_items_database(): Adding item to result pane", add_data_request.result);
+					////////console.log("add_item_to_items_database(): Adding item to result pane", add_data_request.result);
 					
 					///herexxx
 					
 				};
 				add_data_request.onerror = function(e){
-					//////console.log(e);
+					////////console.log(e);
 					//Buleys.transaction.abort();
 				};
 			
@@ -3425,8 +3626,8 @@ function new_topics_transaction(){
 		};
 	
 		item_request.onerror = function(e){
-			//////console.log("check_if_item_is_deleted(): Could not get object");
-			//////console.log(e);
+			////////console.log("check_if_item_is_deleted(): Could not get object");
+			////////console.log(e);
 		};
 
 
@@ -3437,13 +3638,13 @@ function new_topics_transaction(){
 
 	function add_categories_to_categories_database(item_url, categories) {
 	
-		console.log("add_categories_to_categories_database(): ", item_url, categories);
+		//console.log("add_categories_to_categories_database(): ", item_url, categories);
 		
 		jQuery.each(categories, function(c,the_category) {
-			console.log("&& category.key !== null thing: ",the_category.key);
+			//console.log("&& category.key !== null thing: ",the_category.key);
 			if( typeof the_category.key !== 'undefined' ) {
 			
-				console.log("add_categories_to_categories_database(): current category in each ", the_category.key);
+				//console.log("add_categories_to_categories_database(): current category in each ", the_category.key);
 				
 				
 				new_categories_transaction();
@@ -3459,23 +3660,23 @@ function new_topics_transaction(){
 				};
 			
 				
-				console.log("add_categories_to_categories_database(): Trying to save...", data);
+				//console.log("add_categories_to_categories_database(): Trying to save...", data);
 				var add_data_request = Buleys.objectStore.add(data);
 				add_data_request.onsuccess = function(event){
-					console.log("add_categories_to_categories_database(): Saved id ", add_data_request.result);
+					//console.log("add_categories_to_categories_database(): Saved id ", add_data_request.result);
 					//Buleys.objectId = add_data_request.result;
 					if(typeof the_category.key !== 'undefined') {
 						var topic_key = the_category.type.toLowerCase()+"_"+the_category.key.toLowerCase();
 						if(typeof Buleys.queues.new_items[topic_key] == "undefined") {
-							console.log("add_categories_to_categories_database(): key: ",topic_key);
-							console.log("add_categories_to_categories_database(): count: ", Buleys.queues.new_items[topic_key]);
+							//console.log("add_categories_to_categories_database(): key: ",topic_key);
+							//console.log("add_categories_to_categories_database(): count: ", Buleys.queues.new_items[topic_key]);
 							Buleys.queues.new_items[topic_key] = 0;
 						}
 						Buleys.queues.new_items[topic_key] = Buleys.queues.new_items[topic_key] + 1;
 					}
 				};
 				add_data_request.onerror = function(e){
-					console.log("add_categories_to_categories_database(): exists! " + e);
+					//console.log("add_categories_to_categories_database(): exists! " + e);
 					//Buleys.transaction.abort();
 				};
 			
@@ -3491,7 +3692,7 @@ function new_topics_transaction(){
 		if(typeof status == 'undefined') { 
 			status = "unread";
 		}
-		////console.log("item: " + item.link);
+		//////console.log("item: " + item.link);
 		new_status_transaction();
 		
 		var data = {
@@ -3500,15 +3701,15 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("Trying to save...", data);
+		//////console.log("Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("Saved id ", add_data_request.result);
+			//////console.log("Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
-			////console.log(e);
+			//////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3517,7 +3718,7 @@ function new_topics_transaction(){
 
 	function add_item_as_favorite(item_url) {
 	
-		////console.log("add_item_as_favorite(): " + item_url);
+		//////console.log("add_item_as_favorite(): " + item_url);
 		new_status_transaction();
 		
 		var data = {
@@ -3526,14 +3727,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_as_favorite(): Trying to save...", data);
+		//////console.log("add_item_as_favorite(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_as_favorite(): Saved id ", add_data_request.result);
+			//////console.log("add_item_as_favorite(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3541,18 +3742,18 @@ function new_topics_transaction(){
 
 	function check_if_item_is_favorited_for_overlay(item_url) {
 	
-		////console.log("check_if_item_is_favorited(): " + item_url);
+		//////console.log("check_if_item_is_favorited(): " + item_url);
 		new_favorite_transaction();
 
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			////console.log("check_if_item_is_favorited(): done" + item_request);
+			//////console.log("check_if_item_is_favorited(): done" + item_request);
 			 checker = item_request;
-			////console.log(item_request.result);
+			//////console.log(item_request.result);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
-				////console.log("check_if_item_is_favorited(): is favorite");
+				//////console.log("check_if_item_is_favorited(): is favorite");
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				jQuery("#overlay_left").prepend("<span class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
@@ -3560,7 +3761,7 @@ function new_topics_transaction(){
 				//jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('favorited');
 
 			} else {
-				////console.log("check_if_item_is_favorited(): is NOT favorite");
+				//////console.log("check_if_item_is_favorited(): is NOT favorite");
 				jQuery("#overlay_left").prepend("<span class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
 
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
@@ -3570,8 +3771,8 @@ function new_topics_transaction(){
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("check_if_item_is_favorited(): Could not get object");
-			////console.log(e);
+			//////console.log("check_if_item_is_favorited(): Could not get object");
+			//////console.log(e);
 		};
 	
 	}
@@ -3579,32 +3780,32 @@ function new_topics_transaction(){
 
 	function check_if_item_is_favorited(item_url) {
 	
-		////console.log("check_if_item_is_favorited(): " + item_url);
+		//////console.log("check_if_item_is_favorited(): " + item_url);
 		new_favorite_transaction();
 
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			////console.log("check_if_item_is_favorited(): done" + item_request);
+			//////console.log("check_if_item_is_favorited(): done" + item_request);
 			 checker = item_request;
-			////console.log(item_request.result);
+			//////console.log(item_request.result);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
-				////console.log("check_if_item_is_favorited(): is favorite");
+				//////console.log("check_if_item_is_favorited(): is favorite");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().addClass('favorited');
 
 			} else {
-				////console.log("check_if_item_is_favorited(): is NOT favorite");
+				//////console.log("check_if_item_is_favorited(): is NOT favorite");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().addClass('unfavorited');
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("check_if_item_is_favorited(): Could not get object");
-			////console.log(e);
+			//////console.log("check_if_item_is_favorited(): Could not get object");
+			//////console.log(e);
 		};
 
 		
@@ -3613,7 +3814,7 @@ function new_topics_transaction(){
 
 	function add_item_to_favorites_database(item_url, item_slug, item_type) {
 	
-		////console.log("item: " + item_url);
+		//////console.log("item: " + item_url);
 		new_favorite_transaction();
 		
 		var data = {
@@ -3623,14 +3824,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_to_favorites_database(): Trying to save...", data);
+		//////console.log("add_item_to_favorites_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_to_favorites_database(): Saved id ", add_data_request.result);
+			//////console.log("add_item_to_favorites_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3638,17 +3839,17 @@ function new_topics_transaction(){
 
 	function remove_item_from_favorites_database(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_favorites_database(): item: " + item_url);
+		//////console.log("remove_item_from_favorites_database(): item: " + item_url);
 		new_favorite_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("remove_item_from_favorites_database(): Removed id ", request.result);
+			//////console.log("remove_item_from_favorites_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_item_from_favorites_database(): Could not delete object");
+			//////console.log("remove_item_from_favorites_database(): Could not delete object");
 		};
 		
 	
@@ -3656,17 +3857,17 @@ function new_topics_transaction(){
 
 	function remove_item_from_archives_database(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_favorites_database(): item: " + item_url);
+		//////console.log("remove_item_from_favorites_database(): item: " + item_url);
 		new_archived_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("remove_item_from_favorites_database(): Removed id ", request.result);
+			//////console.log("remove_item_from_favorites_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_item_from_favorites_database(): Could not delete object");
+			//////console.log("remove_item_from_favorites_database(): Could not delete object");
 		};
 		
 	
@@ -3674,18 +3875,18 @@ function new_topics_transaction(){
 
 	function remove_item_from_items_database(item_url, item_slug, item_type) {
 	
-		//console.log("remove_item_from_items_database(): item: ", item_url);
+		////console.log("remove_item_from_items_database(): item: ", item_url);
 		new_item_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
 			
-			//console.log("remove_item_from_items_database(): Removed id ", request.result);
+			////console.log("remove_item_from_items_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			//console.log("remove_item_from_items_database(): Could not delete object");
+			////console.log("remove_item_from_items_database(): Could not delete object");
 		};
 		
 	
@@ -3698,7 +3899,7 @@ function new_topics_transaction(){
 
 	function add_item_as_seen(item_url) {
 	
-		////console.log("add_item_as_seen(): " + item_url);
+		//////console.log("add_item_as_seen(): " + item_url);
 		new_seen_transaction();
 		
 		var data = {
@@ -3706,14 +3907,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_as_seen(): Trying to save...", data);
+		//////console.log("add_item_as_seen(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_as_seen(): Saved id ", add_data_request.result);
+			//////console.log("add_item_as_seen(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3721,29 +3922,29 @@ function new_topics_transaction(){
 
 	function check_if_item_is_seen(item_url) {
 	
-		////console.log("check_if_item_is_seen(): " + item_url);
+		//////console.log("check_if_item_is_seen(): " + item_url);
 		new_seen_transaction();
 
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			////console.log("check_if_item_is_seen(): done" + item_request);
+			//////console.log("check_if_item_is_seen(): done" + item_request);
 			 checker = item_request;
-			////console.log(item_request.result);
+			//////console.log(item_request.result);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
-				////console.log("check_if_item_is_seen(): is seen");
+				//////console.log("check_if_item_is_seen(): is seen");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('seen');
 
 			} else {
-				////console.log("check_if_item_is_seen(): is NOT seen");
+				//////console.log("check_if_item_is_seen(): is NOT seen");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unseen');
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("check_if_item_is_seen(): Could not get object");
-			////console.log(e);
+			//////console.log("check_if_item_is_seen(): Could not get object");
+			//////console.log(e);
 		};
 
 		
@@ -3752,7 +3953,7 @@ function new_topics_transaction(){
 
 	function add_item_to_seens_database(item_url, item_slug, item_type) {
 	
-		////console.log("item: " + item_url);
+		//////console.log("item: " + item_url);
 		new_seen_transaction();
 		
 		var data = {
@@ -3762,14 +3963,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_to_seens_database(): Trying to save...", data);
+		//////console.log("add_item_to_seens_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_to_seens_database(): Saved id ", add_data_request.result);
+			//////console.log("add_item_to_seens_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3778,17 +3979,17 @@ function new_topics_transaction(){
 
 	function remove_item_from_seens_database(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_seens_database(): item: " + item_url);
+		//////console.log("remove_item_from_seens_database(): item: " + item_url);
 		new_seen_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("remove_item_from_seens_database(): Removed id ", request.result);
+			//////console.log("remove_item_from_seens_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_item_from_seens_database(): Could not seen object");
+			//////console.log("remove_item_from_seens_database(): Could not seen object");
 		};
 		
 	
@@ -3797,7 +3998,7 @@ function new_topics_transaction(){
 
 	function archive_item(item_url) {
 	
-		////console.log("add_item_as_archive(): " + item_url);
+		//////console.log("add_item_as_archive(): " + item_url);
 		new_archived_transaction();
 		
 		var data = {
@@ -3805,14 +4006,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_as_archive(): Trying to save...", data);
+		//////console.log("add_item_as_archive(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_as_archive(): Saved id ", add_data_request.result);
+			//////console.log("add_item_as_archive(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3820,30 +4021,30 @@ function new_topics_transaction(){
 
 	function check_if_item_is_archived(item_url) {
 	
-		////console.log("check_if_item_is_archived(): " + item_url);
+		//////console.log("check_if_item_is_archived(): " + item_url);
 		new_archived_transaction();
 
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			////console.log("check_if_item_is_archived(): done" + item_request);
+			//////console.log("check_if_item_is_archived(): done" + item_request);
 			 checker = item_request;
-			////console.log(item_request.result);
+			//////console.log(item_request.result);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
-				////console.log("check_if_item_is_archived(): is archive");
+				//////console.log("check_if_item_is_archived(): is archive");
 				
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('archived');
 
 			} else {
-				////console.log("check_if_item_is_archived(): is NOT archive");
+				//////console.log("check_if_item_is_archived(): is NOT archive");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unarchived');
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("check_if_item_is_archived(): Could not get object");
-			////console.log(e);
+			//////console.log("check_if_item_is_archived(): Could not get object");
+			//////console.log(e);
 		};
 
 		
@@ -3852,7 +4053,7 @@ function new_topics_transaction(){
 
 	function add_item_to_archives_database(item_url, item_slug, item_type) {
 	
-		////console.log("item: " + item_url);
+		//////console.log("item: " + item_url);
 		new_archived_transaction();
 		
 		var data = {
@@ -3862,14 +4063,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_to_archives_database(): Trying to save...", data);
+		//////console.log("add_item_to_archives_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_to_archives_database(): Saved id ", add_data_request.result);
+			//////console.log("add_item_to_archives_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -3877,17 +4078,17 @@ function new_topics_transaction(){
 
 	function unarchive_item(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_archives_database(): item: " + item_url);
+		//////console.log("remove_item_from_archives_database(): item: " + item_url);
 		new_archived_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("remove_item_from_archives_database(): Removed id ", request.result);
+			//////console.log("remove_item_from_archives_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_item_from_archives_database(): Could not archive object");
+			//////console.log("remove_item_from_archives_database(): Could not archive object");
 		};
 		
 	
@@ -3895,7 +4096,7 @@ function new_topics_transaction(){
 
 	function remove_item_from_categories_database(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_archives_database(): item: " + item_url);
+		//////console.log("remove_item_from_archives_database(): item: " + item_url);
 	
 		new_categories_transaction();
 		Buleys.index = Buleys.objectStore.index("link");
@@ -3908,37 +4109,37 @@ function new_topics_transaction(){
 				
 					var slug_string = "";
 						slug_string = request_for_item.result.link.replace(/[^a-zA-Z0-9-_]+/g,"") + request_for_item.result.slug.toLowerCase() + request_for_item.result.type.toLowerCase();
-						//console.log("remove_item_from_categories_database(): ", slug_string);
+						////console.log("remove_item_from_categories_database(): ", slug_string);
 							new_categories_transaction();
 	
 								var request_2 = Buleys.objectStore["delete"]( slug_string );
 									request_2.onsuccess = function(event){
-									////console.log("remove_item_from_deletes_database(): Removed id ", request.result);
+									//////console.log("remove_item_from_deletes_database(): Removed id ", request.result);
 									delete Buleys.objectId;
 								};
 								request_2.onerror = function(){
-									////console.log("remove_item_from_deletes_database(): Could not delete object");
+									//////console.log("remove_item_from_deletes_database(): Could not delete object");
 								};
 					
 				
 				} else {
 						
 					$.each(request_for_item.result, function(i, item) {
-						//console.log("remove_item_from_categories_database(): request result_key item  ", request_for_item, i, item);
+						////console.log("remove_item_from_categories_database(): request result_key item  ", request_for_item, i, item);
 						
 						//
 						var slug_string = "";
 						slug_string = item.link.replace(/[^a-zA-Z0-9-_]+/g,"") + item.slug.toLowerCase() + item.type.toLowerCase();
-						//console.log("remove_item_from_categories_database(): ", slug_string);
+						////console.log("remove_item_from_categories_database(): ", slug_string);
 							new_categories_transaction();
 	
 								var request_2 = Buleys.objectStore["delete"]( slug_string );
 									request_2.onsuccess = function(event){
-									////console.log("remove_item_from_deletes_database(): Removed id ", request.result);
+									//////console.log("remove_item_from_deletes_database(): Removed id ", request.result);
 									delete Buleys.objectId;
 								};
 								request_2.onerror = function(){
-									////console.log("remove_item_from_deletes_database(): Could not delete object");
+									//////console.log("remove_item_from_deletes_database(): Could not delete object");
 								};
 			
 						
@@ -3949,7 +4150,7 @@ function new_topics_transaction(){
 			}
 		};
 		request_for_item.onerror = function(){
-			////console.log("remove_item_from_categories_database(): Could not archive object");
+			//////console.log("remove_item_from_categories_database(): Could not archive object");
 		};
 		
 	
@@ -3960,7 +4161,7 @@ function new_topics_transaction(){
 
 	function delete_item(item_url, the_type, the_slug) {
 	
-		//console.log("delete_item(): " + item_url);
+		////console.log("delete_item(): " + item_url);
 		new_deleted_transaction();
 		
 		var data = {
@@ -3968,48 +4169,48 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		//console.log("delete_item(): Trying to delete...", data);
+		////console.log("delete_item(): Trying to delete...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			//console.log("add_item_as_delete(): Deleted item id ", add_data_request.result);
+			////console.log("add_item_as_delete(): Deleted item id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 			/*
 			
 			
-		//console.log("add_item_as_delete():  remove_item_from_items_database");
+		////console.log("add_item_as_delete():  remove_item_from_items_database");
 			remove_item_from_items_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_favorites_database");
+			////console.log("add_item_as_delete():  remove_item_from_favorites_database");
 			remove_item_from_favorites_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_categories_database");
+			////console.log("add_item_as_delete():  remove_item_from_categories_database");
 			remove_item_from_categories_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_archives_database");
+			////console.log("add_item_as_delete():  remove_item_from_archives_database");
 			remove_item_from_archives_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_seens_database");
+			////console.log("add_item_as_delete():  remove_item_from_seens_database");
 			remove_item_from_seens_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_read_database");
+			////console.log("add_item_as_delete():  remove_item_from_read_database");
 			remove_item_from_read_database(item_url, the_type, the_slug);
 
 
 			*/
 		};
 		add_data_request.onerror = function(e){
-			//console.log("delete_item(): Could not delete...", e, add_data_request, data.link);
-			////console.log(e);
+			////console.log("delete_item(): Could not delete...", e, add_data_request, data.link);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 		
 		
-		//console.log("add_item_as_delete():  remove_item_from_items_database");
+		////console.log("add_item_as_delete():  remove_item_from_items_database");
 			//remove_item_from_items_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_favorites_database");
+			////console.log("add_item_as_delete():  remove_item_from_favorites_database");
 			remove_item_from_favorites_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_categories_database");
+			////console.log("add_item_as_delete():  remove_item_from_categories_database");
 			remove_item_from_categories_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_archives_database");
+			////console.log("add_item_as_delete():  remove_item_from_archives_database");
 			remove_item_from_archives_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_seens_database");
+			////console.log("add_item_as_delete():  remove_item_from_seens_database");
 			remove_item_from_seens_database(item_url, the_type, the_slug);
-			//console.log("add_item_as_delete():  remove_item_from_read_database");
+			////console.log("add_item_as_delete():  remove_item_from_read_database");
 			remove_item_from_read_database(item_url, the_type, the_slug);
 
 
@@ -4018,31 +4219,31 @@ function new_topics_transaction(){
 
 	function check_if_item_is_deleted(item_url) {
 	
-		////console.log("check_if_item_is_deleted(): " + item_url);
+		//////console.log("check_if_item_is_deleted(): " + item_url);
 		new_deleted_transaction();
 
 		var item_request = Buleys.objectStore.get(item_url);
 	
 		item_request.onsuccess = function(event){
-			////console.log("check_if_item_is_deleted(): done" + item_request);
+			//////console.log("check_if_item_is_deleted(): done" + item_request);
 			 checker = item_request;
-			////console.log(item_request.result);
+			//////console.log(item_request.result);
 			//Buleys.objectId = item_request.result.author;
 			if(typeof item_request.result != 'undefined') {
-				////console.log("check_if_item_is_deleted(): is delete");
+				//////console.log("check_if_item_is_deleted(): is delete");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='delete_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('deleted');
 
 			} else {
-				////console.log("check_if_item_is_deleted(): is NOT delete");
+				//////console.log("check_if_item_is_deleted(): is NOT delete");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='delete_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("check_if_item_is_deleted(): Could not get object");
-			////console.log(e);
+			//////console.log("check_if_item_is_deleted(): Could not get object");
+			//////console.log(e);
 		};
 
 		
@@ -4051,7 +4252,7 @@ function new_topics_transaction(){
 
 	function add_item_to_deletes_database(item_url, item_slug, item_type) {
 	
-		////console.log("item: " + item_url);
+		//////console.log("item: " + item_url);
 		new_deleted_transaction();
 		
 		var data = {
@@ -4061,14 +4262,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_item_to_deletes_database(): Trying to save...", data);
+		//////console.log("add_item_to_deletes_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_item_to_deletes_database(): Saved id ", add_data_request.result);
+			//////console.log("add_item_to_deletes_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4076,17 +4277,17 @@ function new_topics_transaction(){
 
 	function remove_item_from_deletes_database(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_deletes_database(): item: " + item_url);
+		//////console.log("remove_item_from_deletes_database(): item: " + item_url);
 		new_deleted_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("remove_item_from_deletes_database(): Removed id ", request.result);
+			//////console.log("remove_item_from_deletes_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_item_from_deletes_database(): Could not delete object");
+			//////console.log("remove_item_from_deletes_database(): Could not delete object");
 		};
 		
 	
@@ -4099,7 +4300,7 @@ function new_topics_transaction(){
 
 	function mark_item_as_read(item_url, item_slug, item_type) {
 	
-		////console.log("mark_item_as_read(): url: " + item_url + "slug: " + item_slug + " type: " + item_type);
+		//////console.log("mark_item_as_read(): url: " + item_url + "slug: " + item_slug + " type: " + item_type);
 		new_status_transaction();
 		
 		var data = {
@@ -4109,14 +4310,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("mark_item_as_read(): Trying to save...", data);
+		//////console.log("mark_item_as_read(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("mark_item_as_read(): Saved id ", add_data_request.result);
+			//////console.log("mark_item_as_read(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4124,17 +4325,17 @@ function new_topics_transaction(){
 
 	function remove_item_from_read_database(item_url, item_slug, item_type) {
 	
-		////console.log("remove_item_from_read_database(): item: " + item_url);
+		//////console.log("remove_item_from_read_database(): item: " + item_url);
 		new_status_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("remove_item_from_read_database(): Removed id ", request.result);
+			//////console.log("remove_item_from_read_database(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_item_from_read_database(): Could not delete object");
+			//////console.log("remove_item_from_read_database(): Could not delete object");
 		};
 		
 	
@@ -4142,7 +4343,7 @@ function new_topics_transaction(){
 
 	function mark_item_as_seen(item_url, item_slug, item_type) {
 	
-		////console.log("mark_item_as_seen(): url: " + item_url + "slug: " + item_slug + " type: " + item_type);
+		//////console.log("mark_item_as_seen(): url: " + item_url + "slug: " + item_slug + " type: " + item_type);
 		new_seen_transaction();
 		
 		var data = {
@@ -4152,14 +4353,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("mark_item_as_seen(): Trying to save...", data);
+		//////console.log("mark_item_as_seen(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("mark_item_as_seen(): Saved id ", add_data_request.result);
+			//////console.log("mark_item_as_seen(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4167,17 +4368,17 @@ function new_topics_transaction(){
 
 	function mark_item_as_unseen(item_url, item_slug, item_type) {
 	
-		////console.log("mark_item_as_unseen(): item: " + item_url);
+		//////console.log("mark_item_as_unseen(): item: " + item_url);
 		new_seen_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("mark_item_as_unseen(): Removed id ", request.result);
+			//////console.log("mark_item_as_unseen(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("mark_item_as_unseen(): Could not delete object");
+			//////console.log("mark_item_as_unseen(): Could not delete object");
 		};
 		
 	
@@ -4185,7 +4386,7 @@ function new_topics_transaction(){
 
 	function mark_item_as_deleted(item_url, item_slug, item_type) {
 	
-		////console.log("mark_item_as_deleted(): url: " + item_url + "slug: " + item_slug + " type: " + item_type);
+		//////console.log("mark_item_as_deleted(): url: " + item_url + "slug: " + item_slug + " type: " + item_type);
 		new_deleted_transaction();
 		
 		var data = {
@@ -4195,14 +4396,14 @@ function new_topics_transaction(){
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("mark_item_as_deleted(): Trying to save...", data);
+		//////console.log("mark_item_as_deleted(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("mark_item_as_deleted(): Saved id ", add_data_request.result);
+			//////console.log("mark_item_as_deleted(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4210,17 +4411,17 @@ function new_topics_transaction(){
 
 	function mark_item_as_undeleted(item_url, item_slug, item_type) {
 	
-		////console.log("mark_item_as_undeleted(): item: " + item_url);
+		//////console.log("mark_item_as_undeleted(): item: " + item_url);
 		new_deleted_transaction();
 		
 		//
 		var request = Buleys.objectStore["delete"](item_url);
 			request.onsuccess = function(event){
-			////console.log("mark_item_as_undeleted(): Removed id ", request.result);
+			//////console.log("mark_item_as_undeleted(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("mark_item_as_undeleted(): Could not delete object");
+			//////console.log("mark_item_as_undeleted(): Could not delete object");
 		};
 		
 	
@@ -4230,16 +4431,16 @@ function new_topics_transaction(){
 	//.delete(			
 	function remove_category_for_item(item_url, item_slug, item_type) {
 	
-		////console.log("remove_category_for_item(): item: " + item_url + " slug: " + item_slug + " type: " + item_type);
+		//////console.log("remove_category_for_item(): item: " + item_url + " slug: " + item_slug + " type: " + item_type);
 		new_categories_transaction();
 		//
 		var request = Buleys.objectStore["delete"](item_url + item_type + item_slug);
 			request.onsuccess = function(event){
-			////console.log("remove_category_for_item(): Removed id ", request.result);
+			//////console.log("remove_category_for_item(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_category_for_item(): Could not delete object");
+			//////console.log("remove_category_for_item(): Could not delete object");
 		};
 		
 	
@@ -4247,7 +4448,7 @@ function new_topics_transaction(){
 	
 	
 	function check_for_waiting_items() {
-				console.log("check_for_waiting_items(): ", Buleys.queues.new_items);
+				//console.log("check_for_waiting_items(): ", Buleys.queues.new_items);
 				
 				
 			notify_user_of_new_items( Buleys.queues.new_items, type_to_get, company_to_get );
@@ -4256,11 +4457,11 @@ function new_topics_transaction(){
 
 //better name
 	function add_items( items_to_database, type_to_get, company_to_get ) {
-			//console.log("add_items(): begin ");
+			////console.log("add_items(): begin ");
 			new_item_transaction();
 			var add_transaction = Buleys.db.transaction(["items"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			$.each(items_to_database, function(i,item){
-			//console.log("add_items(): item ", item);
+			////console.log("add_items(): item ", item);
 					add_item_if_new(item, type_to_get, company_to_get);
 			});
 
@@ -4271,13 +4472,13 @@ function new_topics_transaction(){
 	function populate_and_maybe_setup_indexeddbs( items_to_database ) {
 		
 		//Open database
-		//////console.log("Trying to open database ...");
+		////////console.log("Trying to open database ...");
 		//var database_open_request = window.indexedDB.open("Buleys-308", "items");
 		//database_open_request.onsuccess = function(event){
 			//Buleys.db = database_open_request.result;
-			////console.log("Database Opened", Buleys.db);
+			//////console.log("Database Opened", Buleys.db);
 			//document.write("List of Object Stores", Buleys.db.objectStoreNames);
-			////console.log("Opening an Object Store using a transaction.");
+			//////console.log("Opening an Object Store using a transaction.");
 			new_item_transaction();
 			//Buleys.objectStore
 			var add_transaction = Buleys.db.transaction(["items"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
@@ -4288,9 +4489,9 @@ function new_topics_transaction(){
 					//add_item_to_favorites_database(item);		
 			});
 		//};
-		////console.log("Object Store Opened", Buleys.objectStore);
+		//////console.log("Object Store Opened", Buleys.objectStore);
 		//database_open_request.onerror = function(e){
-		//	////console.log(e);
+		//	//////console.log(e);
 		//};
 		
 	}
@@ -4300,21 +4501,21 @@ function open_database( ) {
 
 
 	//Open database
-	////console.log("Trying to open database ...");
+	//////console.log("Trying to open database ...");
 	var database_open_request = window.indexedDB.open("Buleys-317");
 	database_open_request.onsuccess = function(event){
 		database_is_open(database_open_request.result);
 	};
 	
 	database_open_request.onerror = function(e){
-		////console.log("open_database(): Could not open database");
+		//////console.log("open_database(): Could not open database");
 	};
 	
 	
 }
 
 function send_text_to_console(text_to_send) {
-	////console.log(text_to_send);
+	//////console.log(text_to_send);
 	jQuery("#console").html('').append("<p>" + text_to_send + "</p>");
 	
 	//fadeOut('fast');
@@ -4322,7 +4523,7 @@ function send_text_to_console(text_to_send) {
 
 }
 function send_text_to_overlay(text_to_send) {
-	////console.log(text_to_send);
+	//////console.log(text_to_send);
 	jQuery("#overlay").html('').append(text_to_send);
 	
 	//fadeOut('fast');
@@ -4368,24 +4569,24 @@ function add_category_controls( event_context ) {
 					  return;
 					}
 					
-					console.log("get_settings(): Indexed on link; ", objectCursor);
-					console.log("get_settings(): cursor: " + objectCursor.length);
+					//console.log("get_settings(): Indexed on link; ", objectCursor);
+					//console.log("get_settings(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-							////console.log("get_settings(): " + item);							
+							//////console.log("get_settings(): " + item);							
 						});				
 					}
 
 				};
 				request.onerror = function(event){
-					////console.log("get_settings(): Could not open Object Store", event);
+					//////console.log("get_settings(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      console.log("get_settings(): Could not open Index, create it first");
-		      console.log(e);
+		      //console.log("get_settings(): Could not open Index, create it first");
+		      //console.log(e);
 		    }
     
 
@@ -4394,16 +4595,16 @@ function add_category_controls( event_context ) {
 
 //here
 	function remove_setting( option_name ) {
-		////console.log("remove_setting(): " + " option_name: " + option_name);
+		//////console.log("remove_setting(): " + " option_name: " + option_name);
 		new_settings_transaction();
 		//
 		var request = Buleys.objectStore["delete"]( option_name );
 			request.onsuccess = function(event){
-			////console.log("remove_setting(): Removed id ", request.result);
+			//////console.log("remove_setting(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_setting(): Could not delete object");
+			//////console.log("remove_setting(): Could not delete object");
 		};
 	}  	
 
@@ -4411,29 +4612,29 @@ function add_category_controls( event_context ) {
 	
 		new_settings_transaction();
 
-		console.log("load_all_settings_into_dom(): " );
+		//console.log("load_all_settings_into_dom(): " );
 		var item_request = Buleys.objectStore.getAll();
 	
 		item_request.onsuccess = function(event){
 			if(typeof item_request.result !== 'undefined') {
-				console.log("load_all_settings_into_dom(): success ", item_request.result);
+				//console.log("load_all_settings_into_dom(): success ", item_request.result);
 			
 				if(item_request.result.length >= 0)  {
 					jQuery.each(item_request.result, function(k,item) {
-					console.log("load_all_settings_into_dom(): setting, value ", k, item);
+					//console.log("load_all_settings_into_dom(): setting, value ", k, item);
 						Buleys.settings[item.option_name] = item.option_value;							
-						console.log("load_all_settings_into_dom(): now set ", Buleys.settings[item.option_name]);
+						//console.log("load_all_settings_into_dom(): now set ", Buleys.settings[item.option_name]);
 					});				
 				}
 				
 			} else {
-				console.log("get_all_settings(): failed ", item_request.result);
+				//console.log("get_all_settings(): failed ", item_request.result);
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("add_setting_if_doesnt_exist(): Could not get object");
-			////console.log(e);
+			//////console.log("add_setting_if_doesnt_exist(): Could not get object");
+			//////console.log(e);
 		};
 	
 	}
@@ -4444,32 +4645,32 @@ function add_category_controls( event_context ) {
 		if( typeof option_value == 'undefined' ) {
 			option_value = '';
 		}
-		//console.log("add_setting_if_doesnt_exist(): option_name: " + option_name );
+		////console.log("add_setting_if_doesnt_exist(): option_name: " + option_name );
 		var item_request = Buleys.objectStore.get( option_name );
 	
 		item_request.onsuccess = function(event){
-			console.log("add_setting_if_doesnt_exist(): " + event);
+			//console.log("add_setting_if_doesnt_exist(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			console.log("add_setting_if_doesnt_exist(): " + item_request );
+			//console.log("add_setting_if_doesnt_exist(): " + item_request );
 			if(typeof item_request.result == 'undefined') {
-				//console.log("add_or_update_setting(): doesn't exist! ", item_request.result);
+				////console.log("add_or_update_setting(): doesn't exist! ", item_request.result);
 				add_setting_to_settings_database( option_name, option_value );
 			} else {
-				//console.log("add_or_update_setting(): DOES exist", item_request.result);
+				////console.log("add_or_update_setting(): DOES exist", item_request.result);
 				update_setting_in_settings_database( option_name, option_value );
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("add_setting_if_doesnt_exist(): Could not get object");
-			////console.log(e);
+			//////console.log("add_setting_if_doesnt_exist(): Could not get object");
+			//////console.log(e);
 		};
 	
 	}
 	
 	function add_setting_to_settings_database( option_name, option_value ) {
 	
-		////console.log("add_setting_to_settings_database(): option_name" + option_name + " option_value: " + option_value);
+		//////console.log("add_setting_to_settings_database(): option_name" + option_name + " option_value: " + option_value);
 		new_settings_transaction();
 		
 		var data = {
@@ -4478,14 +4679,14 @@ function add_category_controls( event_context ) {
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_setting_to_settings_database(): Trying to save...", data);
+		//////console.log("add_setting_to_settings_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_setting_to_settings_database(): Saved id ", add_data_request.result);
+			//////console.log("add_setting_to_settings_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4493,7 +4694,7 @@ function add_category_controls( event_context ) {
 
 	function update_setting_in_settings_database( option_name, option_value ) {
 	
-		////console.log("add_setting_to_settings_database(): option_name" + option_name + " option_value: " + option_value);
+		//////console.log("add_setting_to_settings_database(): option_name" + option_name + " option_value: " + option_value);
 		new_settings_transaction();
 		
 		var data = {
@@ -4502,14 +4703,14 @@ function add_category_controls( event_context ) {
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_setting_to_settings_database(): Trying to save...", data);
+		//////console.log("add_setting_to_settings_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.put(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_setting_to_settings_database(): Saved id ", add_data_request.result);
+			//////console.log("add_setting_to_settings_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4531,40 +4732,40 @@ function add_category_controls( event_context ) {
 					  return;
 					}
 					
-					console.log("get_queues(): Indexed on link; ", objectCursor);
-					console.log("get_queues(): cursor: " + objectCursor.length);
+					//console.log("get_queues(): Indexed on link; ", objectCursor);
+					//console.log("get_queues(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-							////console.log("get_queues(): " + item);							
+							//////console.log("get_queues(): " + item);							
 						});				
 					}
 
 				};
 				request.onerror = function(event){
-					////console.log("get_queues(): Could not open Object Store", event);
+					//////console.log("get_queues(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      console.log("get_queues(): Could not open Index, create it first");
-		      console.log(e);
+		      //console.log("get_queues(): Could not open Index, create it first");
+		      //console.log(e);
 		    }
     
 
 	}
 
 	function remove_queue( queue_name ) {
-		////console.log("remove_queue(): " + " queue_name: " + queue_name);
+		//////console.log("remove_queue(): " + " queue_name: " + queue_name);
 		new_queue_transaction();
 		//
 		var request = Buleys.objectStore["delete"]( queue_name );
 			request.onsuccess = function(event){
-			////console.log("remove_queue(): Removed id ", request.result);
+			//////console.log("remove_queue(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_queue(): Could not delete object");
+			//////console.log("remove_queue(): Could not delete object");
 		};
 	}  	
 
@@ -4572,29 +4773,29 @@ function add_category_controls( event_context ) {
 	
 		new_queue_transaction();
 
-		console.log("load_all_queues_into_dom(): " );
+		//console.log("load_all_queues_into_dom(): " );
 		var item_request = Buleys.objectStore.getAll();
 	
 		item_request.onsuccess = function(event){
 			if(typeof item_request.result !== 'undefined') {
-				console.log("load_all_queues_into_dom(): success ", item_request.result);
+				//console.log("load_all_queues_into_dom(): success ", item_request.result);
 			
 				if(item_request.result.length >= 0)  {
 					jQuery.each(item_request.result, function(k,item) {
-					console.log("load_all_queues_into_dom(): queue, value ", k, item);
+					//console.log("load_all_queues_into_dom(): queue, value ", k, item);
 						Buleys.queues[item.queue_name] = item.queue_value;							
-						console.log("load_all_queues_into_dom(): now set ", Buleys.queues[item.queue_name]);
+						//console.log("load_all_queues_into_dom(): now set ", Buleys.queues[item.queue_name]);
 					});				
 				}
 				
 			} else {
-				console.log("get_all_queues(): failed ", item_request.result);
+				//console.log("get_all_queues(): failed ", item_request.result);
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("add_queue_if_doesnt_exist(): Could not get object");
-			////console.log(e);
+			//////console.log("add_queue_if_doesnt_exist(): Could not get object");
+			//////console.log(e);
 		};
 	
 	}
@@ -4605,32 +4806,32 @@ function add_category_controls( event_context ) {
 		if( typeof queue_value == 'undefined' ) {
 			queue_value = '';
 		}
-		//console.log("add_queue_if_doesnt_exist(): queue_name: " + queue_name );
+		////console.log("add_queue_if_doesnt_exist(): queue_name: " + queue_name );
 		var item_request = Buleys.objectStore.get( queue_name );
 	
 		item_request.onsuccess = function(event){
-			//console.log("add_queue_if_doesnt_exist(): " + event);
+			////console.log("add_queue_if_doesnt_exist(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			//console.log("add_queue_if_doesnt_exist(): " + item_request );
+			////console.log("add_queue_if_doesnt_exist(): " + item_request );
 			if(typeof item_request.result == 'undefined') {
-				//console.log("add_queue_if_doesnt_exist(): doesn't exist! ", item_request.result);
+				////console.log("add_queue_if_doesnt_exist(): doesn't exist! ", item_request.result);
 				add_queue_to_queues_database( queue_name, queue_value );
 			} else {
-				//console.log("add_queue_if_doesnt_exist(): DOES exist", item_request.result);
+				////console.log("add_queue_if_doesnt_exist(): DOES exist", item_request.result);
 				update_queue_in_queues_database( queue_name, queue_value );
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("add_queue_if_doesnt_exist(): Could not get object");
-			////console.log(e);
+			//////console.log("add_queue_if_doesnt_exist(): Could not get object");
+			//////console.log(e);
 		};
 	
 	}
 	
 	function add_queue_to_queues_database( queue_name, queue_value ) {
 	
-		////console.log("add_queue_to_queues_database(): queue_name" + queue_name + " queue_value: " + queue_value);
+		//////console.log("add_queue_to_queues_database(): queue_name" + queue_name + " queue_value: " + queue_value);
 		new_queue_transaction();
 		
 		var data = {
@@ -4639,14 +4840,14 @@ function add_category_controls( event_context ) {
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_queue_to_queues_database(): Trying to save...", data);
+		//////console.log("add_queue_to_queues_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_queue_to_queues_database(): Saved id ", add_data_request.result);
+			//////console.log("add_queue_to_queues_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4654,7 +4855,7 @@ function add_category_controls( event_context ) {
 
 	function update_queue_in_queues_database( queue_name, queue_value ) {
 	
-		////console.log("add_queue_to_queues_database(): queue_name" + queue_name + " queue_value: " + queue_value);
+		//////console.log("add_queue_to_queues_database(): queue_name" + queue_name + " queue_value: " + queue_value);
 		new_queue_transaction();
 		
 		var data = {
@@ -4663,14 +4864,14 @@ function add_category_controls( event_context ) {
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_queue_to_queues_database(): Trying to save...", data);
+		//////console.log("add_queue_to_queues_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.put(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_queue_to_queues_database(): Saved id ", add_data_request.result);
+			//////console.log("add_queue_to_queues_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4681,23 +4882,23 @@ function add_category_controls( event_context ) {
 	//02.10.11
 	function check_item_vote_status_for_overlay(item_url) {
 	
-		////console.log("check_if_item_is_favorited(): " + item_url);
+		//////console.log("check_if_item_is_favorited(): " + item_url);
 		new_votes_transaction();
 
 		var item_request = Buleys.objectStore.get(item_url.replace(/[^a-zA-Z0-9-_]+/g,""));
 	
 		item_request.onsuccess = function(event){
-			////console.log("check_if_item_is_favorited(): done" + item_request);
+			//////console.log("check_if_item_is_favorited(): done" + item_request);
 			 checker = item_request;
-			console.log("Right here right now");
-			console.log("Right here right now");
-			console.log(event);
-			console.log(event.target.result);
-			console.log("Right here right now");
-			console.log("Right here right now");
+			//console.log("Right here right now");
+			//console.log("Right here right now");
+			//console.log(event);
+			//console.log(event.target.result);
+			//console.log("Right here right now");
+			//console.log("Right here right now");
 			//Buleys.objectId = item_request.result.author;
 			if(typeof event.target.result !== 'undefined') {
-				////console.log("check_if_item_is_favorited(): is favorite");
+				//////console.log("check_if_item_is_favorited(): is favorite");
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "").parent().prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up.png"/></a><br><a href="#" class="vote_down" id="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
 				if(event.target.result.vote_value == -1) {
 					jQuery("#overlay_left").prepend('<div class="vote_context"><a href="#" class="vote_up" alt="' + slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '"><img src="/images/icons/fugue-shadowless/thumb-up-empty.png"/></a><br><a href="#" class="vote_down" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + '" link="' + item_url + '" alt="' + slug + '" ><img src="/images/icons/fugue-shadowless/thumb.png"/></a></div>');
@@ -4722,8 +4923,8 @@ function add_category_controls( event_context ) {
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("check_if_item_is_favorited(): Could not get object");
-			////console.log(e);
+			//////console.log("check_if_item_is_favorited(): Could not get object");
+			//////console.log(e);
 		};
 
 		
@@ -4737,22 +4938,22 @@ function add_category_controls( event_context ) {
 	function get_vote_info( the_url, the_type, the_key ) {
 	
 		new_votes_transaction();
-		////console.log("get_item_vote_info(): the_url: " + the_url );
+		//////console.log("get_item_vote_info(): the_url: " + the_url );
 		var vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g,"") + the_type.toLowerCase() + the_key.toLowerCase();
-		////console.log("get_item_vote_info(): vote_key: " + vote_key );
+		//////console.log("get_item_vote_info(): vote_key: " + vote_key );
 		var item_request = Buleys.objectStore.get( vote_key );
 
 	
 		item_request.onsuccess = function(event){
-			////console.log("get_vote_info(): " + event);
+			//////console.log("get_vote_info(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			////console.log("get_vote_info(): "  + item_request);
+			//////console.log("get_vote_info(): "  + item_request);
 			if(typeof item_request.result == 'undefined' || item_request.result == "") {
-				////console.log("get_vote_info(): vote info NOT found");
+				//////console.log("get_vote_info(): vote info NOT found");
 			} else {
-				////console.log("get_vote_info(): vote info found");
+				//////console.log("get_vote_info(): vote info found");
 				if(typeof item_request.result != 'undefined') {
-				////console.log("get_vote_info(): vote_value: " + item_request.result.vote_value);
+				//////console.log("get_vote_info(): vote_value: " + item_request.result.vote_value);
 
 					if( item_request.result.vote_value == 0 ) {
 						jQuery("#" + vote_key).addClass("voted downvoted");
@@ -4766,8 +4967,8 @@ function add_category_controls( event_context ) {
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("Could not get object");
-			////console.log(e);
+			//////console.log("Could not get object");
+			//////console.log(e);
 		};
 	
 	}
@@ -4788,24 +4989,24 @@ function add_category_controls( event_context ) {
 					  return;
 					}
 					
-					////console.log("get_votes(): Indexed on link; ", objectCursor);
-					////console.log("get_votes(): cursor: " + objectCursor.length);
+					//////console.log("get_votes(): Indexed on link; ", objectCursor);
+					//////console.log("get_votes(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-							////console.log("get_votes(): " + item);							
+							//////console.log("get_votes(): " + item);							
 						});				
 					}
 
 				};
 				request.onerror = function(event){
-					////console.log("get_votes(): Could not open Object Store", event);
+					//////console.log("get_votes(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      ////console.log("get_votes(): Could not open Index, create it first");
-		      ////console.log(e);
+		      //////console.log("get_votes(): Could not open Index, create it first");
+		      //////console.log(e);
 		    }
     
 
@@ -4814,21 +5015,21 @@ function add_category_controls( event_context ) {
 
 //here
 	function remove_vote( vote_key ) {
-		////console.log("remove_vote(): " + " vote_key: " + vote_key);
+		//////console.log("remove_vote(): " + " vote_key: " + vote_key);
 		new_votes_transaction();
 		//
 		var request = Buleys.objectStore["delete"]( vote_key );
 			request.onsuccess = function(event){
-			////console.log("remove_vote(): Removed id ", request.result);
+			//////console.log("remove_vote(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_vote(): Could not delete object");
+			//////console.log("remove_vote(): Could not delete object");
 		};
 	}  	
 
 	function add_or_update_vote( vote_key, vote_value ) {
-	console.log("add_or_update_vote(): key: " + vote_key + " value: " + vote_value );
+	//console.log("add_or_update_vote(): key: " + vote_key + " value: " + vote_value );
 		
 		new_votes_transaction();
 		if( typeof vote_value == 'undefined' ) {
@@ -4837,28 +5038,28 @@ function add_category_controls( event_context ) {
 		var item_request = Buleys.objectStore.get( vote_key );
 	
 		item_request.onsuccess = function(event){
-			console.log("add_or_update_vote(): " + event);
+			//console.log("add_or_update_vote(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			////console.log("add_or_update_vote(): " + item_request );
+			//////console.log("add_or_update_vote(): " + item_request );
 			if(typeof item_request.result == 'undefined') {
-				////console.log("add_or_update_vote(): doesn't exist! ");
+				//////console.log("add_or_update_vote(): doesn't exist! ");
 				add_vote_to_votes_database( vote_key, vote_value );
 			} else {
-				////console.log("add_or_update_vote(): DOES exist");
+				//////console.log("add_or_update_vote(): DOES exist");
 				update_vote_in_votes_database( vote_key, vote_value );
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("add_setting_if_doesnt_exist(): Could not get object");
-			console.log(e);
+			//////console.log("add_setting_if_doesnt_exist(): Could not get object");
+			//console.log(e);
 		};		
 	
 	}
 	
 	function add_vote_to_votes_database( vote_key, vote_value ) {
 	
-		////console.log("add_vote_to_votes_database(): vote_key" + vote_key + " vote_value: " + vote_value);
+		//////console.log("add_vote_to_votes_database(): vote_key" + vote_key + " vote_value: " + vote_value);
 		new_votes_transaction();
 		
 		var data = {
@@ -4867,14 +5068,14 @@ function add_category_controls( event_context ) {
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_vote_to_votes_database(): Trying to save...", data);
+		//////console.log("add_vote_to_votes_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.add(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_vote_to_votes_database(): Saved id ", add_data_request.result);
+			//////console.log("add_vote_to_votes_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4882,7 +5083,7 @@ function add_category_controls( event_context ) {
 
 	function update_vote_in_votes_database( vote_key, vote_value ) {
 	
-		////console.log("add_vote_to_votes_database(): vote_key" + vote_key + " vote_value: " + vote_value);
+		//////console.log("add_vote_to_votes_database(): vote_key" + vote_key + " vote_value: " + vote_value);
 		new_votes_transaction();
 		
 		var data = {
@@ -4891,14 +5092,14 @@ function add_category_controls( event_context ) {
 			"modified": new Date().getTime()
 		};
 		
-		////console.log("add_vote_to_votes_database(): Trying to save...", data);
+		//////console.log("add_vote_to_votes_database(): Trying to save...", data);
 		var add_data_request = Buleys.objectStore.put(data);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_vote_to_votes_database(): Saved id ", add_data_request.result);
+			//////console.log("add_vote_to_votes_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -4923,19 +5124,19 @@ function add_category_controls( event_context ) {
 	function get_page_topic_info( the_type, the_key ) {
 	
 		new_topics_transaction();
-		////console.log("get_page_topic_info(): type: " + the_type + " key: " + the_key);
-		////console.log("get_page_topic_info(): " + the_type.toLowerCase() + "_" + the_key.toLowerCase() );
+		//////console.log("get_page_topic_info(): type: " + the_type + " key: " + the_key);
+		//////console.log("get_page_topic_info(): " + the_type.toLowerCase() + "_" + the_key.toLowerCase() );
 		var item_request = Buleys.objectStore.get(the_type.toLowerCase() + "_" + the_key.toLowerCase());
 
 	
 		item_request.onsuccess = function(event){
-			////console.log("get_page_topic_info(): " + event);
+			//////console.log("get_page_topic_info(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			////console.log("get_page_topic_info(): "  + item_request.result);
+			//////console.log("get_page_topic_info(): "  + item_request.result);
 			if(typeof item_request.result == 'undefined' || item_request.result == "") {
-				////console.log("get_page_topic_info(): topic info NOT found");
+				//////console.log("get_page_topic_info(): topic info NOT found");
 			} else {
-				////console.log("get_page_topic_info(): topic info found");
+				//////console.log("get_page_topic_info(): topic info found");
 				if(typeof item_request.result.name != 'undefined') {
 					jQuery("#page_meta").append("<a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a>");
 					window.document.title = window.document.title.replace(/[|\s]*?Buley's/,"");
@@ -4956,8 +5157,8 @@ function add_category_controls( event_context ) {
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("Could not get object");
-			////console.log(e);
+			//////console.log("Could not get object");
+			//////console.log(e);
 		};
 	
 	}
@@ -4977,24 +5178,24 @@ function add_category_controls( event_context ) {
 					  return;
 					}
 					
-					////console.log("get_topics(): Indexed on link; ", objectCursor);
-					////console.log("get_topics(): cursor: " + objectCursor.length);
+					//////console.log("get_topics(): Indexed on link; ", objectCursor);
+					//////console.log("get_topics(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-							////console.log("get_topics(): " + item);							
+							//////console.log("get_topics(): " + item);							
 						});				
 					}
 
 				};
 				request.onerror = function(event){
-					////console.log("get_topics(): Could not open Object Store", event);
+					//////console.log("get_topics(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      ////console.log("get_topics(): Could not open Index, create it first");
-		      ////console.log(e);
+		      //////console.log("get_topics(): Could not open Index, create it first");
+		      //////console.log(e);
 		    }
     
 
@@ -5003,16 +5204,16 @@ function add_category_controls( event_context ) {
 
 //here
 	function remove_topic( topic_key ) {
-		////console.log("remove_topic(): " + " topic_key: " + topic_key);
+		//////console.log("remove_topic(): " + " topic_key: " + topic_key);
 		new_topics_transaction();
 		//
 		var request = Buleys.objectStore["delete"]( topic_key );
 			request.onsuccess = function(event){
-			////console.log("remove_topic(): Removed id ", request.result);
+			//////console.log("remove_topic(): Removed id ", request.result);
 			delete Buleys.objectId;
 		};
 		request.onerror = function(){
-			////console.log("remove_topic(): Could not delete object");
+			//////console.log("remove_topic(): Could not delete object");
 		};
 	}  	
 
@@ -5022,32 +5223,32 @@ function add_category_controls( event_context ) {
 		if( typeof topic == 'undefined' ) {
 			topic = {};
 		}
-		////console.log("add_topic_if_doesnt_exist(): topic_key: " + topic_key );
+		//////console.log("add_topic_if_doesnt_exist(): topic_key: " + topic_key );
 		var item_request = Buleys.objectStore.get( topic_key );
 	
 		item_request.onsuccess = function(event){
-			////console.log("add_topic_if_doesnt_exist(): " + event);
+			//////console.log("add_topic_if_doesnt_exist(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			////console.log("add_topic_if_doesnt_exist(): " + item_request.result );
+			//////console.log("add_topic_if_doesnt_exist(): " + item_request.result );
 			if(typeof item_request.result == 'undefined') {
-				////console.log("add_topic_if_doesnt_exist(): doesn't exist! ");
+				//////console.log("add_topic_if_doesnt_exist(): doesn't exist! ");
 				add_topic_to_topics_database( topic_key, topic );
 			} else {
-				////console.log("add_topic_if_doesnt_exist(): DOES exist");
+				//////console.log("add_topic_if_doesnt_exist(): DOES exist");
 				update_topic_in_topics_database( topic_key, topic );
 			}
 		};
 	
 		item_request.onerror = function(e){
-			////console.log("add_topic_if_doesnt_exist(): Could not get object");
-			////console.log(e);
+			//////console.log("add_topic_if_doesnt_exist(): Could not get object");
+			//////console.log(e);
 		};
 	
 	}
 	
 	function add_topic_to_topics_database( topic_key, topic ) {
 	
-		////console.log("add_topic_to_topics_database(): topic_key" + topic_key + " topic: " + topic);
+		//////console.log("add_topic_to_topics_database(): topic_key" + topic_key + " topic: " + topic);
 		new_topics_transaction();
 		
 		if(typeof topic == "undefined") {
@@ -5056,14 +5257,14 @@ function add_category_controls( event_context ) {
 		topic.topic_key = topic_key;
 		topic.modified = new Date();
 		
-		////console.log("add_topic_to_topics_database(): Trying to save...", topic);
+		//////console.log("add_topic_to_topics_database(): Trying to save...", topic);
 		var add_data_request = Buleys.objectStore.add(topic);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_topic_to_topics_database(): Saved id ", add_data_request.result);
+			//////console.log("add_topic_to_topics_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -5071,7 +5272,7 @@ function add_category_controls( event_context ) {
 
 	function update_topic_in_topics_database( topic_key, topic ) {
 	
-		////console.log("add_topic_to_topics_database(): topic_key" + topic_key + " topic: " + topic);
+		//////console.log("add_topic_to_topics_database(): topic_key" + topic_key + " topic: " + topic);
 		new_topics_transaction();
 		
 		topic.topic_key = topic_key;
@@ -5087,14 +5288,14 @@ function add_category_controls( event_context ) {
 			topic.last_attempt = new Date(parseInt(topic.last_attempt) * 1000 );
 		}
 		
-		////console.log("add_topic_to_topics_database(): Trying to save...", topic);
+		//////console.log("add_topic_to_topics_database(): Trying to save...", topic);
 		var add_data_request = Buleys.objectStore.put(topic);
 		add_data_request.onsuccess = function(event){
-			////console.log("add_topic_to_topics_database(): Saved id ", add_data_request.result);
+			//////console.log("add_topic_to_topics_database(): Saved id ", add_data_request.result);
 			Buleys.objectId = add_data_request.result;
 		};
 		add_data_request.onerror = function(e){
-			////console.log(e);
+			//////console.log(e);
 			//Buleys.transaction.abort();
 		};
 	
@@ -5156,25 +5357,25 @@ function cancel_confirmation(user_id) {
 function request_login( email, password ) {
 
 	password = md5(password);
-	////console.log("sending data: pass: " + password + " email: " + email);
+	//////console.log("sending data: pass: " + password + " email: " + email);
 	var data_to_send;
         data_to_send = { "method":"request_login", "secret": password, "email": email, "token": session_token};
-	//////console.log("sending data: " + data_to_send.secret);
+	////////console.log("sending data: " + data_to_send.secret);
 	$.post("/api/index.php", data_to_send, function(data) {
 		if(data != null && typeof data.result !== 'undefined') {
 			if(data.result.toLowerCase() == "failure") {
-				////console.log('fail');
+				//////console.log('fail');
 				// data//
 				//xxx
 				send_to_console(data.message);
 				//
 			} else if(data.result.toLowerCase() == "success") {
-				////console.log('suc');
+				//////console.log('suc');
 				send_to_console(data.message);
 				//
 			}
 		} else {
-			////console.log("request_login(): no data"); 
+			//////console.log("request_login(): no data"); 
 		}
 	}, "json");
 
@@ -5649,10 +5850,10 @@ function utf8_encode ( argString ) {
 // check for notifications support
 // you can omit the 'window' keyword
 if (window.webkitNotifications) {
-  //console.log("Notifications are supported!");
+  ////console.log("Notifications are supported!");
 }
 else {
-  //console.log("Notifications are not supported for this Browser/OS version yet.");
+  ////console.log("Notifications are not supported for this Browser/OS version yet.");
 }
 
 
@@ -5670,9 +5871,9 @@ function send_notification_to_desktop() {
   if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
     // function defined in step 2
     notification_test = createNotificationInstance({notificationType: 'html'});
-    notification_test.ondisplay = function() { ////console.log("displayed")
+    notification_test.ondisplay = function() { //////console.log("displayed")
       };
-    notification_test.onclose = function() { ////console.log("closed")
+    notification_test.onclose = function() { //////console.log("closed")
      };
     notification_test.show();
   } else {
@@ -5692,11 +5893,11 @@ $('#show_button').live('click', function (e) {
 
     worker.onmessage = function(event) {
       document.getElementById("body").textContent = event.data;
-      //console.log("Got: " + event.data + "\n");
+      ////console.log("Got: " + event.data + "\n");
     };
 
     worker.onerror = function(error) {
-      //console.log("Worker error: " + error.message + "\n");
+      ////console.log("Worker error: " + error.message + "\n");
       throw error;
     };
 
@@ -5717,12 +5918,12 @@ $('#show_button').live('click', function (e) {
 					  return;
 					}
 					
-					console.log("get_follows(): Indexed on: ", objectCursor);
-					console.log("get_follows(): cursor: " + objectCursor.length);
+					//console.log("get_follows(): Indexed on: ", objectCursor);
+					//console.log("get_follows(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-							console.log("get_follows(): " + item.key);	
+							//console.log("get_follows(): " + item.key);	
 							parse_single_topic(item.key);
 							//typeof category.key !== 'undefined' || category.key !== null						
 						});				
@@ -5730,13 +5931,13 @@ $('#show_button').live('click', function (e) {
 
 				};
 				request.onerror = function(event){
-					console.log("get_follows(): Could not open Object Store", event);
+					//console.log("get_follows(): Could not open Object Store", event);
 				};
       
 		    }
 		    catch (e) {
-		      console.log("get_follows(): Could not open Index, create it first");
-		      console.log(e);
+		      //console.log("get_follows(): Could not open Index, create it first");
+		      //console.log(e);
 		    }
     
 
@@ -5773,7 +5974,7 @@ function do_work() {
 		if( length_of_new > 0 ) {
 			
 			var topic_id = type+"_"+slug;
-			//console.log("deleting: ", Buleys.queues.new_items[topic_id]);
+			////console.log("deleting: ", Buleys.queues.new_items[topic_id]);
 			if(typeof Buleys.queues.new_items[topic_id] !== "undefined") {
 				delete Buleys.queues.new_items[topic_id];
 			}
@@ -5783,7 +5984,7 @@ function do_work() {
 			if( length_post_delete > 0 ) {
 	
 			
-				//console.log("do_work(): checking for new items: ",Buleys.queues.new_items,length_of_new);
+				////console.log("do_work(): checking for new items: ",Buleys.queues.new_items,length_of_new);
 				if( typeof jQuery("#minimize_inbox") !== "undefined" && length_of_new > 0 ) {
 					jQuery("#get_inbox img").attr('src',"http://buleys.com/images/icons/fugue-shadowless/inbox-document.png").parent().parent().removeClass('empty_inbox').addClass('waiting_inbox');
 				}
@@ -5834,10 +6035,10 @@ function do_pending_crawl() {
 	var topic_slug = Buleys.queues.pending_crawls.splice(0, 1);
 
 	var split_string = topic_slug[0].split("_", 1);
-	console.log("do_pending_crawl() topic_slug, split_string: ",topic_slug,split_string);	
+	//console.log("do_pending_crawl() topic_slug, split_string: ",topic_slug,split_string);	
 	var type_to_get = split_string[0];
 	var company_to_get = topic_slug[0].replace( (split_string[0] + "_"), "" );
-	//console.log("do_pending_crawl() result: ",type_to_get,company_to_get);	
+	////console.log("do_pending_crawl() result: ",type_to_get,company_to_get);	
 
 	
 
@@ -5854,7 +6055,7 @@ function do_pending_crawl() {
 			},
 			success: function(data){
 				
-				console.log( data.items, type_to_get, company_to_get );
+				//console.log( data.items, type_to_get, company_to_get );
 				add_items( data.items, type_to_get, company_to_get );
 				
 				
@@ -5871,11 +6072,11 @@ function parse_single_topic(topic_slug) {
 	var split_string = topic_slug.split("_");
 	var type_to_get = split_string[0];
 	var company_to_get = split_string[1];
-	//console.log("parse_single_topic() result: ",type_to_get,company_to_get);	
+	////console.log("parse_single_topic() result: ",type_to_get,company_to_get);	
 
 	var item = Buleys.queues.pending_crawls.slice(0, 1);
 	Buleys.queues.pending_crawls.push(topic_slug);
-	//console.log("parse_single_topic(): pending_crawl added: ", Buleys.queues.pending_crawls);
+	////console.log("parse_single_topic(): pending_crawl added: ", Buleys.queues.pending_crawls);
 	
 
 }
@@ -5883,7 +6084,7 @@ function parse_single_topic(topic_slug) {
 
 function notify_user_of_new_items(number, thetype, thecompany) {
 alert(number + " " + thetype + " " + thecompany);
-//console.log("notify_user_of_new_items(): " + number + " " + thetype + " " + thecompany);
+////console.log("notify_user_of_new_items(): " + number + " " + thetype + " " + thecompany);
 
 if( (type === thetype && thecompany === slug) || type == "home" || typeof type === "undefined" ) {
 	flash_console("<p>" + number + " new items added to " + thetype + " " + thecompany + " </p>");
@@ -5915,35 +6116,35 @@ function flash_console(message) {
 function load_settings_into_dom() {
 
 				new_settings_transaction();
-			console.log("load_settings_into_dom() to begin", objectStore);
+			//console.log("load_settings_into_dom() to begin", objectStore);
      			Buleys.index = Buleys.objectStore.index();
- 			//console.log("load_settings_into_dom() index: ",Buleys.index);
+ 			////console.log("load_settings_into_dom() index: ",Buleys.index);
     
 				var cursorRequest = Buleys.objectStore.getAll();
 				cursorRequest.onsuccess = function(event){
 
 					new_settings_transaction();
-					console.log("load_settings_into_dom(): cursorRequest ", cursorRequest);
+					//console.log("load_settings_into_dom(): cursorRequest ", cursorRequest);
 					var objectCursor = cursorRequest.result;
 					if (!objectCursor) {
-						console.log("load_settings_into_dom(): no objectCursor, bailing");
+						//console.log("load_settings_into_dom(): no objectCursor, bailing");
 					  return;
 					}
 					
-					console.log("load_settings_into_dom(): Indexed on link; ", objectCursor);
-					console.log("load_settings_into_dom(): cursor: " + objectCursor.length);
+					//console.log("load_settings_into_dom(): Indexed on link; ", objectCursor);
+					//console.log("load_settings_into_dom(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
 						jQuery.each(objectCursor, function(k,item) {
-						console.log("load_settings_into_dom(): setting, value ", k, item);
+						//console.log("load_settings_into_dom(): setting, value ", k, item);
 							Buleys.settings[k] = item;							
-							console.log("load_settings_into_dom(): new setting ", Buleys.settings[k]);
+							//console.log("load_settings_into_dom(): new setting ", Buleys.settings[k]);
 						});				
 					}
 
 				};
 				request.onerror = function(event){
-					console.log("load_settings_into_dom(): Could not open Object Store", event);
+					//console.log("load_settings_into_dom(): Could not open Object Store", event);
 				};
       
 		   
@@ -5953,7 +6154,7 @@ function load_settings_into_dom() {
 
 function add_topics_to_mini_inbox() {
 
-		console.log("add_topics_to_mini_inbox(): new items, limit ", Buleys.queues.new_items, Buleys.settings.mini_inbox_topic_count);
+		//console.log("add_topics_to_mini_inbox(): new items, limit ", Buleys.queues.new_items, Buleys.settings.mini_inbox_topic_count);
 
 		jQuery("#mini_inbox_list").html('');
 		var item_count = 0;
@@ -5961,12 +6162,12 @@ function add_topics_to_mini_inbox() {
 		$.each(Buleys.queues.new_items, function(topic_id, count) {
 	   		if(item_count <= Buleys.settings.mini_inbox_topic_count) {
 	   			//add item to inbox
-				console.log("add_topics_to_mini_inbox(): ",topic_id, count);
+				//console.log("add_topics_to_mini_inbox(): ",topic_id, count);
 	   			add_topic_to_mini_inbox(topic_id, count);
 	   			item_count++;
 	   		 
 	   		} else {
-				console.log("add_topics_to_mini_inbox(): too many ",topic_id, count);
+				//console.log("add_topics_to_mini_inbox(): too many ",topic_id, count);
 	   		}
 		});
 		} else {
@@ -5981,25 +6182,25 @@ function add_topics_to_mini_inbox() {
 function add_topic_to_mini_inbox(topic_id, count) {
 
 		new_topics_transaction();
-		//console.log("get_page_topic_info(): type: " + the_type + " key: " + the_key);
-		//console.log("get_page_topic_info(): " + the_type.toLowerCase() + "_" + the_key.toLowerCase() );
+		////console.log("get_page_topic_info(): type: " + the_type + " key: " + the_key);
+		////console.log("get_page_topic_info(): " + the_type.toLowerCase() + "_" + the_key.toLowerCase() );
 		var item_request = Buleys.objectStore.get(topic_id);
 	
 		item_request.onsuccess = function(event){
-			//console.log("get_page_topic_info(): " + event);
+			////console.log("get_page_topic_info(): " + event);
 			//Buleys.objectId = item_request.result.author;
-			//console.log("get_page_topic_info(): "  + item_request.result);
+			////console.log("get_page_topic_info(): "  + item_request.result);
 			if(typeof item_request.result == 'undefined' || item_request.result == "") {
-				console.log("get_page_topic_info(): topic info NOT found");
+				//console.log("get_page_topic_info(): topic info NOT found");
 	var split_string = topic_id.split("_", 1);
-	console.log("add_topic_to_mini_inbox() topic_slug, split_string: ",topic_id,split_string);	
+	//console.log("add_topic_to_mini_inbox() topic_slug, split_string: ",topic_id,split_string);	
 	var type_to_get = split_string[0];
 	var company_to_get = topic_id.replace( (split_string[0] + "_"), "" );
 
 					jQuery("#mini_inbox_list").append("<li><a href='/" + type_to_get + "/" + company_to_get + "' class='topic_name'>" + topic_id + "</a> (" + count + ")</li>");
 				
 			} else {
-				console.log("get_page_topic_info(): topic info found");
+				//console.log("get_page_topic_info(): topic info found");
 				if(typeof item_request.result.name != 'undefined') {
 					jQuery("#mini_inbox_list").append("<li><a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a> (" + count + ")</li>");
 				}
@@ -6018,8 +6219,8 @@ function add_topic_to_mini_inbox(topic_id, count) {
 		};
 	
 		item_request.onerror = function(e){
-			//console.log("Could not get object");
-			//console.log(e);
+			////console.log("Could not get object");
+			////console.log(e);
 		};
 	
 	
@@ -6049,7 +6250,7 @@ function runit(){
   msg='';
   msg=document.body.clientWidth;
   	var font_math = Math.round(font_percent*msg*1);
-  	//console.log("runit(): ",font_math);
+  	////console.log("runit(): ",font_math);
     jQuery("body").css("font-size",font_math);
 }
 
@@ -6084,7 +6285,7 @@ function nn_resize(){
 // new 
 	function get_favorites(type_filter, slug_filter, begin_timeframe, end_timeframe) {
 	
-		console.log("get_favorites(): type: " + type + " slug: " + slug);
+		//console.log("get_favorites(): type: " + type + " slug: " + slug);
 	
 		var begin_date = 0;
 		if(typeof begin_timeframe == "undefined") { 
@@ -6102,26 +6303,26 @@ function nn_resize(){
 			
 			
 		new_categories_transaction();
-		console.log("get_items objectStore",slug_filter,Buleys.objectStore);
+		//console.log("get_items objectStore",slug_filter,Buleys.objectStore);
 			Buleys.index = Buleys.objectStore.index("slug");
 		var cursorRequest = Buleys.index.getAll(slug_filter);
-		console.log("get_items cursor_request",cursorRequest);
+		//console.log("get_items cursor_request",cursorRequest);
 		cursorRequest.onsuccess = function(event){
-			console.log("get_items(): event; ", event);
+			//console.log("get_items(): event; ", event);
 			var objectCursor = cursorRequest.result;
 			if (!objectCursor) {
 			  return;
 			}
 
-			console.log("get_items(): Indexed on link; ", objectCursor);
+			//console.log("get_items(): Indexed on link; ", objectCursor);
 
 			if(objectCursor.length > 1)  {
 				jQuery.each(objectCursor, function(k,item) {
 				
 				
-					console.log("get_items(): item: ", item.link);
+					//console.log("get_items(): item: ", item.link);
 					
-					console.log("get_item(): check_if_item_is_favorite(): ", item.link);
+					//console.log("get_item(): check_if_item_is_favorite(): ", item.link);
 					
 					new_favorite_transaction();
 			
@@ -6129,7 +6330,7 @@ function nn_resize(){
 				
 					item_request_2.onsuccess = function(event){
 						
-						console.log("get_item(): check_if_item_is_favorite(): done", item_request_2.result);
+						//console.log("get_item(): check_if_item_is_favorite(): done", item_request_2.result);
 						
 						new_item_transaction();
 
@@ -6139,17 +6340,17 @@ function nn_resize(){
 							item_request.onsuccess = function(event){
 								//xx
 								if(typeof item_request.result !== 'undefined') {
-									console.log("get_fav() value", item_request.result.value);
-										console.log("get_favorites(): check_if_item_is_favorite(): is favorite1", item_request.result);
+									//console.log("get_fav() value", item_request.result.value);
+										//console.log("get_favorites(): check_if_item_is_favorite(): is favorite1", item_request.result);
 									if(typeof item_request.result.link !== 'undefined') {
-										console.log("get_favorites(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
+										//console.log("get_favorites(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
 										
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 											get_item(item_request.result.link);
 										}			
 						
 									} else {
-										console.log("get_favorites(): check_if_item_is_favorite(): is NOT favorite");
+										//console.log("get_favorites(): check_if_item_is_favorite(): is NOT favorite");
 									}
 								}
 								//xx
@@ -6159,8 +6360,8 @@ function nn_resize(){
 					};
 				
 					item_request_2.onerror = function(e){
-						//////console.log("get_item(): check_if_item_is_archived(): Could not get object");
-						//////console.log(e);
+						////////console.log("get_item(): check_if_item_is_archived(): Could not get object");
+						////////console.log(e);
 										
 							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 								add_item_to_results( item );
@@ -6183,7 +6384,7 @@ function nn_resize(){
 			}
 		};
 		cursorRequest.onerror = function(event){
-			console.log("get_items(): Could not open Object Store", event);
+			//console.log("get_items(): Could not open Object Store", event);
 		};
 
 
@@ -6191,43 +6392,43 @@ function nn_resize(){
 			
 		
 		Buleys.keyRange = new IDBKeyRange.bound(begin_date, end_date, true, false);
-		console.log("get_favorites(): Range Defined", Buleys.keyRange);
+		//console.log("get_favorites(): Range Defined", Buleys.keyRange);
 		
 		Buleys.onCursor = function(callback){
 			new_favorite_transaction();
-			console.log("get_favorites(): callback objectStore",callback,Buleys.objectStore);
+			//console.log("get_favorites(): callback objectStore",callback,Buleys.objectStore);
 			Buleys.index = Buleys.objectStore.index("modified");
 			var favorite_item_request = Buleys.index.openCursor(Buleys.keyRange);
 			
 			favorite_item_request.onsuccess = function(event){
 
-				console.log("get_favorites(): The event: ",event);
-				console.log("get_favorites(): The request: ",favorite_item_request);
+				//console.log("get_favorites(): The event: ",event);
+				//console.log("get_favorites(): The request: ",favorite_item_request);
 				
 				if(typeof favorite_item_request.result !== "undefined") {
-					console.log("get_favorites(): The request result: ",favorite_item_request.result);
-					console.log("get_favorites(): The request result value: ",favorite_item_request.result.value);
+					//console.log("get_favorites(): The request result: ",favorite_item_request.result);
+					//console.log("get_favorites(): The request result value: ",favorite_item_request.result.value);
 					Buleys.cursor = favorite_item_request.result;
-					console.log("get_favorites(): The cursor: ",Buleys.cursor);
+					//console.log("get_favorites(): The cursor: ",Buleys.cursor);
 					
-					console.log("get_favorites(): slugs: ",slug_filter,Buleys.cursor.value.topic_slug);
-					console.log("get_favorites(): types: ",type_filter,Buleys.cursor.value.topic_type);
+					//console.log("get_favorites(): slugs: ",slug_filter,Buleys.cursor.value.topic_slug);
+					//console.log("get_favorites(): types: ",type_filter,Buleys.cursor.value.topic_type);
 					
 					if (typeof type_filter !== 'undefined' && typeof slug_filter !== 'undefined' && type_filter == Buleys.cursor.value.topic_type && slug_filter == Buleys.cursor.value.topic_slug) { 
-					console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
+					//console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
 						get_item( Buleys.cursor.value.item_link );
 						
 					} else if (typeof type !== 'undefined' && type_filter == "favorites") {
-					console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
+					//console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
 						get_item( Buleys.cursor.value.item_link );
 					
 					//no slug filter, no type filter
 					} else if (typeof type_filter == 'undefined' && slug_filter == 'undefined') {
-					console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
+					//console.log("get_favorites(): get_item: ",Buleys.cursor.value.item_link);
 						get_item( Buleys.cursor.value.item_link );
 					
 					}  else {
-						console.log("get_favorites() didn't match the filter", type_filter, slug_filter);
+						//console.log("get_favorites() didn't match the filter", type_filter, slug_filter);
 					}
 
 					Buleys.cursor["continue"]();
@@ -6235,13 +6436,13 @@ function nn_resize(){
 			};
 							    
 			favorite_item_request.onerror = function(event){
-				console.log("get_favorites(): Could not open cursor", Buleys.cursor);
-				console.log(e);
+				//console.log("get_favorites(): Could not open cursor", Buleys.cursor);
+				//console.log(e);
 			};
 			
 			
 		Buleys.onCursor(function(){
-			console.log("Cursor Created", Buleys.cursor);
+			//console.log("Cursor Created", Buleys.cursor);
 		});
 		
 		
@@ -6254,7 +6455,7 @@ function nn_resize(){
 	
 	//
 	function get_favorite( favorite_slug ) {
-		//////console.log("get_favorite(): adding: " + favorite_slug);
+		////////console.log("get_favorite(): adding: " + favorite_slug);
 		
 		if(typeof favorite_slug !== 'undefined') {
 
@@ -6262,28 +6463,28 @@ function nn_resize(){
 			var favorite_request_1 = Buleys.objectStore.get(favorite_slug);
 		
 			favorite_request_1.onsuccess = function(event){
-				//////console.log("get_favorite(): 1: done" + favorite_request_1);
-				//////console.log(event.result);
+				////////console.log("get_favorite(): 1: done" + favorite_request_1);
+				////////console.log(event.result);
 				//Buleys.objectId = favorite_request.result.author;
 				if(typeof favorite_request_1.result != 'undefined') {
 	
 	
 					//check for archival
 					//xxx
-					//////console.log("get_favorite(): check_if_favorite_is_archived: " + favorite_slug);
+					////////console.log("get_favorite(): check_if_favorite_is_archived: " + favorite_slug);
 			
 			new_archived_transaction();
 	
 			var favorite_request_2 = Buleys.objectStore.get(favorite_slug);
 		
 			favorite_request_2.onsuccess = function(event){
-				//////console.log("get_favorite(): check_if_favorite_is_archived(): done" + favorite_request_2.result);
+				////////console.log("get_favorite(): check_if_favorite_is_archived(): done" + favorite_request_2.result);
 				if(typeof favorite_request_2.result !== 'undefined') {
-					//////console.log("check_if_favorite_is_archived(): is archived" + event.result);
+					////////console.log("check_if_favorite_is_archived(): is archived" + event.result);
 	
 	
 				} else {
-					//////console.log("get_favorite(): check_if_favorite_is_archived: is NOT archived");
+					////////console.log("get_favorite(): check_if_favorite_is_archived: is NOT archived");
 	
 									
 					if(jQuery("#" + favorite_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
@@ -6297,8 +6498,8 @@ function nn_resize(){
 			};
 		
 			favorite_request_2.onerror = function(e){
-				//////console.log("get_favorite(): check_if_favorite_is_archived(): Could not get object");
-				//////console.log(e);
+				////////console.log("get_favorite(): check_if_favorite_is_archived(): Could not get object");
+				////////console.log(e);
 								
 					if(jQuery("#" + favorite_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 						add_favorite_to_results( favorite_request_1.result );
@@ -6319,8 +6520,8 @@ function nn_resize(){
 			};
 		
 			favorite_request_1.onerror = function(e){
-				////console.log("get_favorite(): Could not get object");
-				//////console.log(e);
+				//////console.log("get_favorite(): Could not get object");
+				////////console.log(e);
 		
 			};
 		
@@ -6331,13 +6532,13 @@ function nn_resize(){
 	function get_favorite_for_console( favorite_slug ) {
 		
 		new_favorite_transaction();
-		//////console.log("get_favorite_for_console: " + favorite_slug);
+		////////console.log("get_favorite_for_console: " + favorite_slug);
 		
-		////////console.log(favorite_slug);
+		//////////console.log(favorite_slug);
 		var favorite_request = Buleys.objectStore.get(favorite_slug);
 	
 		favorite_request.onsuccess = function(event){
-			////////console.log(typeof favorite_request.result.id);
+			//////////console.log(typeof favorite_request.result.id);
 			//Buleys.objectId = favorite_request.result.author;
 			if(typeof favorite_request.result != 'undefined' && typeof favorite_request.result.id == 'string') {
 				var html_snippit = "<div id='console_" + favorite_request.result.id.replace(/[^a-zA-Z0-9-_]+/g,"") + "'>";
@@ -6350,8 +6551,8 @@ function nn_resize(){
 		};
 	
 		favorite_request.onerror = function(e){
-			//////console.log("Error: " + e);
-			////////console.log(e);
+			////////console.log("Error: " + e);
+			//////////console.log(e);
 		};
 	
 	}
@@ -6359,13 +6560,13 @@ function nn_resize(){
 	function get_favorite_for_overlay( favorited_url ) {
 		
 		new_item_transaction();
-		//////console.log("get_favorite_for_overlay: " + favorite_slug);
+		////////console.log("get_favorite_for_overlay: " + favorite_slug);
 		
-		////////console.log(favorite_slug);
+		//////////console.log(favorite_slug);
 		var favorite_request = Buleys.objectStore.get(( favorited_url ));
 	
 		favorite_request.onsuccess = function(event){
-			//////console.log("get_favorite_for_overlay(): type of result: " + typeof favorite_request.result.link);
+			////////console.log("get_favorite_for_overlay(): type of result: " + typeof favorite_request.result.link);
 			//Buleys.objectId = favorite_request.result.author;
 			if(typeof favorite_request.result != 'undefined' && typeof favorite_request.result.link == 'string') {
 
@@ -6375,14 +6576,14 @@ function nn_resize(){
 				if( typeof favorite_request.result.author !== 'undefined' &&  favorite_request.result.author.length > 0 ) { 
 					//html_snippit = html_snippit + "<p>" + favorite_request.result.author + "</p>";
 				}
-				//////console.log("get_favorite_for_overlay(): sending to overlay: " + html_snippit);
+				////////console.log("get_favorite_for_overlay(): sending to overlay: " + html_snippit);
 				send_to_overlay(html_snippit);
 			}
 		};
 	
 		favorite_request.onerror = function(e){
-			//////console.log("Error: " + e);
-			////////console.log(e);
+			////////console.log("Error: " + e);
+			//////////console.log(e);
 		};
 	
 	}
@@ -6391,9 +6592,9 @@ function nn_resize(){
 				
 	function add_favorite_to_results(item) {
 
-				////console.log("add_item_to_results(): ", item);
+				//////console.log("add_item_to_results(): ", item);
 					var id = item.link.replace(/[^a-zA-Z0-9-_]+/g,"");
-					//////console.log("add_item_to_results(): " + jQuery("#" + id).length );
+					////////console.log("add_item_to_results(): " + jQuery("#" + id).length );
 					if( !( jQuery("#" + id ).length ) ) {
 					
 					
@@ -6402,7 +6603,7 @@ function nn_resize(){
 						
 						
 					} else {
-						//////console.log("add_item_to_results(): duplicate!");
+						////////console.log("add_item_to_results(): duplicate!");
 						//should report the dupe
 						//https://www.pivotaltracker.com/story/show/9307085 in pivotal
 					}
@@ -6415,7 +6616,7 @@ function nn_resize(){
 // new 
 	function get_archived(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
 	
-		console.log("get_archived(): type: " + type + " slug: " + slug);
+		//console.log("get_archived(): type: " + type + " slug: " + slug);
 		
 		if(typeof make_inverse == "undefined") {
 			make_inverse = false;
@@ -6437,26 +6638,26 @@ function nn_resize(){
 			
 			
 		new_categories_transaction();
-		console.log("get_archived objectStore",slug_filter,Buleys.objectStore);
+		//console.log("get_archived objectStore",slug_filter,Buleys.objectStore);
 			Buleys.index = Buleys.objectStore.index("slug");
 		var cursorRequest = Buleys.index.getAll(slug_filter);
-		console.log("get_archived cursor_request",cursorRequest);
+		//console.log("get_archived cursor_request",cursorRequest);
 		cursorRequest.onsuccess = function(event){
-			console.log("get_archived(): event; ", event);
+			//console.log("get_archived(): event; ", event);
 			var objectCursor = cursorRequest.result;
 			if (!objectCursor) {
 			  return;
 			}
 
-			console.log("get_archived(): Indexed on link; ", objectCursor);
+			//console.log("get_archived(): Indexed on link; ", objectCursor);
 
 			if(objectCursor.length > 1)  {
 				jQuery.each(objectCursor, function(k,item) {
 				
 				
-					console.log("get_archived(): item: ", item.link);
+					//console.log("get_archived(): item: ", item.link);
 					
-					console.log("get_archived(): check_if_item_is_favorite(): ", item.link);
+					//console.log("get_archived(): check_if_item_is_favorite(): ", item.link);
 					
 					new_archived_transaction();
 			
@@ -6464,7 +6665,7 @@ function nn_resize(){
 					item_request_2.onsuccess = function(event){
 						
 						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
-							console.log("get_archived(): check_if_item_is_archived(): done", item_request_2.result);
+							//console.log("get_archived(): check_if_item_is_archived(): done", item_request_2.result);
 							
 							new_item_transaction();
 
@@ -6473,17 +6674,17 @@ function nn_resize(){
 							item_request.onsuccess = function(event){
 								//xx
 								if(typeof item_request.result !== 'undefined') {
-									console.log("get_fav() value", item_request.result.value);
-										console.log("get_archived(): check_if_item_is_favorite(): is favorite1", item_request.result);
+									//console.log("get_fav() value", item_request.result.value);
+										//console.log("get_archived(): check_if_item_is_favorite(): is favorite1", item_request.result);
 									if(typeof item_request.result.link !== 'undefined') {
-										console.log("get_archived(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
+										//console.log("get_archived(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
 										
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 											get_item_raw(item_request.result.link);
 										}			
 						
 									} else {
-										console.log("get_archived(): check_if_item_is_favorite(): is NOT favorite");
+										//console.log("get_archived(): check_if_item_is_favorite(): is NOT favorite");
 									}
 								}
 								//xx
@@ -6497,17 +6698,17 @@ function nn_resize(){
 							item_request.onsuccess = function(event){
 								//xx
 								if(typeof item_request.result !== 'undefined') {
-									console.log("get_fav() value", item_request.result.value);
-										console.log("get_archived(): get_item(): is favorite1", item_request.result);
+									//console.log("get_fav() value", item_request.result.value);
+										//console.log("get_archived(): get_item(): is favorite1", item_request.result);
 									if(typeof item_request.result !== 'undefined') {
-										console.log("get_archived(): get_item(): is favorite2", item_request.result.value);
+										//console.log("get_archived(): get_item(): is favorite2", item_request.result.value);
 										
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 											get_item_raw(item_request.result.link);
 										}			
 						
 									} else {
-										console.log("get_archived(): get_item(): is NOT favorite");
+										//console.log("get_archived(): get_item(): is NOT favorite");
 									}
 								}
 								//xx
@@ -6531,7 +6732,7 @@ function nn_resize(){
 			}
 		};
 		cursorRequest.onerror = function(event){
-			console.log("get_items(): Could not open Object Store", event);
+			//console.log("get_items(): Could not open Object Store", event);
 		};
 
 			
@@ -6543,7 +6744,7 @@ function nn_resize(){
 // new 
 	function get_deleted(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
 	
-		console.log("get_deleted(): type: " + type + " slug: " + slug);
+		//console.log("get_deleted(): type: " + type + " slug: " + slug);
 		
 		if(typeof make_inverse == "undefined") {
 			make_inverse = false;
@@ -6564,26 +6765,26 @@ function nn_resize(){
 		}
 			
 		new_categories_transaction();
-		console.log("get_deleted objectStore",slug_filter,Buleys.objectStore);
+		//console.log("get_deleted objectStore",slug_filter,Buleys.objectStore);
 			Buleys.index = Buleys.objectStore.index("slug");
 		var cursorRequest = Buleys.index.getAll(slug_filter);
-		console.log("get_deleted cursor_request",cursorRequest);
+		//console.log("get_deleted cursor_request",cursorRequest);
 		cursorRequest.onsuccess = function(event){
-			console.log("get_deleted(): event; ", event);
+			//console.log("get_deleted(): event; ", event);
 			var objectCursor = cursorRequest.result;
 			if (!objectCursor) {
 			  return;
 			}
 
-			console.log("get_deleted(): Indexed on link; ", objectCursor);
+			//console.log("get_deleted(): Indexed on link; ", objectCursor);
 
 			if(objectCursor.length > 1)  {
 				jQuery.each(objectCursor, function(k,item) {
 				
 				
-					console.log("get_deleted(): item: ", item.link);
+					//console.log("get_deleted(): item: ", item.link);
 					
-					console.log("get_deleted(): check_if_item_is_deleted: ", item.link);
+					//console.log("get_deleted(): check_if_item_is_deleted: ", item.link);
 					
 					new_deleted_transaction();
 			
@@ -6591,7 +6792,7 @@ function nn_resize(){
 					item_request_2.onsuccess = function(event){
 						
 						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
-							console.log("get_deleted(): check_if_item_is_deleted: done", item_request_2.result);
+							//console.log("get_deleted(): check_if_item_is_deleted: done", item_request_2.result);
 							
 							new_item_transaction();
 
@@ -6600,7 +6801,7 @@ function nn_resize(){
 							item_request.onsuccess = function(event){
 								//xx
 								if(typeof item_request.result !== 'undefined' && make_inverse !== true) {
-									console.log("get_fav() value", item_request.result.value);
+									//console.log("get_fav() value", item_request.result.value);
 								
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 											get_item_raw_no_trash(item_request.result.link);
@@ -6618,17 +6819,17 @@ function nn_resize(){
 							item_request.onsuccess = function(event){
 								//xx
 								if(typeof item_request.result !== 'undefined') {
-									console.log("get_fav() value", item_request.result.value);
-										console.log("get_deleted(): get_item(): is favorite1", item_request.result);
+									//console.log("get_fav() value", item_request.result.value);
+										//console.log("get_deleted(): get_item(): is favorite1", item_request.result);
 									if(typeof item_request.result !== 'undefined') {
-										console.log("get_deleted(): get_item(): is favorite2", item_request.result.value);
+										//console.log("get_deleted(): get_item(): is favorite2", item_request.result.value);
 										
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 											get_item_raw(item_request.result.link);
 										}			
 						
 									} else {
-										console.log("get_deleted(): get_item(): is NOT favorite");
+										//console.log("get_deleted(): get_item(): is NOT favorite");
 									}
 								}
 								//xx
@@ -6652,7 +6853,7 @@ function nn_resize(){
 			}
 		};
 		cursorRequest.onerror = function(event){
-			console.log("get_items(): Could not open Object Store", event);
+			//console.log("get_items(): Could not open Object Store", event);
 		};
 
 			
@@ -6663,7 +6864,7 @@ function nn_resize(){
 // new 
 	function get_read(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
 	
-		console.log("get_read(): type: " + type + " slug: " + slug);
+		//console.log("get_read(): type: " + type + " slug: " + slug);
 		
 		if(typeof make_inverse == "undefined") {
 			make_inverse = false;
@@ -6684,26 +6885,26 @@ function nn_resize(){
 		}
 			
 		new_categories_transaction();
-		console.log("get_read objectStore",slug_filter,Buleys.objectStore);
+		//console.log("get_read objectStore",slug_filter,Buleys.objectStore);
 			Buleys.index = Buleys.objectStore.index("slug");
 		var cursorRequest = Buleys.index.getAll(slug_filter);
-		console.log("get_read cursor_request",cursorRequest);
+		//console.log("get_read cursor_request",cursorRequest);
 		cursorRequest.onsuccess = function(event){
-			console.log("get_read(): event; ", event);
+			//console.log("get_read(): event; ", event);
 			var objectCursor = cursorRequest.result;
 			if (!objectCursor) {
 			  return;
 			}
 
-			console.log("get_read(): Indexed on link; ", objectCursor);
+			//console.log("get_read(): Indexed on link; ", objectCursor);
 
 			if(objectCursor.length > 1)  {
 				jQuery.each(objectCursor, function(k,item) {
 				
 				
-					console.log("get_read(): item: ", item.link);
+					//console.log("get_read(): item: ", item.link);
 					
-					console.log("get_read(): check_if_item_is_read: ", item.link);
+					//console.log("get_read(): check_if_item_is_read: ", item.link);
 					
 					new_status_transaction();
 			
@@ -6711,7 +6912,7 @@ function nn_resize(){
 					item_request_2.onsuccess = function(event){
 						
 						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
-							console.log("get_read(): check_if_item_is_read: done", item_request_2.result);
+							//console.log("get_read(): check_if_item_is_read: done", item_request_2.result);
 							
 							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 								get_item(item_request_2.result.link);
@@ -6742,7 +6943,7 @@ function nn_resize(){
 			}
 		};
 		cursorRequest.onerror = function(event){
-			console.log("get_items(): Could not open Object Store", event);
+			//console.log("get_items(): Could not open Object Store", event);
 		};
 
 			
@@ -6753,7 +6954,7 @@ function nn_resize(){
 // new 
 	function get_seen(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
 	
-		console.log("get_seen(): type: " + type + " slug: " + slug);
+		//console.log("get_seen(): type: " + type + " slug: " + slug);
 		
 		if(typeof make_inverse == "undefined") {
 			make_inverse = false;
@@ -6774,33 +6975,33 @@ function nn_resize(){
 		}
 			
 		new_categories_transaction();
-		console.log("get_seen objectStore",slug_filter,Buleys.objectStore);
+		//console.log("get_seen objectStore",slug_filter,Buleys.objectStore);
 			Buleys.index = Buleys.objectStore.index("slug");
 		var cursorRequest = Buleys.index.getAll(slug_filter);
-		console.log("get_seen cursor_request",cursorRequest);
+		//console.log("get_seen cursor_request",cursorRequest);
 		cursorRequest.onsuccess = function(event){
-			console.log("get_seen(): event; ", event);
+			//console.log("get_seen(): event; ", event);
 			var objectCursor = cursorRequest.result;
 			if (!objectCursor) {
 			  return;
 			}
 
-			console.log("get_seen(): Indexed on link; ", objectCursor);
+			//console.log("get_seen(): Indexed on link; ", objectCursor);
 
 			if(objectCursor.length > 1)  {
 				jQuery.each(objectCursor, function(k,item) {
 				
 				
-					console.log("get_seen(): item: ", item.link);
+					//console.log("get_seen(): item: ", item.link);
 					
-					console.log("get_seen(): check_if_item_is_seen: ", item.link);
+					//console.log("get_seen(): check_if_item_is_seen: ", item.link);
 					
 					new_seen_transaction();
 			
 					var item_request_2 = Buleys.objectStore.get(item.link);
 					item_request_2.onsuccess = function(event){
 						if(typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
-							console.log("get_seen(): check_if_item_is_seen: item is seen done", item_request_2.result);
+							//console.log("get_seen(): check_if_item_is_seen: item is seen done", item_request_2.result);
 							
 							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 								get_item(item_request_2.result.link);
@@ -6809,7 +7010,7 @@ function nn_resize(){
 							
 						} else if ( typeof item_request_2.result == 'undefined' && make_inverse == true ) {
 
-							console.log("get_seen(): get_item(): is unseen2", item_request_2.result);
+							//console.log("get_seen(): get_item(): is unseen2", item_request_2.result);
 										
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
 											get_item(item.link);
@@ -6835,7 +7036,7 @@ function nn_resize(){
 			}
 		};
 		cursorRequest.onerror = function(event){
-			console.log("get_items(): Could not open Object Store", event);
+			//console.log("get_items(): Could not open Object Store", event);
 		};
 
 			
@@ -7298,6 +7499,33 @@ padding:10px 0 0px 0;
 <body>
 	<div id='header'><a href="#" class="logo">Buley's</a><div id='page_meta'></div></div>
 		<ul id='result_controls'>
+		
+			<li id='view_index_button'>
+				<a href='#' id='view_index'>View Index (Home)</a> (shift + h)
+			</li>
+			<li id='view_favorites_button'>
+				<a href='#' id='view_favorites'>View Favorites</a> (shift + f)
+			</li>
+			<li id='view_seen_button'>
+				<a href='#' id='view_seen'>View Seen</a> (shift + q)
+			</li>
+			<li id='view_unseen_button'>
+				<a href='#' id='view_unseen'>View Unseen</a> (shift + w)
+			</li>
+			<li id='view_read_button'>
+				<a href='#' id='view_read'>View Read</a> (shift + q)
+			</li>
+			<li id='view_unread_button'>
+				<a href='#' id='view_unread'>View Unread</a> (shift + w)
+			</li>
+			<li id='view_archive_button'>
+				<a href='#' id='view_archive'>View Archive</a> (shift + c)
+			</li>
+			<li id='view_trash_button'>
+				<a href='#' id='view_trash'>View Trash</a> (shift + x)
+			</li>
+
+
 			<li id='reload_button'>
 				<a href='#' class='refresh_results'>Refresh</a> (z)
 			</li>
