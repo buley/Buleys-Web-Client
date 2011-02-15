@@ -51,6 +51,7 @@ var checker;
 	Buleys.db = {};
 	Buleys.queues = {};
 	Buleys.settings = {};
+	Buleys.profile = {};
 	Buleys.mouse = {};
 	Buleys.shortcuts = {};
 	Buleys.history = {};
@@ -108,7 +109,22 @@ var checker;
 		console.log("load_current_page(): ",Buleys.view.type, Buleys.view.slug, Buleys.view.page);
 
 		
-			if ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs"  ) {
+			if ( Buleys.view.type == "account"  ) {
+				
+				//
+				get_account();
+
+			} else if ( Buleys.view.type == "register"  ) {
+				
+				//
+				get_registration();
+
+			} else if ( Buleys.view.type == "confirm"  ) {
+				
+				//
+				get_confirmation();
+
+			} else if ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs"  ) {
 				
 				//
 				get_favorites(Buleys.view.type,Buleys.view.slug);
@@ -256,7 +272,7 @@ var checker;
     	if(Buleys.shortcuts.s_depressed) {
     	} else if(Buleys.shortcuts.d_depressed) {
     	} else if(Buleys.shortcuts.shift_depressed) {
-    	    	$('#view_index').click();
+    	    	$('#view_home').click();
     	} else {
     		$('#preview_item').click();
     	
@@ -403,9 +419,9 @@ var checker;
     } else if ( e.keyCode == 70 ) {
     	
     	if(Buleys.shortcuts.s_depressed) {
-    		$('#select_favorite').click();
+    		$('#select_favorites').click();
     	} else if(Buleys.shortcuts.d_depressed) {
-    		$('#deselect_favorite').click();
+    		$('#deselect_favorites').click();
     	} else if(Buleys.shortcuts.shift_depressed) {
     		$('#view_favorites').click();
     	} else {
@@ -492,6 +508,7 @@ var checker;
 
 		$(window).bind("popstate", function(e) {
 		    console.log( location.pathname );
+		    reload_results();
 		});
 
         $('#view_seen').live('click', function(event) {
@@ -623,7 +640,21 @@ var checker;
 			history.pushState(stateObj, "view_index", "http://buleys.com/");
 			reload_results();
 		});
-    
+        $('#view_home').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_home clicked");
+			jQuery("#page_meta").html('');
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = '';
+			if(typeof slug != 'undefined' && slug != "") {
+				urlString = "http://buleys.com/"+type+"/"+slug+"/";
+			} else if(typeof type != 'undefined' && type != "") {
+				urlString = "http://buleys.com/"+type+"/";
+			}
+			history.pushState(stateObj, "view_home",urlString);
+			reload_results();
+		});    
     
  		$('#dologinsubmit').live('click', function(event) {
         	event.preventDefault();
@@ -969,6 +1000,7 @@ var checker;
 	        event.preventDefault();
 	        $.each( $('.favorited'), function(i,item_to_mark) {
 	        	if(jQuery(item_to_mark).hasClass('selected')) {
+	        	
 	        	} else {
 	        		jQuery(item_to_mark).addClass('selected');
 					
@@ -1186,7 +1218,9 @@ var checker;
 		        $.each( $('.selected'), function(i,item_to_mark) {
 		        	////////console.log(i);
 		        	archive_item( jQuery(item_to_mark).children('a').attr('href'), slug, type );
-		        	jQuery(item_to_mark).remove();
+		        	if(Buleys.view.page !== "favorites" && Buleys.view.page !== "archive") {
+		        		jQuery(item_to_mark).remove();
+		        	}
 		        }); 
 		        
 			} else {
@@ -1244,11 +1278,17 @@ var checker;
 		        $.each( $('.selected'), function(i,item_to_mark) {
 		        	////////console.log(i);
 		        	unarchive_item( jQuery(item_to_mark).children('a').attr('href'), slug, type );
+		        	if(Buleys.view.page == "archive") {
+		        		jQuery(item_to_mark).remove();
+		        	}
 		        }); 
 			} else {
 
 	        	unarchive_item( jQuery('.cursor').children('a').attr('href'), slug, type );
 				jQuery('.cursor').removeClass('archived').addClass('.unarchived');
+				if(Buleys.view.page == "archive") {
+		        	jQuery('.cursor').remove();
+		        }
 							
 			}
 	    });
@@ -3757,7 +3797,7 @@ function new_topics_transaction(){
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				jQuery("#overlay_left").prepend("<span class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
-				jQuery("#overlay_left").parent().addClass('favorited');
+				jQuery("#overlay_left").addClass('favorited');
 				//jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('favorited');
 
 			} else {
@@ -3766,7 +3806,7 @@ function new_topics_transaction(){
 
 //				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().prepend("<span class='overlay_favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
 				//jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unfavorited');
-				jQuery("#overlay_left").parent().addClass('unfavorited');
+				jQuery("#overlay_left").addClass('unfavorited');
 			}
 		};
 	
@@ -3794,12 +3834,12 @@ function new_topics_transaction(){
 				//////console.log("check_if_item_is_favorited(): is favorite");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='unfav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star.png'></a></span>");
 				
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().addClass('favorited');
+				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('favorited');
 
 			} else {
 				//////console.log("check_if_item_is_favorited(): is NOT favorite");
 				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).prepend("<span class='favorite_status'><a href='" + item_url + "' class='fav_link'><img src='http://buleys.com/images/icons/fugue-shadowless/star-empty.png'></a></span>");
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).parent().addClass('unfavorited');
+				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g,"")).addClass('unfavorited');
 			}
 		};
 	
@@ -6236,10 +6276,10 @@ function save_queues() {
 
 function save_settings() {
 		//do setting update for pending
-		//add_or_update_setting("new_items", Buleys.queues.new_items);
-		//add_or_update_setting("pending_crawls", Buleys.queues.pending_crawls);
+		add_or_update_setting("profile", Buleys.profile);
 
 }
+
 
 /*
 //via http://flexknowlogy.learningfield.org/2008/06/26/setting-font-size-proportional-to-window-size/
@@ -6346,7 +6386,7 @@ function nn_resize(){
 										//console.log("get_favorites(): check_if_item_is_favorite(): is favorite2", item_request.result.value);
 										
 										if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
-											get_item(item_request.result.link);
+											get_item_raw(item_request.result.link);
 										}			
 						
 									} else {
@@ -6915,14 +6955,14 @@ function nn_resize(){
 							//console.log("get_read(): check_if_item_is_read: done", item_request_2.result);
 							
 							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
-								get_item(item_request_2.result.link);
+								get_item_raw(item_request_2.result.link);
 							}			
 			
 						} else if ( typeof item_request_2.result == 'undefined' && make_inverse == true ) {
 
 				
 							if(jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g,"")).length <= 0) {
-								get_item(item.link);
+								get_item_raw(item.link);
 							}			
 												
 						}
@@ -7043,6 +7083,23 @@ function nn_resize(){
 		
 	}
 
+	function get_account() {
+	
+	console.log("get_account(): ");
+	
+	}
+
+	function get_registration() {
+	
+	console.log("get_registration(): ");
+	
+	}
+
+	function get_confirmation() {
+	
+	console.log("get_confirmation(): ");
+	
+	}
 
 </script>
 
@@ -7499,9 +7556,11 @@ padding:10px 0 0px 0;
 <body>
 	<div id='header'><a href="#" class="logo">Buley's</a><div id='page_meta'></div></div>
 		<ul id='result_controls'>
-		
+			<li id='view_home_button'>
+				<a href='#' id='view_home'>View Home</a> (shift + h)
+			</li>		
 			<li id='view_index_button'>
-				<a href='#' id='view_index'>View Index (Home)</a> (shift + h)
+				<a href='#' id='view_index'>View Index</a> (shift + z)
 			</li>
 			<li id='view_favorites_button'>
 				<a href='#' id='view_favorites'>View Favorites</a> (shift + f)
