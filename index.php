@@ -18,25 +18,6 @@ if(empty($pageID)) { $pageID = ""; }
 <script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
 <script type="text/javascript">
 var checker;
-	/*
-	items - all items
-	status - read, unread, favorited
-	 -> [key] id (URL)
-	 -> status (unread/read/favorited)
-	 	--> NOTE: favorited implies read; no entries implies unread
-	 	--> users can mark as 'unread'
-	 
-	votes - 
-	 -> [key] id (URL)
-	 -> [key] type (type e.g. company)
-	 -> [key] slug (slug e.g. aapl)
-	 -> [key] vote (1, -1)
-	 
-	 social - 
-	  -> [key] id (URL)
-	  -> source (twitter/reddit/facebook, etc.)
-	  -> type (friend_mention, mention, self_mention)
-	*/
 
 	if ('webkitIndexedDB' in window) {
 	  window.indexedDB = window.webkitIndexedDB;
@@ -45,9 +26,13 @@ var checker;
 	} else if ('mozIndexedDB' in window) {
 	  window.indexedDB = window.mozIndexedDB;
 	}
-	//////console.log("Supported? ", typeof window['indexedDB'] );
-	
+	//todo support check & popup on unsupported
+		
+
 	var Buleys = {};
+
+	Buleys.store = window.localStorage;
+
 	Buleys.db = {};
 	Buleys.queues = {};
 	Buleys.settings = {};
@@ -55,22 +40,14 @@ var checker;
 	Buleys.mouse = {};
 	Buleys.shortcuts = {};
 	Buleys.history = {};
+	Buleys.session = {};
+	Buleys.session.database_is_open = false;
 	Buleys.view = {};
-	
 	Buleys.debug = {};
 	Buleys.debug.database = false;
 	Buleys.debug.ajax = false;
 	Buleys.debug.items = false;
-	
-
-	//default settings
 	Buleys.settings.mini_inbox_topic_count = 5;
-	
-	var slug = <?php echo json_encode($itemID); ?>;
-	var type = <?php echo json_encode($typeID); ?>;
-	var page = <?php echo json_encode($pageID); ?>;
-	var session_token = '';
-	var debug;
 	Buleys.shortcuts.s_depressed = false;
 	Buleys.shortcuts.d_depressed = false;
 	Buleys.shortcuts.shift_depressed = false;
@@ -79,15 +56,20 @@ var checker;
 	Buleys.settings.crawl_increment = (1/5);
 	Buleys.settings.crawl_max = 6000000;
 	Buleys.settings.crawl_min = 10000;
-	
 	Buleys.queues.pending_crawls = [];
 	Buleys.queues.new_items = {};
-
 	Buleys.mouse.mouse_y = 0;
 	Buleys.mouse.mouse_x = 0;
 	Buleys.mouse.mouse_y_snapshot = 0;
 	Buleys.mouse.mouse_x_snapshot = 0;
-
+	
+	//todo remove this	
+	var slug = <?php echo json_encode($itemID); ?>;
+	var type = <?php echo json_encode($typeID); ?>;
+	var page = <?php echo json_encode($pageID); ?>;
+	var session_token = '';
+	var debug;
+	
 	function set_page_vars() {
 	
 		console.log( "Setting page vars: ", location.pathname );
@@ -103,16 +85,69 @@ var checker;
 	
 	}
 	
+	function check_login_status() {
+	
+		console.log("check_login_status()");
+		
+		console.log("Get",get_local_storage("session_id"));
+		var session_id = get_local_storage("session_id");
+		if(typeof session_id == "undefined" || session_id == null || session_id == "") {
+			jQuery("#header").append("<div id='login_status_pane'>" + '<a href="#" id="get_settings_button" class="get_settings">Settings</a>' + '<a href="#" id="get_login" class="getloginform">Login or Signup</a>' + "</div>");	
+		} else {
+			jQuery("#header").append("<div id='login_status_pane'>" + '<a href="#" id="get_settings_button" class="get_settings">Settings</a>'+ "</div>");	
+		}
+		
+	
+	}
+	
+	function get_settings_page() {
+		console.log("get_settings_page()");
+jQuery("#main").append("<div od='login_prompt'>Logged in with session id <code>" + get_local_storage("session_id")+"</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");	
+	
+	}
+	
+	function get_setting_type(setting_to_get) {
+		return get_local_storage("setting_type_"+setting_to_get)
+	} 
+	
+	function set_setting_type(setting_to_set, setting_value) {
+		return set_local_storage("setting_type_"+setting_to_set, setting_value)
+	}
+	
+	function get_setting(setting_to_get) {
+		return get_local_storage("setting_type_"+setting_to_get)
+	} 
+	
+	function set_setting(setting_to_set, setting_value) {
+		return set_local_storage("setting_type_"+setting_to_set, setting_value)
+	}
+		
+	
+	
+	function clear_page() {
+		jQuery("#right").html('');
+		jQuery("#main").html('');
+	}
+	
 	function load_current_page() {
 	
+		clear_page();
 		set_page_vars();
+		
 		console.log("load_current_page(): ",Buleys.view.type, Buleys.view.slug, Buleys.view.page);
 
 		
-			if ( Buleys.view.type == "account"  ) {
+			if ( Buleys.view.type == "settings" || Buleys.view.type == "account"  ) {
 				
 				//
-				get_account();
+					get_settings_page();
+				
+			} else if ( Buleys.view.type == "signin" || "signin" == Buleys.view.type || "start" == Buleys.view.type ) {
+				
+				//
+				if(Buleys.view.loaded!="signin") {
+					get_signin();
+				}
 
 			} else if ( Buleys.view.type == "register"  ) {
 				
@@ -169,14 +204,10 @@ var checker;
 				get_items(Buleys.view.type,Buleys.view.slug);
 			
 			}
+			
+			Buleys.view.loaded=Buleys.view.type;
 
 	
-	}
-	
-	function clear_page() {
-	
-		jQuery("#results").fadeOut().html('').fadeIn();
-			
 	}
 	
 	function reload_results() {
@@ -199,7 +230,7 @@ var checker;
 		$('#dologin').live('click', function(event) {
        		event.preventDefault();
 		        $('#dologin').remove();
-		        $('#login_box').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-in.png"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
+		        $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-in.png"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
 		    });
     
     	$('a#get_inbox').live('click', function(event) {
@@ -225,7 +256,7 @@ var checker;
      $('#dologinboxminimize').live('click', function(event) {
         event.preventDefault();
         
-        $('#login_box').html('<a href="#" id="dologin" class="getloginform"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-out.png"></a>');
+        $('#login_status_pane').html('<a href="#" id="dologin" class="getloginform"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-out.png"></a>');
     });
     
 
@@ -511,6 +542,29 @@ var checker;
 		    reload_results();
 		});
 
+        $('.get_settings').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("view_settings clicked")
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = 'http://buleys.com/settings';
+			history.pushState(stateObj, "settings", urlString);
+			reload_results();
+		});  
+		
+		//
+        $('#get_login').live('click', function(event) {
+	        event.preventDefault();
+		    console.log( location.pathname );
+			console.log("get_login clicked");
+			//implies typeof page != 'undefined' && typeof type != 'undefined' && typeof slug != 'undefined'
+			var stateObj = { "page":page,"slug":slug,"type":type,"time":new Date().getTime() };
+			var urlString = "http://buleys.com/start";
+			history.pushState(stateObj, "login", urlString);
+			reload_results();
+		}); 
+		
+
         $('#view_seen').live('click', function(event) {
 	        event.preventDefault();
 		    console.log( location.pathname );
@@ -665,9 +719,10 @@ var checker;
 			} else {
 				////////console.log("No password");
 			}
-			
     	});
+    	//herenow
        
+    
     
     
 			
@@ -1365,6 +1420,8 @@ var checker;
 	        	remove_item_from_read_database( jQuery(item_to_mark).children('a').attr('href'), slug, type );
 	        });
 
+
+
 	jQuery("#logout").live("click", function(event) {
 	
 		account_logout();
@@ -1372,17 +1429,23 @@ var checker;
 	});
 
 
-//login_box
-	jQuery(".logout_link").live("click", function(event) {
+//login_status_pane
+	jQuery(".do_logout").live("click", function(event) {
 	
 		account_logout();
 	
 	});
+
+//login_status_pane
+	jQuery(".do_logout").live("click", function(event) {
 	
+		account_logout();
+	
+	});	
 
 	jQuery(".submitthelogin").live("click", function(event) {
 		////////console.log("submit_login");
-		//request_login( jQuery("#login_box password").val(), jQuery("#login_box email").val() );
+		//request_login( jQuery("#login_status_pane password").val(), jQuery("#login_status_pane email").val() );
 	});
 
 
@@ -1656,28 +1719,37 @@ var checker;
 	}	
 	
 	function database_is_open(open_result) {
-		////////console.log('database_is_open(): setting:' + open_result);
-		Buleys.db = open_result;
-		//////////console.log("add_or_update_setting(): name");
-		//add_or_update_setting("name","Taylor");
-
 		
+		Buleys.db = open_result;
+		
+		if(!Buleys.session.database_is_open) {
 		//get_settings();
-
 		//load_all_settings_into_dom();
 		//load_all_queues_into_dom();
 		//setTimeout('do_work()', 10000);
+		//fire_off_request();
 		
-//		fire_off_request();
+		if(Buleys.view.type == "account") {
+			load_profile_info();
+		}
 		
-//		load_profile_info();
-		get_page_follow_status(type,slug);
-		get_page_subscription_status(type,slug);
-		get_page_topic_info(type,slug);
+		if(Buleys.view.type !== "account" && Buleys.view.type !== "home" && Buleys.view.type !== "signin"  && Buleys.view.type !== "" && Buleys.view.type !== "start" && Buleys.view.type !== "settings" && Buleys.view.type !== "favorites" && Buleys.view.type !== "read" && Buleys.view.type !== "unread" && Buleys.view.type !== "seen" && Buleys.view.type !== "unseen" && Buleys.view.type !== "unarchived" && Buleys.view.type !== "archived"   ) {
+			get_page_follow_status(type,slug);
+			get_page_subscription_status(type,slug);
+			get_page_topic_info(type,slug);
+		}
 //		get_items(type,slug);
 
-		load_current_page();
+		check_login_status();
 
+		
+		//prevent dupes
+		Buleys.session.database_is_open = true;
+	console.log("XxX",Buleys.session.database_is_open);
+	} else {
+	console.log("yYy",Buleys.session.database_is_open);
+	
+	}
 
       var $container = $('#results');
 
@@ -1780,14 +1852,14 @@ function is_in_cursor_mode() {
 	function fire_off_request() {
 
 	
-    var data_to_send;
-        data_to_send = { "method":"get_users_personal_collection" };
-	var the_url;
-	if( typeof type == "undefined" || type == "" ) {
-		the_url = "/feedback/index.php";
-	} else {
-		the_url = "http://static.buleys.com/js/collections/<?php echo "$typeID/$itemID.js";?>";
-	}
+	    var data_to_send;
+	    data_to_send = { "method":"get_users_personal_collection" };
+		var the_url;
+		if( typeof type == "undefined" || type == "" ) {
+			the_url = "/feedback/index.php";
+		} else {
+			the_url = "http://static.buleys.com/js/collections/<?php echo "$typeID/$itemID.js";?>";
+		}
 		$.ajax({
 			//url: "/feedback/index.php",
 			url: the_url,
@@ -1824,13 +1896,14 @@ function is_in_cursor_mode() {
 			var transaction = Buleys.db.transaction(["items"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
 				//////////console.log("Transaction Complete");
-				delete Buleys.objectStore;
+				delete Buleys.db.objectStore;
 			};
 			transaction.onabort = function(e){
 				//////////console.log("Transaction Aborted");
 			};
-			Buleys.objectStore = transaction.objectStore("items");
-			//////////console.log("New Transaction", Buleys.objectStore);
+			
+			Buleys.db.objectStore = transaction.objectStore("items");
+			console.log("New Transaction", Buleys.db.objectStore);
 		}
 		catch (e) {
 			////////console.log("new_item_transaction(): Could not open objectStore. You may have to create it first");
@@ -1840,29 +1913,33 @@ function is_in_cursor_mode() {
 			
 			////////console.log("new_item_transaction(): Create object store; db: " + Buleys.db);
 			//Create object store
-			var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
-			request.onsuccess = function(e){
-				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
-				Buleys.objectStore = Buleys.db.createObjectStore("items", {
-					"keyPath": "link"
-				}, false);
-
-				Buleys.objectStore.createIndex("author", "author", { unique: false });
-				Buleys.objectStore.createIndex("published_date", "published_date", { unique: false });
-				Buleys.objectStore.createIndex("index_date", "index_date", { unique: false });
-				Buleys.objectStore.createIndex("modified", "modified", { unique: false });
-
-				
-				////////console.log("new_item_transaction(): Object store created: ", Buleys.objectStore);
-			};
-			request.onerror = function(e){
-				////////console.log("new_item_transaction(): Could not set the version, so cannot create database", e);
-			};
+			console.log("Fail!",Buleys.db);
+			if(typeof Buleys.db.setVersion == "function") {
+				var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
+				request.onsuccess = function(e){
+					////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
+					Buleys.db.objectStore = Buleys.db.createObjectStore("items", {
+						"keyPath": "link"
+					}, false);
+	
+					Buleys.db.objectStore.createIndex("author", "author", { unique: false });
+					Buleys.db.objectStore.createIndex("published_date", "published_date", { unique: false });
+					Buleys.db.objectStore.createIndex("index_date", "index_date", { unique: false });
+					Buleys.db.objectStore.createIndex("modified", "modified", { unique: false });
+	
+					
+					////////console.log("new_item_transaction(): Object store created: ", Buleys.objectStore);
+				};
+				request.onerror = function(e){
+					////////console.log("new_item_transaction(): Could not set the version, so cannot create database", e);
+				};
+			}
 			
 		};
 	}
 
 	function new_categories_transaction(){
+			console.log(Buleys.db);
 		try {
 			var transaction = Buleys.db.transaction(["categories"], 1 /*Read-Write*/, 1000 /*Time out in ms*/);
 			transaction.oncomplete = function(e){
@@ -1878,15 +1955,17 @@ function is_in_cursor_mode() {
 		catch (e) {
 			////////console.log("new_categories_transaction(): Could not open objectStore. You may have to create it first");
 			////////console.log(e);
-
-		////////console.log("new_categories_transaction(): Create object store ver:" + parseInt(Buleys.db.version));
+			////////console.log("new_categories_transaction(): Create object store ver:" + parseInt(Buleys.db.version));
 			//Create object store
+
 			var ver_to_set = 0;
 			if(! (Buleys.db.version > 0) ) {
 				ver_to_set = ver_to_set + 1;
 			} else {
 				ver_to_set = 1;
 			}
+			
+			console.log(Buleys.db);
 			var request = Buleys.db.setVersion( ver_to_set );
 			request.onsuccess = function(e){
 				////////console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
@@ -2430,11 +2509,11 @@ function new_topics_transaction(){
 				  Buleys.keyRange = new IDBKeyRange.bound(begin_date, end_date, true, false);
 				  //console.log("Range Defined", Buleys.keyRange);
 				  
-				  Buleys.onCursor = function(callback){
+				  Buleys.db.onCursor = function(callback){
 					new_item_transaction();
-					//console.log("get_items callback objectStore",callback,Buleys.objectStore);
-		 			Buleys.index = Buleys.objectStore.index("published_date");
-				    var request = Buleys.index.openCursor(Buleys.keyRange);
+					console.log("get_items callback objectStore",callback,Buleys.db.objectStore);
+		 			Buleys.db.index = Buleys.db.objectStore.index("published_date");
+				    var request = Buleys.db.index.openCursor(Buleys.keyRange);
 				    request.onsuccess = function(event){
 				      //console.log("CURSOR!",event,request);
 				      
@@ -2460,7 +2539,7 @@ function new_topics_transaction(){
 				      //console.log(e);
 				    };
 				  };
-				  Buleys.onCursor(function(){
+				  Buleys.db.onCursor(function(){
 				    //console.log("Cursor Created", Buleys.cursor);
 				  });
 
@@ -4613,8 +4692,9 @@ function add_category_controls( event_context ) {
 					//console.log("get_settings(): cursor: " + objectCursor.length);
 					
 					if(objectCursor.length >= 0)  {
+						Buleys.view.type == "account";
 						jQuery.each(objectCursor, function(k,item) {
-							//////console.log("get_settings(): " + item);							
+							console.log("get_settings(): " + item);							
 						});				
 					}
 
@@ -5391,36 +5471,40 @@ function cancel_confirmation(user_id) {
 }
 
 
-	
+function set_local_storage(set_key,set_value) {
+	return Buleys.store.setItem(set_key,set_value);
+}
+function get_local_storage(get_key) {
+	return Buleys.store.getItem(get_key);
+}		
 
 
 function request_login( email, password ) {
 
 	password = md5(password);
-	//////console.log("sending data: pass: " + password + " email: " + email);
 	var data_to_send;
         data_to_send = { "method":"request_login", "secret": password, "email": email, "token": session_token};
-	////////console.log("sending data: " + data_to_send.secret);
 	$.post("/api/index.php", data_to_send, function(data) {
 		if(data != null && typeof data.result !== 'undefined') {
 			if(data.result.toLowerCase() == "failure") {
-				//////console.log('fail');
-				// data//
-				//xxx
+				console.log('fail');
 				send_to_console(data.message);
-				//
 			} else if(data.result.toLowerCase() == "success") {
-				//////console.log('suc');
+				set_local_storage("session_id",data.session_id);
 				send_to_console(data.message);
-				//
+				jQuery("#login_prompt").html('');
+				jQuery("#login_prompt").append("Just logged in with session id <code>" + get_local_storage("session_id")+"</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.");	
+
+
 			}
 		} else {
-			//////console.log("request_login(): no data"); 
+			console.log("request_login(): no data"); 
 		}
 	}, "json");
 
 
 }
+
 
 //function request_registration
 function request_registration(password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country) {
@@ -5433,18 +5517,18 @@ function request_registration(password, display_name, first_name, last_name, add
 		if(typeof(data.request_status) !== 'undefined') {
 			if(data.result.toLowerCase() == "failure") {
 				if(typeof(data.message) !== 'undefined') {
-					jQuery("#login_box").prepend("<p>" + data.message + "</p>");
+					jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
 				} else {
-					jQuery("#login_box").prepend('There was an error. Your account is not confirmed.');
+					jQuery("#login_status_pane").prepend('There was an error. Your account is not confirmed.');
 				}
-				close_button(jQuery("#login_box"));
+				close_button(jQuery("#login_status_pane"));
 			} else if(data.result.toLowerCase() == "success") {
 				if(typeof(data.message) !== 'undefined') {
-					jQuery("#login_box").html("<p>" + data.message + "</p>");
+					jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
 				} else {
-					jQuery("#login_box").html('Your account is confirmed.');
+					jQuery("#login_status_pane").html('Your account is confirmed.');
 				}
-				close_button(jQuery("#login_box"));
+				close_button(jQuery("#login_status_pane"));
 			}
 		}
 	}, "json");
@@ -5460,36 +5544,36 @@ function confirm_registration(secret) {
 	$.post("/feedback/index.php", data_to_send, function(data) {
 		if(typeof(data.request_status) !== 'undefined') {
 			if(data.result.toLowerCase() == "failure") {
-				jQuery("#login_box").html('');
+				jQuery("#login_status_pane").html('');
 
 
 				if(typeof(data.reason) !== 'undefined') {
-					jQuery("#login_box").prepend("<p><small>" + data.reason + "<small></p>");
+					jQuery("#login_status_pane").prepend("<p><small>" + data.reason + "<small></p>");
 				}
 
 				if(typeof(data.message) !== 'undefined') {
-					jQuery("#login_box").prepend("<p>" + data.message + "</p>");
+					jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
 				} else {
-					jQuery("#login_box").prepend('There was an error.');
+					jQuery("#login_status_pane").prepend('There was an error.');
 				}
 
 			} else if(data.result.toLowerCase() == "success") {
 
 				if(typeof(data.message) !== 'undefined') {
-					jQuery("#login_box").html("<p>" + data.message + "</p>");
+					jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
 				} else {
-					jQuery("#login_box").html('Your account is confirmed and logged in.');
+					jQuery("#login_status_pane").html('Your account is confirmed and logged in.');
 				}
 				/*
 				
 				*/
-				jQuery("#login_box").append('<p><strong>Password</strong>:<input id="password_once"type="password"name="password"/><br/><strong>Password</strong>(again):<input id="password_twice"type="password"name="password_confirm"/></p><p><strong>Public name</strong>:<input id="display_name"type="text"name="display_name"/></p><p id="registration_profile_info"><strong>First Name</strong>: <input id="first_name"type="text"name="first_name"  size="20"/><br/><strong>Last Name</strong>: <input id="last_name"type="text"name="last_name"  size="20"/><br/><strong>Address 1</strong>:<input id="address_1"type="text"name="address_1"/><br/><strong>Apt. #</strong> (optional): <input id="address_2"type="text"name="address_2"/><br/><strong>City</strong>: <input id="city"type="text" name="city" size="20"/><br/><strong>State</strong>: <select id="state" name="state"><option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option><option value="DC">DC</option><option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option><option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option><option value="WI">WI</option><option value="WY">WY</option></select>&nbsp;&nbsp;&nbsp;<strong>Zip</strong>: <input id="zip"type="text"name="zip" size="10"/><br/><strong>Country</strong>: <select id="country" name="country" size="1"><option value="AF">Afghanistan</option><option value="AX">Axland Islands</option><option value="AL">Albania</option><option value="DZ">Algeria</option><option value="AS">American Samoa</option><option value="AD">Andorra</option><option value="AO">Angola</option><option value="AI">Anguilla</option><option value="AQ">Antarctica</option><option value="AG">Antigua And Barbuda</option><option value="AR">Argentina</option><option value="AM">Armenia</option><option value="AW">Aruba</option><option value="AU">Australia</option><option value="AT">Austria</option><option value="AZ">Azerbaijan</option><option value="BS">Bahamas</option><option value="BH">Bahrain</option><option value="BD">Bangladesh</option><option value="BB">Barbados</option><option value="BY">Belarus</option><option value="BE">Belgium</option><option value="BZ">Belize</option><option value="BJ">Benin</option><option value="BM">Bermuda</option><option value="BT">Bhutan</option><option value="BO">Bolivia</option><option value="BA">Bosnia And Herzegovina</option><option value="BW">Botswana</option><option value="BV">Bouvet Island</option><option value="BR">Brazil</option><option value="IO">British Indian Ocean Territory</option><option value="BN">Brunei Darussalam</option><option value="BG">Bulgaria</option><option value="BF">Burkina Faso</option><option value="BI">Burundi</option><option value="KH">Cambodia</option><option value="CM">Cameroon</option><option value="CA">Canada</option><option value="CV">Cape Verde</option><option value="KY">Cayman Islands</option><option value="CF">Central African Republic</option><option value="TD">Chad</option><option value="CL">Chile</option><option value="CN">China</option><option value="CX">Christmas Island</option><option value="CC">Cocos (Keeling) Islands</option><option value="CO">Colombia</option><option value="KM">Comoros</option><option value="CG">Congo</option><option value="CD">Congo, The Democratic Republic Of The</option><option value="CK">Cook Islands</option><option value="CR">Costa Rica</option><option value="CI">Cote DIvoire</option><option value="HR">Croatia</option><option value="CU">Cuba</option><option value="CY">Cyprus</option><option value="CZ">Czech Republic</option><option value="DK">Denmark</option><option value="DJ">Djibouti</option><option value="DM">Dominica</option><option value="DO">Dominican Republic</option><option value="EC">Ecuador</option><option value="EG">Egypt</option><option value="SV">El Salvador</option><option value="GQ">Equatorial Guinea</option><option value="ER">Eritrea</option><option value="EE">Estonia</option><option value="ET">Ethiopia</option><option value="FK">Falkland Islands (Malvinas)</option><option value="FO">Faroe Islands</option><option value="FJ">Fiji</option><option value="FI">Finland</option><option value="FR">France</option><option value="GF">French Guiana</option><option value="PF">French Polynesia</option><option value="TF">French Southern Territories</option><option value="GA">Gabon</option><option value="GM">Gambia</option><option value="GE">Georgia</option><option value="DE">Germany</option><option value="GH">Ghana</option><option value="GI">Gibraltar</option><option value="GR">Greece</option><option value="GL">Greenland</option><option value="GD">Grenada</option><option value="GP">Guadeloupe</option><option value="GU">Guam</option><option value="GT">Guatemala</option><option value=" Gg">Guernsey</option><option value="GN">Guinea</option><option value="GW">Guinea-Bissau</option><option value="GY">Guyana</option><option value="HT">Haiti</option><option value="HM">Heard Island And Mcdonald Islands</option><option value="VA">Holy See (Vatican City State)</option><option value="HN">Honduras</option><option value="HK">Hong Kong</option><option value="HU">Hungary</option><option value="IS">Iceland</option><option value="IN">India</option><option value="ID">Indonesia</option><option value="IR">Iran, Islamic Republic Of</option><option value="IQ">Iraq</option><option value="IE">Ireland</option><option value="IM">Isle Of Man</option><option value="IL">Israel</option><option value="IT">Italy</option><option value="JM">Jamaica</option><option value="JP">Japan</option><option value="JE">Jersey</option><option value="JO">Jordan</option><option value="KZ">Kazakhstan</option><option value="KE">Kenya</option><option value="KI">Kiribati</option><option value="KP">Korea, Democratic People\'s Republic Of</option><option value="KR">Korea, Republic Of</option><option value="KW">Kuwait</option><option value="KG">Kyrgyzstan</option><option value="LA">Lao People\'s Democratic Republic</option><option value="LV">Latvia</option><option value="LB">Lebanon</option><option value="LS">Lesotho</option><option value="LR">Liberia</option><option value="LY">Libyan Arab Jamahiriya</option><option value="LI">Liechtenstein</option><option value="LT">Lithuania</option><option value="LU">Luxembourg</option><option value="MO">Macao</option><option value="MK">Macedonia, The Former Yugoslav Republic Of</option><option value="MG">Madagascar</option><option value="MW">Malawi</option><option value="MY">Malaysia</option><option value="MV">Maldives</option><option value="ML">Mali</option><option value="MT">Malta</option><option value="MH">Marshall Islands</option><option value="MQ">Martinique</option><option value="MR">Mauritania</option><option value="MU">Mauritius</option><option value="YT">Mayotte</option><option value="MX">Mexico</option><option value="FM">Micronesia, Federated States Of</option><option value="MD">Moldova, Republic Of</option><option value="MC">Monaco</option><option value="MN">Mongolia</option><option value="MS">Montserrat</option><option value="MA">Morocco</option><option value="MZ">Mozambique</option><option value="MM">Myanmar</option><option value="NA">Namibia</option><option value="NR">Nauru</option><option value="NP">Nepal</option><option value="NL">Netherlands</option><option value="AN">Netherlands Antilles</option><option value="NC">New Caledonia</option><option value="NZ">New Zealand</option><option value="NI">Nicaragua</option><option value="NE">Niger</option><option value="NG">Nigeria</option><option value="NU">Niue</option><option value="NF">Norfolk Island</option><option value="MP">Northern Mariana Islands</option><option value="NO">Norway</option><option value="OM">Oman</option><option value="PK">Pakistan</option><option value="PW">Palau</option><option value="PS">Palestinian Territory, Occupied</option><option value="PA">Panama</option><option value="PG">Papua New Guinea</option><option value="PY">Paraguay</option><option value="PE">Peru</option><option value="PH">Philippines</option><option value="PN">Pitcairn</option><option value="PL">Poland</option><option value="PT">Portugal</option><option value="PR">Puerto Rico</option><option value="QA">Qatar</option><option value="RE">Reunion</option><option value="RO">Romania</option><option value="RU">Russian Federation</option><option value="RW">Rwanda</option><option value="SH">Saint Helena</option><option value="KN">Saint Kitts And Nevis</option><option value="LC">Saint Lucia</option><option value="PM">Saint Pierre And Miquelon</option><option value="VC">Saint Vincent And The Grenadines</option><option value="WS">Samoa</option><option value="SM">San Marino</option><option value="ST">Sao Tome And Principe</option><option value="SA">Saudi Arabia</option><option value="SN">Senegal</option><option value="CS">Serbia And Montenegro</option><option value="SC">Seychelles</option><option value="SL">Sierra Leone</option><option value="SG">Singapore</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option><option value="SB">Solomon Islands</option><option value="SO">Somalia</option><option value="ZA">South Africa</option><option value="GS">South Georgia And The South Sandwich Islands</option><option value="ES">Spain</option><option value="LK">Sri Lanka</option><option value="SD">Sudan</option><option value="SR">Suriname</option><option value="SJ">Svalbard And Jan Mayen</option><option value="SZ">Swaziland</option><option value="SE">Sweden</option><option value="CH">Switzerland</option><option value="SY">Syrian Arab Republic</option><option value="TW">Taiwan, Province Of China</option><option value="TJ">Tajikistan</option><option value="TZ">Tanzania, United Republic Of</option><option value="TH">Thailand</option><option value="TL">Timor-Leste</option><option value="TG">Togo</option><option value="TK">Tokelau</option><option value="TO">Tonga</option><option value="TT">Trinidad And Tobago</option><option value="TN">Tunisia</option><option value="TR">Turkey</option><option value="TM">Turkmenistan</option><option value="TC">Turks And Caicos Islands</option><option value="TV">Tuvalu</option><option value="UG">Uganda</option><option value="UA">Ukraine</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US" selected>United States</option><option value="UM">United States Minor Outlying Islands</option><option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option><option value="VU">Vanuatu</option><option value="VE">Venezuela</option><option value="VN">Viet Nam</option><option value="VG">Virgin Islands, British</option><option value="VI">Virgin Islands, U.S.</option><option value="WF">Wallis And Futuna</option><option value="EH">Western Sahara</option><option value="YE">Yemen</option><option value="ZM">Zambia</option><option value="ZW">Zimbabwe</option></select><br/></p>');
+				jQuery("#login_status_pane").append('<p><strong>Password</strong>:<input id="password_once"type="password"name="password"/><br/><strong>Password</strong>(again):<input id="password_twice"type="password"name="password_confirm"/></p><p><strong>Public name</strong>:<input id="display_name"type="text"name="display_name"/></p><p id="registration_profile_info"><strong>First Name</strong>: <input id="first_name"type="text"name="first_name"  size="20"/><br/><strong>Last Name</strong>: <input id="last_name"type="text"name="last_name"  size="20"/><br/><strong>Address 1</strong>:<input id="address_1"type="text"name="address_1"/><br/><strong>Apt. #</strong> (optional): <input id="address_2"type="text"name="address_2"/><br/><strong>City</strong>: <input id="city"type="text" name="city" size="20"/><br/><strong>State</strong>: <select id="state" name="state"><option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option><option value="DC">DC</option><option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option><option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option><option value="WI">WI</option><option value="WY">WY</option></select>&nbsp;&nbsp;&nbsp;<strong>Zip</strong>: <input id="zip"type="text"name="zip" size="10"/><br/><strong>Country</strong>: <select id="country" name="country" size="1"><option value="AF">Afghanistan</option><option value="AX">Axland Islands</option><option value="AL">Albania</option><option value="DZ">Algeria</option><option value="AS">American Samoa</option><option value="AD">Andorra</option><option value="AO">Angola</option><option value="AI">Anguilla</option><option value="AQ">Antarctica</option><option value="AG">Antigua And Barbuda</option><option value="AR">Argentina</option><option value="AM">Armenia</option><option value="AW">Aruba</option><option value="AU">Australia</option><option value="AT">Austria</option><option value="AZ">Azerbaijan</option><option value="BS">Bahamas</option><option value="BH">Bahrain</option><option value="BD">Bangladesh</option><option value="BB">Barbados</option><option value="BY">Belarus</option><option value="BE">Belgium</option><option value="BZ">Belize</option><option value="BJ">Benin</option><option value="BM">Bermuda</option><option value="BT">Bhutan</option><option value="BO">Bolivia</option><option value="BA">Bosnia And Herzegovina</option><option value="BW">Botswana</option><option value="BV">Bouvet Island</option><option value="BR">Brazil</option><option value="IO">British Indian Ocean Territory</option><option value="BN">Brunei Darussalam</option><option value="BG">Bulgaria</option><option value="BF">Burkina Faso</option><option value="BI">Burundi</option><option value="KH">Cambodia</option><option value="CM">Cameroon</option><option value="CA">Canada</option><option value="CV">Cape Verde</option><option value="KY">Cayman Islands</option><option value="CF">Central African Republic</option><option value="TD">Chad</option><option value="CL">Chile</option><option value="CN">China</option><option value="CX">Christmas Island</option><option value="CC">Cocos (Keeling) Islands</option><option value="CO">Colombia</option><option value="KM">Comoros</option><option value="CG">Congo</option><option value="CD">Congo, The Democratic Republic Of The</option><option value="CK">Cook Islands</option><option value="CR">Costa Rica</option><option value="CI">Cote DIvoire</option><option value="HR">Croatia</option><option value="CU">Cuba</option><option value="CY">Cyprus</option><option value="CZ">Czech Republic</option><option value="DK">Denmark</option><option value="DJ">Djibouti</option><option value="DM">Dominica</option><option value="DO">Dominican Republic</option><option value="EC">Ecuador</option><option value="EG">Egypt</option><option value="SV">El Salvador</option><option value="GQ">Equatorial Guinea</option><option value="ER">Eritrea</option><option value="EE">Estonia</option><option value="ET">Ethiopia</option><option value="FK">Falkland Islands (Malvinas)</option><option value="FO">Faroe Islands</option><option value="FJ">Fiji</option><option value="FI">Finland</option><option value="FR">France</option><option value="GF">French Guiana</option><option value="PF">French Polynesia</option><option value="TF">French Southern Territories</option><option value="GA">Gabon</option><option value="GM">Gambia</option><option value="GE">Georgia</option><option value="DE">Germany</option><option value="GH">Ghana</option><option value="GI">Gibraltar</option><option value="GR">Greece</option><option value="GL">Greenland</option><option value="GD">Grenada</option><option value="GP">Guadeloupe</option><option value="GU">Guam</option><option value="GT">Guatemala</option><option value=" Gg">Guernsey</option><option value="GN">Guinea</option><option value="GW">Guinea-Bissau</option><option value="GY">Guyana</option><option value="HT">Haiti</option><option value="HM">Heard Island And Mcdonald Islands</option><option value="VA">Holy See (Vatican City State)</option><option value="HN">Honduras</option><option value="HK">Hong Kong</option><option value="HU">Hungary</option><option value="IS">Iceland</option><option value="IN">India</option><option value="ID">Indonesia</option><option value="IR">Iran, Islamic Republic Of</option><option value="IQ">Iraq</option><option value="IE">Ireland</option><option value="IM">Isle Of Man</option><option value="IL">Israel</option><option value="IT">Italy</option><option value="JM">Jamaica</option><option value="JP">Japan</option><option value="JE">Jersey</option><option value="JO">Jordan</option><option value="KZ">Kazakhstan</option><option value="KE">Kenya</option><option value="KI">Kiribati</option><option value="KP">Korea, Democratic People\'s Republic Of</option><option value="KR">Korea, Republic Of</option><option value="KW">Kuwait</option><option value="KG">Kyrgyzstan</option><option value="LA">Lao People\'s Democratic Republic</option><option value="LV">Latvia</option><option value="LB">Lebanon</option><option value="LS">Lesotho</option><option value="LR">Liberia</option><option value="LY">Libyan Arab Jamahiriya</option><option value="LI">Liechtenstein</option><option value="LT">Lithuania</option><option value="LU">Luxembourg</option><option value="MO">Macao</option><option value="MK">Macedonia, The Former Yugoslav Republic Of</option><option value="MG">Madagascar</option><option value="MW">Malawi</option><option value="MY">Malaysia</option><option value="MV">Maldives</option><option value="ML">Mali</option><option value="MT">Malta</option><option value="MH">Marshall Islands</option><option value="MQ">Martinique</option><option value="MR">Mauritania</option><option value="MU">Mauritius</option><option value="YT">Mayotte</option><option value="MX">Mexico</option><option value="FM">Micronesia, Federated States Of</option><option value="MD">Moldova, Republic Of</option><option value="MC">Monaco</option><option value="MN">Mongolia</option><option value="MS">Montserrat</option><option value="MA">Morocco</option><option value="MZ">Mozambique</option><option value="MM">Myanmar</option><option value="NA">Namibia</option><option value="NR">Nauru</option><option value="NP">Nepal</option><option value="NL">Netherlands</option><option value="AN">Netherlands Antilles</option><option value="NC">New Caledonia</option><option value="NZ">New Zealand</option><option value="NI">Nicaragua</option><option value="NE">Niger</option><option value="NG">Nigeria</option><option value="NU">Niue</option><option value="NF">Norfolk Island</option><option value="MP">Northern Mariana Islands</option><option value="NO">Norway</option><option value="OM">Oman</option><option value="PK">Pakistan</option><option value="PW">Palau</option><option value="PS">Palestinian Territory, Occupied</option><option value="PA">Panama</option><option value="PG">Papua New Guinea</option><option value="PY">Paraguay</option><option value="PE">Peru</option><option value="PH">Philippines</option><option value="PN">Pitcairn</option><option value="PL">Poland</option><option value="PT">Portugal</option><option value="PR">Puerto Rico</option><option value="QA">Qatar</option><option value="RE">Reunion</option><option value="RO">Romania</option><option value="RU">Russian Federation</option><option value="RW">Rwanda</option><option value="SH">Saint Helena</option><option value="KN">Saint Kitts And Nevis</option><option value="LC">Saint Lucia</option><option value="PM">Saint Pierre And Miquelon</option><option value="VC">Saint Vincent And The Grenadines</option><option value="WS">Samoa</option><option value="SM">San Marino</option><option value="ST">Sao Tome And Principe</option><option value="SA">Saudi Arabia</option><option value="SN">Senegal</option><option value="CS">Serbia And Montenegro</option><option value="SC">Seychelles</option><option value="SL">Sierra Leone</option><option value="SG">Singapore</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option><option value="SB">Solomon Islands</option><option value="SO">Somalia</option><option value="ZA">South Africa</option><option value="GS">South Georgia And The South Sandwich Islands</option><option value="ES">Spain</option><option value="LK">Sri Lanka</option><option value="SD">Sudan</option><option value="SR">Suriname</option><option value="SJ">Svalbard And Jan Mayen</option><option value="SZ">Swaziland</option><option value="SE">Sweden</option><option value="CH">Switzerland</option><option value="SY">Syrian Arab Republic</option><option value="TW">Taiwan, Province Of China</option><option value="TJ">Tajikistan</option><option value="TZ">Tanzania, United Republic Of</option><option value="TH">Thailand</option><option value="TL">Timor-Leste</option><option value="TG">Togo</option><option value="TK">Tokelau</option><option value="TO">Tonga</option><option value="TT">Trinidad And Tobago</option><option value="TN">Tunisia</option><option value="TR">Turkey</option><option value="TM">Turkmenistan</option><option value="TC">Turks And Caicos Islands</option><option value="TV">Tuvalu</option><option value="UG">Uganda</option><option value="UA">Ukraine</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US" selected>United States</option><option value="UM">United States Minor Outlying Islands</option><option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option><option value="VU">Vanuatu</option><option value="VE">Venezuela</option><option value="VN">Viet Nam</option><option value="VG">Virgin Islands, British</option><option value="VI">Virgin Islands, U.S.</option><option value="WF">Wallis And Futuna</option><option value="EH">Western Sahara</option><option value="YE">Yemen</option><option value="ZM">Zambia</option><option value="ZW">Zimbabwe</option></select><br/></p>');
 
-				//request_login_buttons(jQuery("#login_box"));
-				request_registration_confirmation_buttons( jQuery("#login_box") );
+				//request_login_buttons(jQuery("#login_status_pane"));
+				request_registration_confirmation_buttons( jQuery("#login_status_pane") );
 				
 			} else {
-				jQuery("#login_box").prepend('There was an error.');
+				jQuery("#login_status_pane").prepend('There was an error.');
 			}
 		}
 	}, "json");
@@ -5517,21 +5601,21 @@ function send_confirmation(email, page, context, resend) {
 	$.post("/feedback/index.php", data_to_send, function(data) {
 		if(typeof(data.result) !== 'undefined') {
 			if(data.result.toLowerCase() == "failure") {
-				jQuery("#login_box").html('');
+				jQuery("#login_status_pane").html('');
 				if(typeof(data.reason) !== 'undefined') {
 					if(data.reason.toLowerCase() == "account_pending") {
-						pending_confirmation_buttons(jQuery( "#login_box" ));
+						pending_confirmation_buttons(jQuery( "#login_status_pane" ));
 					} else {
-						ready_to_close_button(jQuery( "#login_box" ));
+						ready_to_close_button(jQuery( "#login_status_pane" ));
 					}
 				}
 				if(typeof(data.message) !== 'undefined') {
-					jQuery("#login_box").append("<p>" + data.message + "</p>");
+					jQuery("#login_status_pane").append("<p>" + data.message + "</p>");
 				}
 
 			} else {
-				pending_secret_confirmation_buttons( jQuery( "#login_box" ) );
-				jQuery("#login_box").html('Thank you. Buley\'s has sent an email to ' + $('#registration_email').val() + '. Please click the verification link in that email or paste its "secret" into the box below:<br/><br/><strong>Secret</strong>: <input id="confirmation_hash" type="text" name="confirmation_hash" />');
+				pending_secret_confirmation_buttons( jQuery( "#login_status_pane" ) );
+				jQuery("#login_status_pane").html('Thank you. Buley\'s has sent an email to ' + $('#registration_email').val() + '. Please click the verification link in that email or paste its "secret" into the box below:<br/><br/><strong>Secret</strong>: <input id="confirmation_hash" type="text" name="confirmation_hash" />');
 			}
 		}
 	}, "json");
@@ -5548,28 +5632,28 @@ function account_login(email, password) {
 				
 				if(typeof data.message !== 'undefined') {
 					//miricle sauce
-					//jQuery("<p id='user_message'>" + data.message + "</p>").hide().prependTo("#login_box").fadeIn('slow');
+					//jQuery("<p id='user_message'>" + data.message + "</p>").hide().prependTo("#login_status_pane").fadeIn('slow');
 					send_to_console("<p>" + data.message + "</p>");
 					
 				} else {
-					//jQuery("<p id='user_message'>Incorrect email or password.</p>").hide().prependTo("#login_box").fadeIn('slow');
+					//jQuery("<p id='user_message'>Incorrect email or password.</p>").hide().prependTo("#login_status_pane").fadeIn('slow');
 					
 				}
 			
 			
 			} else if(data.result.toLowerCase() == "success") {
-				jQuery("#login_box").remove();
+				jQuery("#login_status_pane").remove();
 				if(typeof(data.message) !== 'undefined' && data.message != null && data.message != '') {
 					send_to_console("<p>" + data.message + "</p>");
-					//jQuery("<p id='user_message'>" + data.message + "</p>").hide().prependTo("#login_box").fadeIn('slow');
+					//jQuery("<p id='user_message'>" + data.message + "</p>").hide().prependTo("#login_status_pane").fadeIn('slow');
 				} else {
 					send_to_console("<p>Logged in successfully.</p>");
-					//jQuery('<p id="user_message">Logged in successfully.</p>').hide().prependTo("#login_box").fadeIn('slow');
+					//jQuery('<p id="user_message">Logged in successfully.</p>').hide().prependTo("#login_status_pane").fadeIn('slow');
 				}
 				jQuery("#register").fadeOut('fast');
 				jQuery("#login").fadeOut('fast');
 				jQuery("#logout").fadeIn('fast');
-				close_button(jQuery("#login_box"));
+				close_button(jQuery("#login_status_pane"));
 			}
 		}
 	}, "json");
@@ -5581,18 +5665,9 @@ function account_logout() {
 
 	$.post("/feedback/index.php", data_to_send, function(data) {
 		if(typeof(data.result) !== 'undefined') {
-			if(data.result.toLowerCase() == "failure") {
-				
-				if(typeof(data.message) !== 'undefined') {
-					jQuery("#login_box").append("<p>" + data.message + "</p>");
-				} else {
-					jQuery("#login_box").append("<p>Incorrect email or password.</p>");
-				}
-			
-			} else if(data.result.toLowerCase() == "success") {
+				delete Buleys.store["session_id"];
 				jQuery("#login").fadeIn('fast');
 				jQuery("#logout").fadeOut('fast');
-			}
 		}
 	}, "json");
 }
@@ -6610,8 +6685,10 @@ function nn_resize(){
 			//Buleys.objectId = favorite_request.result.author;
 			if(typeof favorite_request.result != 'undefined' && typeof favorite_request.result.link == 'string') {
 
-			var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><a href="#" class="close_sidebar_link" id="' + favorite_slug + '"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div>' + "<h3 id='overlay_" + favorite_slug.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + favorite_request.result.link + "'>" + favorite_request.result.title + "</a></h3></div><div id='overlay_left'></div><div id='overlay_controls'><a href='" + favorite_slug + "' class='favorite_favorite'>Favorite</a>&nbsp;<a href='" + favorite_slug + "' class='unfavorite_favorite'>Unfavorite</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_read'>Mark as read</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unread'>Mark as unread</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_seen'>Mark as seen</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + favorite_slug + "' class='archive_favorite'>Archive</a>&nbsp;<a href='" + favorite_slug + "' class='delete_favorite'>Delete</a>&nbsp;<a href='" + favorite_slug + "' class='unarchive_favorite'>Unarchive</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_up'>Vote up</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_down'>Vote down</a>&nbsp;<a href='" + favorite_slug + "' class='close_favorite_preview'>Close preview</a></div>";
-			
+			var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><a href="#" class="close_sidebar_link" id="' + favorite_slug + '"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div>' + "<h3 id='overlay_" + favorite_slug.replace(/[^a-zA-Z0-9-_]+/g,"") + "'><a href='" + favorite_request.result.link + "'>" + favorite_request.result.title + "</a></h3></div><div id='overlay_left'></div>";
+			/*
+			<div id='overlay_controls'><a href='" + favorite_slug + "' class='favorite_favorite'>Favorite</a>&nbsp;<a href='" + favorite_slug + "' class='unfavorite_favorite'>Unfavorite</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_read'>Mark as read</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unread'>Mark as unread</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_seen'>Mark as seen</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + favorite_slug + "' class='archive_favorite'>Archive</a>&nbsp;<a href='" + favorite_slug + "' class='delete_favorite'>Delete</a>&nbsp;<a href='" + favorite_slug + "' class='unarchive_favorite'>Unarchive</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_up'>Vote up</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_down'>Vote down</a>&nbsp;<a href='" + favorite_slug + "' class='close_favorite_preview'>Close preview</a></div>
+			*/
 			//<div id='overlay_controls'><a href='" + favorite_slug + "' class='favorite_favorite'>Favorite</a>&nbsp;<a href='" + favorite_slug + "' class='unfavorite_favorite'>Unfavorite</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_read'>Mark as read</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unread'>Mark as unread</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_seen'>Mark as seen</a>&nbsp;<a href='" + favorite_slug + "' class='mark_favorite_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + favorite_slug + "' class='archive_favorite'>Archive</a>&nbsp;<a href='" + favorite_slug + "' class='delete_favorite'>Delete</a>&nbsp;<a href='" + favorite_slug + "' class='unarchive_favorite'>Unarchive</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_up'>Vote up</a>&nbsp;<a href='" + favorite_slug + "' class='vote_favorite_down'>Vote down</a>&nbsp;<a href='" + favorite_slug + "' class='close_favorite_preview'>Close preview</a></div>
 				if( typeof favorite_request.result.author !== 'undefined' &&  favorite_request.result.author.length > 0 ) { 
 					//html_snippit = html_snippit + "<p>" + favorite_request.result.author + "</p>";
@@ -7083,9 +7160,34 @@ function nn_resize(){
 		
 	}
 
-	function get_account() {
+	function get_settings() {
+	//herenow
+	console.log("get_settings(): ");
+	Buleys.view.loaded="account";
+	get_settings();
+
+		var session_id = get_local_storage("session_id");
+		if(typeof session_id == "undefined" || session_id == null || session_id == "") {
+			jQuery("#main").append('<div id="account"><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /><br/><br/><a href="#" id="update_settings_button" class="update_settings">Update</a> or <a href="#" id="clear_form_button" class="clear_form">Clear</a></div></div></div>');
+		} else {
+			jQuery("#main").append("<div id='account'>Already logged in with session id <code>" + session_id+"</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");	
+		}
+		
+			Buleys.view.loaded="signin";
+
+
 	
-	console.log("get_account(): ");
+	}
+	
+	function get_signin() {
+		var session_id = get_local_storage("session_id");
+		if(typeof session_id == "undefined" || session_id == null || session_id == "") {
+			jQuery("#main").append('<div id="login_prompt"><div id="login_form"><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /><br/><br/><a href="#" id="doregistration" class="registrationlink">Register</a> or <a href="#" id="dologinsubmit" class="submitloginform">Login</a></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a></div></div></div>');
+		} else {
+			jQuery("#main").append("<div id='login_prompt'>Already logged in with session id <code>" + session_id+"</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");	
+		}
+		
+			Buleys.view.loaded="signin";
 	
 	}
 
@@ -7106,10 +7208,10 @@ function nn_resize(){
 </head>
 <style>
 
-#main a { 
+a { 
 color:#000;
 }
-#main a:visited { 
+a:visited { 
 color:#000;
 }
 h3 a:visited { 
@@ -7130,28 +7232,36 @@ ul {
 	margin:0;
 }
 #main {
-	right:6%;
 	position:absolute;
-	margin:4.5% 1% 0 1%;
-	clear:right;
+	margin:4.5% 1% 0 0%;
+	left:2%;
+	clear:left;
 	width:50%;
 }
-#console_wrapper {
-	left:8%;
-	width:45%;
-	bottom:5%;
-	background:url('/images/20percenttransparency.png') repeat;
-	z-index: 10000;
-	position: fixed;
+#right {
+	position:absolute;
+	margin:4.5% 1% 0 0%;
+	right:5%;
 	clear:left;
+	width:50%;
+}
+
+#console_wrapper {
+	left:5%;
+	width:45%;
+	bottom:2%;
+	background:url('/images/5percenttransparency.png') repeat;
+	z-index: 999;
+	position: fixed;
 }
 #console {
 	float:left;
-	margin:0 5px 0 5px;
+	clear:left;
+	margin:0 10px 0 10px;
 	padding:10px;
 }
 #console_controls {
-	clear:both;
+	clear:right;
 	float:right;
 	margin:10px;
 }
@@ -7159,8 +7269,31 @@ ul {
 	color:#000;
 }
 
+#login_prompt {
+width:330px;
+margin:20px 0 0 0;
+z-index: 999;
+}
+
 #console_close_button {
 	padding: 0 20px 20px 20px;
+}
+#login_status_pane {
+padding:5px 5px 20px 10px;
+float:right;
+font: 1.3em Georgia,Helvetica;
+}
+
+
+#login_status_pane a {
+	margin:0 10px 0 0;
+	color:#000;
+	font-size:1.25em Helvetica, Georgia;
+}
+
+#service_status_pane {
+padding:5px;
+float:right;
 }
 #overlay {
 	padding: 10px 20px 20px 20px;
@@ -7353,7 +7486,7 @@ a.downvoted{
 color:#999;
 }
 
-#login_box {
+#login_status_pane-depreciateme {
 	top:16%;
 	right:0;
 	position: fixed;
@@ -7366,9 +7499,6 @@ color:#999;
 	color:#eee;
 }
 
-#login_box a {
-	color:#fff;
-}
 
 #inbox_box {
 	right:0;
@@ -7388,11 +7518,12 @@ color:#999;
 
 
 #help_box {
-	bottom:0;
-	right:0;
+	bottom:4%;
+	left:2%;
 	position: fixed;
-	z-index:5000;
-	padding:2%;
+	z-index:999;
+	padding:1%;
+	color:#000;
 	color:#eee;
 }
 
@@ -7429,8 +7560,8 @@ color:#fff;
 
 
 #login_buttons {
-	float:right;
-	padding: 0 10px 10px 10px;
+	clear:left;
+	padding: 10px 10px 10px 0px;
 }
 
 #header {
@@ -7438,9 +7569,9 @@ position: fixed;
 top:0;
 right:0;
 left:0;
-padding:1% 1% 0% 1%;
+padding:.5% 1% 0% 1%;
 z-index: 10000;
-background:url('/images/5percenttransparency.png') repeat;
+/*background:url('/images/5percenttransparency.png') repeat;*/
 color:#000;
 border-bottom:1% solid #111;
 
@@ -7449,17 +7580,19 @@ a.logo {
 color:#000;
 text-decoration: none;
 font-size:150%;
-margin:-.25% 1% 1% 1%;
+margin:.25% 1% 1% 1%;
 text-transform: uppercase;
 font-weight: 100#;
 text-shadow: #000 0 1% 0;
-float:left;
+float:right;
+position:relative;
 border:1px solid #000;
 padding:.25% .5% 0 .5%;
 }
 #page_meta {
 font-size:125%;
 padding-top:3px;
+margin:7px 0 0 0;
 float:left;
 }
 #page_meta a {
@@ -7468,16 +7601,16 @@ color:#000;
 #page_meta a:visited {
 color:#000;
 }
-#main li a {
+#right li a {
 	color:#000;
 }
-#main li.seen a {
+#right li.seen a {
 	color:#333;
 }
-#main li.read a {
+#right li.read a {
 	color:#222;
 }
-#main li.favorited a {
+#right li.favorited a {
 	color:#111;
 }
 
@@ -7485,7 +7618,7 @@ color:#000;
 	display: none;
 }
 
-#main li.selected {
+#right li.selected {
 	background:url('/images/5percenttransparency.png') repeat;
 	color:#000;
 	margin:0px;
@@ -7493,26 +7626,24 @@ color:#000;
 
 }
 
-#main li.cursor {
+#right li.cursor {
 border-left:10px solid #a60000;
 
 }
 
 #mini_inbox_box {
-	top:40%;
-	right:0;
+	bottom:20px;
+	right:20px;
 	position: fixed;
-	background:url('/images/80percenttransparency.png') repeat;
-	z-index:5000;
-	border-left:1px solid #111;
-	border-top:1px solid #111;
-	border-bottom:1px solid #111;
-	padding:2.35%;
-	color:#eee;
+	background:url('/images/5percenttransparency.png') repeat;
+	z-index:999;
+	padding:1%;
+	color:#000;
 }
 
 #mini_inbox_box a {
-	color:#fff;
+	color:#000;
+	z-index: 1000;
 }
 
 .mini_box_icon {
@@ -7554,7 +7685,11 @@ padding:10px 0 0px 0;
 
 </style>
 <body>
-	<div id='header'><a href="#" class="logo">Buley's</a><div id='page_meta'></div></div>
+	<div id='header'>
+		<!--<a href="#" class="logo">Buley's</a>-->
+		<div id='page_meta'></div>
+		<div id='service_status_pane'></div>
+	</div>
 		<ul id='result_controls'>
 			<li id='view_home_button'>
 				<a href='#' id='view_home'>View Home</a> (shift + h)
@@ -7731,18 +7866,19 @@ padding:10px 0 0px 0;
 			</div>
 		</div>
 	</div>
+
 	<div id='main'>
+	</div>
+	<div id='right'>
 		<ul id='results'></ul>
 	</div>
+	
 	<div id='overlay'></div>
-	<div id='login_box'>
-		<a href="#" id="dologin" class="getloginform"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-out.png"></a>
+	<div id='help_box'>
+		<a href="#" id="dogethelpbox" class="getinbox"><img src="http://buleys.com/images/icons/fugue-shadowless/question.png"></a>
 	</div>
 	<div id='mini_inbox_box' class='empty_inbox'>
 		<a href="#" id="get_inbox" class="getinbox empty_inbox"><img src="http://buleys.com/images/icons/fugue-shadowless/inbox.png"></a>
-	</div>
-	<div id='help_box'>
-		<a href="#" id="dogethelpbox" class="getinbox"><img src="http://buleys.com/images/icons/fugue-shadowless/question.png"></a>
 	</div>
 
 
