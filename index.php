@@ -7,8 +7,6 @@ header('HTTP/1.0 200 OK');
 		<link rel="stylesheet" href="/css/style.css">
 		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
 
-		<script type="text/javascript" src="/js/loader.js"></script>
-
 
 	</head>
 	<body>
@@ -226,5 +224,6 @@ header('HTTP/1.0 200 OK');
 	})();
 	
 	</script>
+		<script type="text/javascript" src="/js/combined.js"></script>
 
 </html>

@@ -1,0 +1,7 @@
+To compile dev.js to combined.js via Google Closure Compiler:
+1. cd tools
+2. php ./compile_js.php
+3. cd ../
+4. php loader.php > combined.js
+
+Combined: cd tools && php ./compile_js.php && cd ../ && php loader.php > combined.js
