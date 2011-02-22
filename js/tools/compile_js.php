@@ -1,6 +1,7 @@
 <?php
 // Loop through each file
 $contents = '';
+shell_exec("java -jar compiler.jar --js=./../loader.dev.js --js_output_file=./../loader.js");
 foreach (glob("./../core/development/*.dev.js") as $filename) {
 	$filename = str_replace("./../core/development/","",$filename);
 	if($filename != "loader.js") {
