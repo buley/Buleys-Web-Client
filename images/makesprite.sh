@@ -6,5 +6,5 @@ sudo /ImageMagick-6.6.7/bin/convert thumb.png thumb-empty.png thumb-up.png thumb
 sudo /ImageMagick-6.6.7/bin/convert cross-button.png question.png transparencies.png +append actions_4.png
 sudo /ImageMagick-6.6.7/bin/convert 154.png 158.png 159.png 160.png +append circles.png
 sudo /ImageMagick-6.6.7/bin/convert facebook.png twitter.png reddit.png digg.png +append social.png
-sudo /ImageMagick-6.6.7/bin/convert actions_1.png actions_2.png actions_3.png actions_4.png circles.png social.png -append sprite.png
+sudo /ImageMagick-6.6.7/bin/convert actions_1.png actions_2.png actions_3.png circles.png social.png actions_4.png -append sprite.png
 sudo rm transparencies.png actions_1.png actions_2.png actions_3.png actions_4.png circles.png social.png
