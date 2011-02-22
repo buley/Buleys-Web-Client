@@ -7,7 +7,7 @@
 	
 	function createNotificationInstance(options) {
 	    if (options.notificationType == 'simple') {
-	        return window.webkitNotifications.createNotification('icon.png', 'Notification Title', 'Notification content...');
+	        return window.webkitNotifications.createNotification('fire.png', 'Notification Title', 'Notification content...');
 	    } else if (options.notificationType == 'html') {
 	        return window.webkitNotifications.createHTMLNotification('http://someurl.com');
 	    }

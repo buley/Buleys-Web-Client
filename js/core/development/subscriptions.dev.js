@@ -77,10 +77,10 @@
 	
 	        if (typeof item_request.result == 'undefined' || item_request.result == "") {
 	
-	            jQuery("#page_meta").append("<a href='#' class='subscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/mail.png'/></a>");
+	            jQuery("#page_meta").append("<a href='#' class='subscribe_topic empty_mail_icon'></a>");
 	        } else {
 	
-	            jQuery("#page_meta").append("<a href='#' class='unsubscribe_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/mail-send.png'/></a>");
+	            jQuery("#page_meta").append("<a href='#' class='unsubscribe_topic mail_icon'></a>");
 	        }
 	    };
 	

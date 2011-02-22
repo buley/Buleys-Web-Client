@@ -2,13 +2,13 @@
     $('#dologin').live('click', function (event) {
         event.preventDefault();
         $('#dologin').remove();
-        $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-in.png"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
+        $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
     });
 
     $('a#get_inbox').live('click', function (event) {
         event.preventDefault();
 
-        $('#mini_inbox_box').html('<div id="mini_inbox_wrapper"><div id="minimize_mini_inbox_controls"><a href="#" id="minimize_inbox"><img src="/images/icons/fugue-shadowless/cross-button.png"></a></div><ul id="mini_inbox_list"><li>Loading...</li></ul></div>');
+        $('#mini_inbox_box').html('<div id="mini_inbox_wrapper"><div id="minimize_mini_inbox_controls"><a href="#" id="minimize_inbox cross_link"></a></div><ul id="mini_inbox_list"><li>Loading...</li></ul></div>');
         add_topics_to_mini_inbox();
 
     });
@@ -18,9 +18,9 @@
     $('#minimize_inbox').live('click', function (event) {
         event.preventDefault();
         if ($('#mini_inbox_box').hasClass('waiting_inbox')) {
-            $('#mini_inbox_box').html('<a href="#" id="get_inbox"><img src="http://buleys.com/images/icons/fugue-shadowless/inbox-document.png"></a>');
+            $('#mini_inbox_box').html('<a href="#" id="get_inbox inbox"></a>');
         } else {
-            $('#mini_inbox_box').html('<a href="#" id="get_inbox"><img src="http://buleys.com/images/icons/fugue-shadowless/inbox.png"></a>');
+            $('#mini_inbox_box').html('<a href="#" id="get_inbox empty_inbox"></a>');
         }
     });
 
@@ -28,7 +28,7 @@
     $('#dologinboxminimize').live('click', function (event) {
         event.preventDefault();
 
-        $('#login_status_pane').html('<a href="#" id="dologin" class="getloginform"><img src="http://buleys.com/images/icons/fugue-shadowless/door-open-out.png"></a>');
+        $('#login_status_pane').html('<a href="#" id="dologin" class="getloginform exit_door_link"></a>');
     });
 
 
@@ -565,11 +565,11 @@
 
         event.preventDefault();
 
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
         jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
         jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link').addClass('fav_link');
 
-        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
         jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
 
 
@@ -588,13 +588,13 @@
 
 
 
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
 
                 jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
                 jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
 
 
-                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
                 jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
 
 
@@ -608,13 +608,13 @@
 
         } else {
 
-            jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+            jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
 
             jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
             jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
 
 
-            jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+            jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
             jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
 
 
@@ -635,11 +635,11 @@
             $.each($('.selected'), function (i, item_to_mark) {
 
 
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('star_icon').addClass('empty_star_icon');
                 jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
                 jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
 
-                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
                 jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
 
                 remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
@@ -653,11 +653,11 @@
 
         } else {
 
-            jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+            jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('star_icon').addClass('empty_star_icon');
             jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
             jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
 
-            jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star-empty.png");
+            jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
             jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
 
 
@@ -674,13 +674,13 @@
     $('.fav_link').live('click', function (event) {
         event.preventDefault();
 
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
 
         jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
         jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('fav_link').addClass('unfav_link');;
 
 
-        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
         jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
 
         add_item_to_favorites_database($(this).attr('href'), Buleys.view.slug, Buleys.view.type);
@@ -720,7 +720,7 @@
 
     $('.mark_item_as_unread').live('click', function (event) {
         event.preventDefault();
-        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/star.png");
+        $(this).removeClass('empty_star_icon').addClass('star_icon');
         $(this).removeClass('unfav_link');
         $(this).addClass('fav_link');
 
@@ -1331,7 +1331,7 @@
         add_follow_if_doesnt_exist(the_type, the_key);
         post_feedback('follow', '', the_key, the_type);
 
-        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/heart.png");
+        $(this).removeClass('empty_heart_icon').addClass('heart_icon');
         $(this).removeClass('follow_topic');
         $(this).addClass('unfollow_topic');
 
@@ -1355,7 +1355,7 @@
         remove_follow(the_type, the_key);
         post_feedback('unfollow', '', the_key, the_type);
 
-        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/heart-empty.png");
+        $(this).removeClass('heart_icon').addClass('empty_heart_icon');
         $(this).removeClass('unfollow_topic');
         $(this).addClass('follow_topic');
     });
@@ -1378,7 +1378,7 @@
         add_subscription_if_doesnt_exist(the_type, the_key);
         post_feedback('subscribe', "", the_key, the_type);
 
-        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/inbox-document.png");
+        $(this).removeClass('empty_inbox_icon').addClass('inbox_icon');
         $(this).removeClass('subscribe_topic');
         $(this).addClass('unsubscribe_topic');
     });
@@ -1402,7 +1402,7 @@
         remove_subscription(the_type, the_key);
         post_feedback('subscribe', "", the_key, the_type);
 
-        $(this).children('img').attr('src', "http://buleys.com/images/icons/fugue-shadowless/inbox.png");
+        $(this).removeClass('inbox_icon').addClass('empty_inbox_icon');
         $(this).removeClass('unsubscribe_topic');
         $(this).addClass('subscribe_topic');
     });
@@ -1440,7 +1440,7 @@
         var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
         if (jQuery("#overlay_upvote_" + the_url).hasClass('vote')) {
 
-            jQuery("#overlay_upvote_" + the_url).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-up-empty.png');
+            jQuery("#overlay_upvote_" + the_url).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
             $('.vote').removeClass('vote');
             $(this).parent().removeClass('voted');
             post_feedback('item_remove_upvote', the_url, Buleys.view.type, Buleys.view.slug);
@@ -1448,8 +1448,8 @@
 
         } else {
 
-            jQuery("#overlay_downvote_" + the_url).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-empty.png');
-            jQuery("#overlay_upvote_" + the_url).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-up.png');
+            jQuery("#overlay_downvote_" + the_url).removeClass('thumb_icon').addClass('empty_thumb_icon');
+            jQuery("#overlay_upvote_" + the_url).removeClass('empty_thumb_up_icon').addClass('thumb_up_icon');
             $('.vote').removeClass('vote');
             $(this).parent().addClass('voted');
             $(this).addClass('vote');
@@ -1467,7 +1467,7 @@
 
         if (jQuery("#overlay_downvote_" + the_url_slug).hasClass('vote')) {
 
-            jQuery("#overlay_downvote_" + the_url_slug).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-empty.png');
+            jQuery("#overlay_downvote_" + the_url_slug).removeClass('empty_thumb_icon').addClass('thumb_icon');
             $('.vote').removeClass('vote');
             $(this).parent().removeClass('voted');
 
@@ -1476,8 +1476,8 @@
 
         } else {
 
-            jQuery("#overlay_downvote_" + the_url_slug).children('img').attr('src', '/images/icons/fugue-shadowless/thumb.png');
-            jQuery("#overlay_upvote_" + the_url_slug).children('img').attr('src', '/images/icons/fugue-shadowless/thumb-up-empty.png');
+            jQuery("#overlay_downvote_" + the_url_slug).removeClass('empty_thumb_icon').addClass('thumb_icon');
+            jQuery("#overlay_upvote_" + the_url_slug).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
 
             $('.vote').removeClass('vote');
             $(this).parent().addClass('voted');

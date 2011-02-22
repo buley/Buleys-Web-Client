@@ -92,7 +92,7 @@ float:right;
 	left:1%;
 	z-index:999;
 	position:fixed;
-	background:url('/images/5percenttransparency.png') repeat;
+	background:url('/images/5percenttransparency.png') repeat 32px -32px;
 	border:1px solid #eee;
 
 }
@@ -157,9 +157,10 @@ float:right;
 	vertical-align: middle;
 }
 
-.vote_context a {
-	padding:6px 0 0 0;
+.vote_context div {
+	margin:0 0 8px 0;
 }
+
 
 .sidebar_close_link {
 	margin:10px 0px 0 0;
@@ -237,6 +238,8 @@ ul#results > li > a {
 
 .favorite_status {
 	margin:0 10px 0 0;
+	float:left;
+	position: relative;
 }
 div#overlay span.overlay_favorite_status a {
 padding:0px 00px 0px 0;
@@ -471,4 +474,328 @@ padding:10px 0 0px 0;
 	padding:0;
 	position: relative;
 	float:right;
+}
+
+.heart_icon {
+	background:url('/images/sprite-compressed.png') 0px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.empty_heart_icon {
+	background:url('/images/sprite-compressed.png') -16px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.heart_break_icon {
+	background:url('/images/sprite-compressed.png') -32px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.star_icon {
+	background:url('/images/sprite-compressed.png') -48px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.empty_star_icon {
+	background:url('/images/sprite-compressed.png') -64px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_empty_star_icon {
+	background:url('/images/sprite-compressed.png') -80px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_reverse_alpha_icon {
+	background:url('/images/sprite-compressed.png') -96px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_alpha_icon {
+	background:url('/images/sprite-compressed.png') -112px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_empty_heart_icon {
+	background:url('/images/sprite-compressed.png') -128px 0px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.empty_mail_icon {
+	background:url('/images/sprite-compressed.png') 0px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.mail_icon {
+	background:url('/images/sprite-compressed.png') -16px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.empty_inbox_icon {
+	background:url('/images/sprite-compressed.png') -32px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.inbox_icon {
+	background:url('/images/sprite-compressed.png') -48px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_date_icon {
+	background:url('/images/sprite-compressed.png') -64px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_descending_icon {
+	background:url('/images/sprite-compressed.png') -80px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_price_icon {
+	background:url('/images/sprite-compressed.png') -96px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.fire_icon {
+	background:url('/images/sprite-compressed.png') -112px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_heart_icon {
+	background:url('/images/sprite-compressed.png') -128px -16px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.thumb_icon {
+	background:url('/images/sprite-compressed.png') 0px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.empty_thumb_icon {
+	background:url('/images/sprite-compressed.png') -16px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.thumb_up_icon {
+	background:url('/images/sprite-compressed.png') -32px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.empty_thumb_up_icon {
+	background:url('/images/sprite-compressed.png') -48px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_ascending_icon {
+	background:url('/images/sprite-compressed.png') -64px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_price_descending_icon {
+	background:url('/images/sprite-compressed.png') -80px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_quantity_icon {
+	background:url('/images/sprite-compressed.png') -96px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.slash_icon {
+	background:url('/images/sprite-compressed.png') -112px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.slash_small_icon {
+	background:url('/images/sprite-compressed.png') -128px -32px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.gold_circle_icon {
+	background:url('/images/sprite-compressed.png') 0px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.black_circle_icon {
+	background:url('/images/sprite-compressed.png') -16px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.grey_circle_icon {
+	background:url('/images/sprite-compressed.png') -32px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.white_circle_icon {
+	background:url('/images/sprite-compressed.png') -48px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.door_exit_icon {
+	background:url('/images/sprite-compressed.png') -64px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.door_enter_icon {
+	background:url('/images/sprite-compressed.png') -80px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_rating_descending_icon {
+	background:url('/images/sprite-compressed.png') -96px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_rating_icon {
+	background:url('/images/sprite-compressed.png') -112px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_icon {
+	background:url('/images/sprite-compressed.png') -128px -48px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.facebook_icon {
+	background:url('/images/sprite-compressed.png') 0px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.twitter_icon {
+	background:url('/images/sprite-compressed.png') -16px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.reddit_icon {
+	background:url('/images/sprite-compressed.png') -32px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.digg_icon {
+	background:url('/images/sprite-compressed.png') -48px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_sort_icon {
+	background:url('/images/sprite-compressed.png') -64px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.edit_icon {
+	background:url('/images/sprite-compressed.png') -80px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.increase_text_size_icon {
+	background:url('/images/sprite-compressed.png') -96px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.decrease_text_size_icon {
+	background:url('/images/sprite-compressed.png') -112px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.wall_icon {
+	background:url('/images/sprite-compressed.png') -128px -64px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.cross_icon {
+	background:url('/images/sprite-compressed.png') 0px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.cross_circle_icon {
+	background:url('/images/sprite-compressed.png') -16px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.help_icon {
+	background:url('/images/sprite-compressed.png') -32px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.magnify_icon {
+	background:url('/images/sprite-compressed.png') -48px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_magnify_icon {
+	background:url('/images/sprite-compressed.png') -64px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.people_icon {
+	background:url('/images/sprite-compressed.png') -80px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.sort_date_descending_icon {
+	background:url('/images/sprite-compressed.png') -96px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_star_icon {
+	background:url('/images/sprite-compressed.png') -112px -80px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.small_empty_star_icon {
+	background:url('/images/sprite-compressed.png') -128px -80px no-repeat;
+	height:16px;
+	width:16px;
 }

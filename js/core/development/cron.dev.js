@@ -24,12 +24,12 @@
 	
 	
 	            if (typeof jQuery("#minimize_inbox") !== "undefined" && length_of_new > 0) {
-	                jQuery("#get_inbox img").attr('src', "http://buleys.com/images/icons/fugue-shadowless/inbox-document.png").parent().parent().removeClass('empty_inbox').addClass('waiting_inbox');
+	                jQuery("#get_inbox").removeClass('inbox_icon').addClass('empty_inbox_icon').parent().parent().removeClass('empty_inbox').addClass('waiting_inbox');
 	            }
 	
 	        } else {
 	
-	            jQuery("#get_inbox img").attr('src', "http://buleys.com/images/icons/fugue-shadowless/inbox.png").parent().parent().addClass('empty_inbox').removeClass('waiting_inbox');
+	            jQuery("#get_inbox img").removeClass('empty_inbox_icon').addClass('inbox_icon').parent().parent().addClass('empty_inbox').removeClass('waiting_inbox');
 	
 	
 	        }

@@ -90,9 +90,9 @@ function get_page_follow_status(the_type, the_key) {
     var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
     item_request.onsuccess = function (event) {
         if (typeof item_request.result == 'undefined' || item_request.result == "") {
-            jQuery("#page_meta").append("<a href='#' class='follow_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/heart-empty.png'/></a>");
+            jQuery("#page_meta").append("<a href='#' class='follow_topic empty_heart_icon'></a>");
         } else {
-            jQuery("#page_meta").append("<a href='#' class='follow_topic'><img src='http://buleys.com/images/icons/fugue-shadowless/heart.png'/></a>");
+            jQuery("#page_meta").append("<a href='#' class='unfollow_topic heart_icon'></a>");
         }
     };
     item_request.onerror = function (e) {

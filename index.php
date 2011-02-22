@@ -186,8 +186,7 @@ header('HTTP/1.0 200 OK');
 		<div id='console_wrapper'>
 			<div id='console'></div>
 			<div id='console_controls'>
-				<div id='console_close_button'>
-					<img src='http://buleys.com/images/icons/fugue-shadowless/cross-button.png'/></div>
+				<div id='console_close_button cross_icon'></div>
 				</div>
 			</div>
 		</div>
@@ -200,10 +199,10 @@ header('HTTP/1.0 200 OK');
 		
 		<div id='overlay'></div>
 		<div id='help_box'>
-			<a href="#" id="dogethelpbox" class="getinbox"><img src="http://buleys.com/images/icons/fugue-shadowless/question.png"></a>
+			<a href="#" id="dogethelpbox" class="getinbox help_icon"></a>
 		</div>
 		<div id='mini_inbox_box' class='empty_inbox'>
-			<a href="#" id="get_inbox" class="getinbox empty_inbox"><img src="http://buleys.com/images/icons/fugue-shadowless/inbox.png"></a>
+			<a href="#" id="get_inbox" class="getinbox empty_inbox empty_inbox_icon"></a>
 		</div>
 	
 	

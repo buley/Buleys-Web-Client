@@ -70,10 +70,10 @@
 	    var the_link = jQuery(event_context).attr('link');
 	    var the_type = jQuery(event_context).attr('type');
 	    var the_slug = jQuery(event_context).attr('slug');
-	    html_snippit = "<span class='vote_up_category' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'><img src='http://buleys.com/images/icons/fugue-shadowless/thumb-up.png'>&nbsp;</span>";
-	    html_snippit = html_snippit + "<span class='vote_down_category' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'><img src='http://buleys.com/images/icons/fugue-shadowless/thumb.png'>&nbsp;&nbsp;</span>";
+	    html_snippit = "<span class='vote_up_category thumb_up_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
+	    html_snippit = html_snippit + "<span class='vote_down_category thumb_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
 	    html_snippit = html_snippit + "" + current;
-	    html_snippit = html_snippit + "<div class='delete_category' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'><img src='http://buleys.com/images/icons/fugue-shadowless/cross-button.png'></div>";
+	    html_snippit = html_snippit + "<div class='delete_category close_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
 	    jQuery(event_context).html(html_snippit);
 	
 	}
