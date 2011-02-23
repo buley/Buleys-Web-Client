@@ -132,7 +132,7 @@
 	function reload_results() {
 	
 	    clear_page();
-	
+		set_page_vars();
 	    load_current_page();
 	}
 

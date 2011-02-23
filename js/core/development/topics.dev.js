@@ -50,9 +50,7 @@
 	function get_page_topic_info(the_type, the_key) {
 	    new_topics_transaction();
 	
-	
 	    var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
-	
 	
 	    item_request.onsuccess = function (event) {
 	
@@ -63,19 +61,25 @@
 	        } else {
 	
 	            if (typeof item_request.result.name != 'undefined') {
-	                jQuery("#page_meta").append("<a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a>");
+	                jQuery("#page_title").html("<a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a>");
 	                window.document.title = window.document.title.replace(/[|\s]*?Buley's/, "");
 	                window.document.title = window.document.title + item_request.result.name + " | Buley's";
 	
 	
-	            }
+	            } else {
+	    			jQuery("#page_title").html("");
+	    		}
 	            if (typeof item_request.result.subsector != 'undefined') {
-	                jQuery("#page_meta").append("<a href='/sector/" + getURLSlug(item_request.result.subsector).toLowerCase() + "' class='sector_name'>" + item_request.result.subsector + "</a>");
-	            }
+	                jQuery("#subtitle_1").html("<a href='/sector/" + getURLSlug(item_request.result.subsector).toLowerCase() + "' class='sector_name'>" + item_request.result.subsector + "</a>");
+	            } else {
+	    			jQuery("#subtitle_1").html("");
+	 		    }
 	
 	            if (typeof item_request.result.sector != 'undefined') {
-	                jQuery("#page_meta").append("<a href='/sector/" + getURLSlug(item_request.result.sector).toLowerCase() + "' class='subsector_name'>" + item_request.result.sector + "</a>");
-	            }
+	                jQuery("#subtitle_2").html("<a href='/sector/" + getURLSlug(item_request.result.sector).toLowerCase() + "' class='subsector_name'>" + item_request.result.sector + "</a>");
+	            } else {
+	    			jQuery("#subtitle_2").html("");
+	   			}
 	
 	
 	        }

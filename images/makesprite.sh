@@ -7,4 +7,8 @@ sudo /ImageMagick-6.6.7/bin/convert cross.png cross-circle.png question.png magn
 sudo /ImageMagick-6.6.7/bin/convert 154.png 158.png 159.png 160.png door-open.png door-open-in.png sort-rating-descending.png sort-rating.png sort.png +append circles.png
 sudo /ImageMagick-6.6.7/bin/convert facebook.png twitter.png reddit.png digg.png sort-small.png edit-code.png edit-size-down.png edit-size-up.png wall.png +append social.png
 sudo /ImageMagick-6.6.7/bin/convert actions_1.png actions_2.png actions_3.png circles.png social.png actions_4.png -append sprite.png
-sudo rm transparencies.png actions_1.png actions_2.png actions_3.png actions_4.png circles.png social.png
+sudo /ImageMagick-6.6.7/bin/convert big-inbox.png big-inbox-document.png big-briefcase.png big-magnifier.png -append big-sprite1.png
+sudo /ImageMagick-6.6.7/bin/convert big-thumb-up.png big-thumb.png big-star.png big-star-empty.png -append big-sprite2.png
+sudo /ImageMagick-6.6.7/bin/convert big-sprite1.png big-sprite2.png +append big-sprite.png
+sudo /ImageMagick-6.6.7/bin/convert sprite.png big-sprite.png +append sprite-combined.png
+sudo rm transparencies.png actions_1.png actions_2.png actions_3.png actions_4.png circles.png social.png big-sprite1.png big-sprite.png big-sprite2.png

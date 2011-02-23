@@ -5,24 +5,7 @@
         $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
     });
 
-    $('a#get_inbox').live('click', function (event) {
-        event.preventDefault();
 
-        $('#mini_inbox_box').html('<div id="mini_inbox_wrapper"><div id="minimize_mini_inbox_controls"><a href="#" id="minimize_inbox cross_link"></a></div><ul id="mini_inbox_list"><li>Loading...</li></ul></div>');
-        add_topics_to_mini_inbox();
-
-    });
-
-
-
-    $('#minimize_inbox').live('click', function (event) {
-        event.preventDefault();
-        if ($('#mini_inbox_box').hasClass('waiting_inbox')) {
-            $('#mini_inbox_box').html('<a href="#" id="get_inbox inbox"></a>');
-        } else {
-            $('#mini_inbox_box').html('<a href="#" id="get_inbox empty_inbox"></a>');
-        }
-    });
 
 
     $('#dologinboxminimize').live('click', function (event) {
@@ -486,33 +469,11 @@
         reload_results();
     });
 
-    $('#view_favorites').live('click', function (event) {
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_favorites clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/favorites";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/favorites";
-        } else {
-            urlString = "http://buleys.com/favorites";
-        }
-        history.pushState(stateObj, "view_favorites", urlString);
-        reload_results();
-    });
 
     $('#view_index').live('click', function (event) {
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_index clicked");
-        jQuery("#page_meta").html('');
         var stateObj = {
             "page": Buleys.view.page,
             "slug": Buleys.view.slug,
@@ -526,7 +487,6 @@
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_home clicked");
-        jQuery("#page_meta").html('');
         var stateObj = {
             "page": Buleys.view.page,
             "slug": Buleys.view.slug,
@@ -553,142 +513,6 @@
 
         }
     });
-
-
-
-
-
-
-
-
-    $('.unfav_link').live('click', function (event) {
-
-        event.preventDefault();
-
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link').addClass('fav_link');
-
-        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-
-
-        remove_item_from_favorites_database($(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-        post_feedback('unstar', $(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-        send_to_console("<p>item removed from favorites</p>");
-        setTimeout('fade_console_message()', 1000);
-    });
-
-    $('#favorite').live('click', function (event) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function (i, item_to_mark) {
-
-
-
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
-
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
-
-
-                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-
-
-                add_item_to_favorites_database($(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                post_feedback('star', $(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                send_to_console("<p>item favorited</p>");
-                setTimeout('fade_console_message()', 1000);
-
-
-            });
-
-        } else {
-
-            jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
-
-            jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-            jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
-
-
-            jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-            jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-
-
-            add_item_to_favorites_database($('.cursor a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            post_feedback('star', $('.cursor a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            send_to_console("<p>item favorited</p>");
-            setTimeout('fade_console_message()', 1000);
-
-
-        }
-
-    });
-
-    $('#unfavorite').live('click', function (event) {
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function (i, item_to_mark) {
-
-
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('star_icon').addClass('empty_star_icon');
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-                jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
-
-                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-                jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-
-                remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                post_feedback('unstar', $(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                send_to_console("<p>item removed from favorites</p>");
-                setTimeout('fade_console_message()', 1000);
-
-
-
-            });
-
-        } else {
-
-            jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('star_icon').addClass('empty_star_icon');
-            jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-            jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('unfav_link');
-
-            jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-            jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-
-
-            remove_item_from_favorites_database($('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            post_feedback('unstar', $('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            send_to_console("<p>item removed from favorites</p>");
-            setTimeout('fade_console_message()', 1000);
-
-        }
-    });
-
-
-
-    $('.fav_link').live('click', function (event) {
-        event.preventDefault();
-
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('empty_star_icon').addClass('star_icon');
-
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-        jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('a').removeClass('fav_link').addClass('unfav_link');;
-
-
-        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-        jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-
-        add_item_to_favorites_database($(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-        post_feedback('star', $(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-        send_to_console("<p>item favorited</p>");
-        setTimeout('fade_console_message()', 1000);
-    });
-
 
     $('.close_item_preview').live('click', function (event) {
         event.preventDefault();
@@ -883,19 +707,7 @@
         }
     });
 
-    $('#select_favorites').live('click', function (event) {
-        event.preventDefault();
-        $.each($('.favorited'), function (i, item_to_mark) {
-            if (jQuery(item_to_mark).hasClass('selected')) {
 
-            } else {
-                jQuery(item_to_mark).addClass('selected');
-
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-
-            }
-        });
-    });
 
     $('#deselect_seen').live('click', function (event) {
         event.preventDefault();
@@ -919,14 +731,7 @@
 
         });
     });
-    $('#deselect_favorites').live('click', function (event) {
-        event.preventDefault();
-        $.each($('.favorited'), function (i, item_to_mark) {
 
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
     $('#deselect_read').live('click', function (event) {
         event.preventDefault();
         $.each($('.read'), function (i, item_to_mark) {

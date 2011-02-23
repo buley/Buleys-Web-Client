@@ -6,13 +6,15 @@ header('HTTP/1.0 200 OK');
 		<title>Buley's</title>
 		<link rel="stylesheet" href="/css/style.css">
 		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
-
-
 	</head>
 	<body>
 		<div id='header'>
 			<!--<a href="#" class="logo">Buley's</a>-->
-			<div id='page_meta'></div>
+			<div id='page_meta'>
+				<div id="page_title"></div>
+				<div id="subtitle_1"></div>
+				<div id="subtitle_2"></div>
+			</div>
 			<div id='service_status_pane'></div>
 		</div>
 			<ul id='result_controls'>

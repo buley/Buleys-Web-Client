@@ -77,10 +77,10 @@
 	
 	        if (typeof item_request.result == 'undefined' || item_request.result == "") {
 	
-	            jQuery("#page_meta").append("<a href='#' class='subscribe_topic empty_mail_icon'></a>");
+	            jQuery("#page_subscription_status").append("<a href='#' class='subscribe_topic empty_mail_icon'></a>");
 	        } else {
 	
-	            jQuery("#page_meta").append("<a href='#' class='unsubscribe_topic mail_icon'></a>");
+	            jQuery("#page_subscription_status").append("<a href='#' class='unsubscribe_topic mail_icon'></a>");
 	        }
 	    };
 	
