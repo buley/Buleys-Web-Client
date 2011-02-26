@@ -47,6 +47,7 @@
 	}
 		
 	function clear_page() {
+	    hide_overlay();
 	    jQuery("#right").html("<ul id='results'></ul>");
 	    jQuery("#main").html('');
 	}

@@ -8,6 +8,12 @@ function send_to_overlay(text) {
         opacity: 1
     }, 500);
 }
+function hide_overlay() {
+    jQuery("#overlay").stop(true).animate({
+        opacity: 0
+    }, 500);
+    jQuery("#overlay").html('').removeClass();
+}
 	
 function load_item_to_overlay(item_key) {
     get_item_for_overlay(item_key);

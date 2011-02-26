@@ -37,8 +37,9 @@
 		
 	function get_settings() {
 	
+		hide_overlay();
 	    console.log("get_settings(): ");
-	    Buleys.view.loaded = "account";
+	    Buleys.view.loaded = "settings";
 	    get_settings();
 	
 	    var session_id = get_local_storage("session_id");
@@ -47,9 +48,7 @@
 	    } else {
 	        jQuery("#main").append("<div id='account'>Already logged in with session id <code>" + session_id + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");
 	    }
-	
-	    Buleys.view.loaded = "signin";
-	
+		
 	
 	
 	}
