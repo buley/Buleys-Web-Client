@@ -31,9 +31,12 @@ ul {
 #right {
 	position:absolute;
 	margin:4.5% 1% 0 0%;
+	border-left:1px dotted #eee;
 	right:5%;
+	padding:0 1% 0 1%;
 	clear:left;
 	width:50%;
+	
 }
 
 #console_wrapper {
@@ -63,6 +66,8 @@ ul {
 width:330px;
 margin:20px 0 0 0;
 z-index: 999;
+font: 1.3em Georgia,Helvetica;
+
 }
 
 #console_close_button {
@@ -87,8 +92,8 @@ float:right;
 }
 #overlay {
 	padding: 10px 20px 20px 20px;
-	margin:4.5% 0% 0 0%;
-	width:38%;
+	margin:4.5% 1% 0 0%;
+	width:37%;
 	left:1%;
 	z-index:999;
 	position:fixed;
@@ -141,9 +146,6 @@ float:right;
 
 #overlay .delete_category {
 	float:right;
-	margin:0 0px 0px 0px;
-	padding:0 0px 0px 7px;
-	line-height: 1.4em;
 }
 
 #overlay .selected_category {
@@ -302,20 +304,23 @@ color:#999;
 	border-top:1px solid #111;
 	border-bottom:1px solid #111;
 	padding:2.35%;
-	color:#eee;
+	color:#eee;	
 }
 
 #inbox_box a {
 	color:#fff;
 }
 
+#corner_pocket {
+width:5%;
+float:right;
+}
 
 #help_box {
-	bottom:4%;
-	left:2%;
+	bottom:3%;
+	left:1%;
 	position: fixed;
 	z-index:999;
-	padding:1%;
 	color:#000;
 	color:#eee;
 }
@@ -333,9 +338,7 @@ padding:0 0 20px 20px;
 
 #minimize_mini_inbox_controls {
 float:right;
-position: relative;
-display: inline;
-padding:0 0 20px 20px;
+margin:0 0 20px 20px;
 }
 
 #login_form {
@@ -364,9 +367,9 @@ right:0;
 left:0;
 padding:.5% 1% 0% 1%;
 z-index: 10000;
-/*background:url('/images/5percenttransparency.png') repeat;*/
+	border-bottom:1px dotted #eee;
+background: #fff;
 color:#000;
-border-bottom:1% solid #111;
 
 }
 a.logo {
@@ -394,6 +397,49 @@ color:#000;
 #page_meta a:visited {
 color:#000;
 }
+#page_title {
+float:left;
+}
+#subtitle_1 {
+float:left;
+
+}
+#subtitle_2 {
+float:left;
+}
+#page_status {
+float:left;
+}
+#page_follow_status {
+float:left;
+}
+#page_subscription_status {
+float:left;
+}
+
+#right_rail {
+width:5%;
+padding:5% 1% 0 0%;
+right:0;
+position:fixed;
+height:100%;
+border-left:1px dotted #eee;
+}
+#mini_inbox_wrapper {
+	background:url('/images/5percenttransparency.png') repeat;
+position:absolute;
+margin:-10px 0 0 -80px;
+padding:12px;
+}
+
+.service_box_wrapper {
+	background:url('/images/5percenttransparency.png') repeat;
+position:absolute;
+margin:-10px 0 0 -80px;
+padding:12px;
+}
+
+
 #right li a {
 	color:#000;
 }
@@ -425,18 +471,13 @@ border-left:10px solid #a60000;
 }
 
 #mini_inbox_box {
-	bottom:20px;
-	right:20px;
-	position: fixed;
-	background:url('/images/5percenttransparency.png') repeat;
-	z-index:999;
-	padding:1%;
+	float:none;
+	margin:0 0 .5em 1.5em;
 	color:#000;
 }
 
 #mini_inbox_box a {
 	color:#000;
-	z-index: 1000;
 }
 
 .mini_box_icon {
@@ -798,4 +839,188 @@ padding:10px 0 0px 0;
 	background:url('/images/sprite-compressed.png') -128px -80px no-repeat;
 	height:16px;
 	width:16px;
+}
+
+
+.hacker_news_icon {
+	background:url('/images/sprite-compressed.png') 0px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.techmeme_icon {
+	background:url('/images/sprite-compressed.png') -16px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.facebook_bubble_icon {
+	background:url('/images/sprite-compressed.png') -32px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.facebook_bubble_right_icon {
+	background:url('/images/sprite-compressed.png') -48px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.twitter_bubble_icon {
+	background:url('/images/sprite-compressed.png') -64px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.twitter_bubble_retweet_icon {
+	background:url('/images/sprite-compressed.png') -80px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.twitter_bubble_right_icon {
+	background:url('/images/sprite-compressed.png') -96px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.buzz_bubble_right_icon {
+	background:url('/images/sprite-compressed.png') -112px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+.buzz_bubble_icon {
+	background:url('/images/sprite-compressed.png') -128px -96px no-repeat;
+	height:16px;
+	width:16px;
+}
+
+
+.big_inbox_icon {
+	background:url('/images/sprite-compressed.png') -144px 0px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_inbox_document_icon {
+	background:url('/images/sprite-compressed.png') -144px -24px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_briefcase_icon {
+	background:url('/images/sprite-compressed.png') -144px -48px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_magnify_icon {
+	background:url('/images/sprite-compressed.png') -144px -72px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_trash_bin_icon {
+	background:url('/images/sprite-compressed.png') -144px -96px no-repeat;
+	height:24px;
+	width:24px;
+}
+
+
+.big_thumb_icon {
+	background:url('/images/sprite-compressed.png') -168px 0px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_thumb_up_icon {
+	background:url('/images/sprite-compressed.png') -168px -24px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_star_icon {
+	background:url('/images/sprite-compressed.png') -168px -48px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_empty_star_icon {
+	background:url('/images/sprite-compressed.png') -168px -72px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_bell_icon {
+	background:url('/images/sprite-compressed.png') -168px -96px no-repeat;
+	height:24px;
+	width:24px;
+}
+
+
+.big_facebook_balloon_icon {
+	background:url('/images/sprite-compressed.png') -192px 0px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_twitter_balloon_icon {
+	background:url('/images/sprite-compressed.png') -192px -24px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_databae_export_icon {
+	background:url('/images/sprite-compressed.png') -192px -48px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_database_import_icon {
+	background:url('/images/sprite-compressed.png') -192px -72px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_database_icon {
+	background:url('/images/sprite-compressed.png') -192px -96px no-repeat;
+	height:24px;
+	width:24px;
+}
+
+.big_fire_icon {
+	background:url('/images/sprite-compressed.png') -216px 0px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_soap_icon {
+	background:url('/images/sprite-compressed.png') -216px -24px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_empty_thumb_icon {
+	background:url('/images/sprite-compressed.png') -216px -48px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_empty_thumb_up_icon {
+	background:url('/images/sprite-compressed.png') -216px -72px no-repeat;
+	height:24px;
+	width:24px;
+}
+.big_box_icon {
+	background:url('/images/sprite-compressed.png') -216px -96px no-repeat;
+	height:24px;
+	width:24px;
+}
+
+
+
+
+.float_left {
+ float:left;
+ position:relative;
+}
+
+.float_right {
+ float:right;
+ position:relative;
+}
+
+.float_none {
+ float:none;
+ position:relative;
+}
+
+.category_hover_icon {
+ margin:5px 4px 0px 4px;
 }
