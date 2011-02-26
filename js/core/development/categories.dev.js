@@ -14,9 +14,6 @@
 	    } catch (e) {
 	        console.log("new_categories_transaction(): Could not open objectStore. You may have to create it first");
 	
-	
-	
-	
 	        var ver_to_set = 0;
 	        if (!(Buleys.db.version > 0)) {
 	            ver_to_set = ver_to_set + 1;
@@ -70,10 +67,10 @@
 	    var the_link = jQuery(event_context).attr('link');
 	    var the_type = jQuery(event_context).attr('type');
 	    var the_slug = jQuery(event_context).attr('slug');
-	    html_snippit = "<span class='vote_up_category thumb_up_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-	    html_snippit = html_snippit + "<span class='vote_down_category thumb_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
+	    html_snippit = "<span class='vote_up_category thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
 	    html_snippit = html_snippit + "" + current;
-	    html_snippit = html_snippit + "<div class='delete_category close_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
+	    html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
+	    html_snippit = html_snippit + "<div class='vote_down_category thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
 	    jQuery(event_context).html(html_snippit);
 	
 	}
