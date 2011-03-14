@@ -10,5 +10,23 @@ sudo /ImageMagick-6.6.7/bin/convert actions_1.png actions_2.png actions_3.png ci
 sudo /ImageMagick-6.6.7/bin/convert big-inbox.png big-inbox-document.png big-briefcase.png big-magnifier.png -append big-sprite1.png
 sudo /ImageMagick-6.6.7/bin/convert big-thumb-up.png big-thumb.png big-star.png big-star-empty.png -append big-sprite2.png
 sudo /ImageMagick-6.6.7/bin/convert big-sprite1.png big-sprite2.png +append big-sprite.png
-sudo /ImageMagick-6.6.7/bin/convert sprite.png big-sprite.png +append sprite-combined.png
-sudo rm transparencies.png actions_1.png actions_2.png actions_3.png actions_4.png circles.png social.png big-sprite1.png big-sprite.png big-sprite2.png
+sudo /ImageMagick-6.6.7/bin/convert sprite.png big-sprite.png +append sprite-combined-pre-1.png
+
+sudo /ImageMagick-6.6.7/bin/convert hacker-news.png techmeme.png balloon-facebook-left.png balloon-facebook.png balloon-twitter-left.png balloon-twitter-retweet.png balloon-twitter.png balloon-buzz.png balloon-buzz-left.png +append row_1_9_icons.png
+
+sudo /ImageMagick-6.6.7/bin/convert big-bin-metal.png big-bell.png +append row_2_2_big_icons.png
+
+sudo /ImageMagick-6.6.7/bin/convert row_1_9_icons.png row_2_2_big_icons.png +append sprite-combined-bottom.png
+
+sudo /ImageMagick-6.6.7/bin/convert sprite-combined-pre-1.png  sprite-combined-bottom.png -append sprite-combined-pre-2.png 
+
+sudo /ImageMagick-6.6.7/bin/convert big-balloon-facebook.png big-balloon-twitter.png big-database-export.png big-database-import.png big-database.png -append column_1_5_big_icons.png
+
+sudo /ImageMagick-6.6.7/bin/convert big-fire.png big-soap.png big-thumb-empty.png big-thumb-up-empty.png big-wooden-box.png -append column_2_5_big_icons.png
+
+sudo /ImageMagick-6.6.7/bin/convert sprite-combined-pre-2.png column_1_5_big_icons.png column_2_5_big_icons.png +append sprite-combined.png
+
+
+
+
+sudo rm transparencies.png actions_1.png actions_2.png actions_3.png actions_4.png circles.png social.png big-sprite1.png big-sprite.png big-sprite2.png sprite-combined-bottom.png sprite-combined-pre-2.png row_2_2_big_icons.png column_2_5_big_icons.png column_1_5_big_icons.png row_1_9_icons.png sprite-combined-pre-1.png

@@ -1,340 +1,4 @@
 
-    $('#dologin').live('click', function (event) {
-        event.preventDefault();
-        $('#dologin').remove();
-        $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" class="defaulttext" /><br/><input id="password"  class="defaulttext" type="password" value="p4s5w0rd" name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
-    });
-
-
-
-
-    $('#dologinboxminimize').live('click', function (event) {
-        event.preventDefault();
-
-        $('#login_status_pane').html('<a href="#" id="dologin" class="getloginform exit_door_link"></a>');
-    });
-
-
-    $('#show_commands').live('click', function (event) {
-        event.preventDefault();
-
-        $('#result_controls').show();
-    });
-
-
-    $('#hide_commands').live('click', function (event) {
-        event.preventDefault();
-        $('#result_controls').hide();
-    });
-
-
-    $('html').live('keyup', function (e) {
-        if (e.keyCode == 68) {
-            Buleys.shortcuts.d_depressed = false;
-
-        } else if (e.keyCode == 83) {
-            Buleys.shortcuts.s_depressed = false;
-
-        } else if (e.keyCode == 16) {
-            Buleys.shortcuts.shift_depressed = false;
-
-
-
-
-
-        } else if (e.keyCode == 72) {
-
-            if (Buleys.shortcuts.s_depressed) {} else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_index').click();
-            } else {
-                $('#close_item_preview').click();
-            }
-
-
-        } else if (e.keyCode == 76) {
-
-            if (Buleys.shortcuts.s_depressed) {} else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_home').click();
-            } else {
-                $('#preview_item').click();
-
-                if (jQuery('.cursor').length > 0) {
-                    //alert(jQuery('.cursor').text());
-                }
-
-            }
-
-
-        } else if (e.keyCode == 78) {
-            $('#preview_item').click();
-            if (jQuery('.selected').length > 0) {
-                jQuery('#results li.selected:first').addClass('cursor');
-            } else {
-                jQuery('#results li:first').addClass('cursor');
-            }
-
-
-        } else if (e.keyCode == 74) {
-
-            if (jQuery('.cursor').next().length > 0) {
-                jQuery('.cursor').removeClass('cursor').next().addClass('cursor');
-            } else {
-                jQuery('.cursor').removeClass('cursor');
-                jQuery('#results li:first').addClass('cursor');
-            }
-
-        } else if (e.keyCode == 75) {
-
-            if (jQuery('.cursor').prev().length > 0) {
-                jQuery('.cursor').removeClass('cursor').prev().addClass('cursor');
-            } else {
-                jQuery('.cursor').removeClass('cursor');
-                jQuery('#results li:last').addClass('cursor');
-            }
-
-
-        } else if (e.keyCode == 27) {
-            jQuery('.cursor').removeClass('cursor');
-            $('#close_all').click();
-
-
-        } else if (e.keyCode == 77) {
-            jQuery('.cursor').removeClass('cursor');
-
-
-        } else if (e.keyCode == 219) {
-            $('#preview_item').click();
-
-        } else if (e.keyCode == 221) {
-            $('#close_item_preview').click();
-
-
-        } else if (e.keyCode == 89) {
-            $('#show_commands').click();
-
-
-        } else if (e.keyCode == 85) {
-            $('#hide_commands').click();
-
-
-        } else if (e.keyCode == 65) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_all').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#select_none').click();
-            } else {}
-
-
-        } else if (e.keyCode == 82) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_unread').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_unread').click();
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_unread').click();
-            } else {
-                $('#mark_unread').click();
-            }
-
-
-        } else if (e.keyCode == 13) {
-
-
-
-        } else if (e.keyCode == 73) {
-            $('#select').click();
-
-        } else if (e.keyCode == 79) {
-            $('#deselect').click();
-
-        } else if (e.keyCode == 69) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_read').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_read').click();
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_read').click();
-            } else {
-                $('#mark_read').click();
-            }
-
-        } else if (e.keyCode == 88) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_none').click();
-            } else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_trash').click();
-            } else {
-                $('#delete').click();
-            }
-
-
-        } else if (e.keyCode == 67) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_archived').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_archived').click();
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_archive').click();
-            } else {
-                $('#archive').click();
-            }
-
-        } else if (e.keyCode == 86) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_unarchived').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_unarchived').click();
-            } else {
-                $('#unarchive').click();
-            }
-
-        } else if (e.keyCode == 70) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_favorites').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_favorites').click();
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_favorites').click();
-            } else {
-                $('#favorite').click();
-            }
-
-        } else if (e.keyCode == 71) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_unfavorite').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_unfavorite').click();
-            } else {
-                $('#unfavorite').click();
-            }
-
-        } else if (e.keyCode == 81) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_seen').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_seen').click();
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_seen').click();
-            } else {
-                $('#mark_seen').click();
-            }
-
-        } else if (e.keyCode == 87) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_unseen').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-                $('#deselect_unseen').click();
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_unseen').click();
-            } else {
-                $('#mark_unseen').click();
-            }
-
-        } else if (e.keyCode == 90) {
-
-            if (Buleys.shortcuts.s_depressed) {
-                $('#select_inverse').click();
-            } else if (Buleys.shortcuts.d_depressed) {
-            
-            } else if (Buleys.shortcuts.shift_depressed) {
-                $('#view_index').click();
-            } else {
-                $('#refresh').click();
-            }
-
-        } else if (e.keyCode == 73) {
-            $('#deselect').click();
-
-        } else if (e.keyCode == 79) {
-
-            $('#select').click();
-        }
-
-
-
-
-
-    });
-
-
-    $('html').live('keydown', function (e) {
-        if (e.keyCode == 68) {
-            Buleys.shortcuts.d_depressed = true;
-
-        } else if (e.keyCode == 83) {
-            Buleys.shortcuts.s_depressed = true;
-
-        } else if (e.keyCode == 16) {
-            Buleys.shortcuts.shift_depressed = true;
-
-        }
-
-
-
-    });
-
-
-
-    $(window).bind("popstate", function (e) {
-        console.log(location.pathname);
-        if (!Buleys.session.database_is_open) {
-        
-        } else {
-
-            reload_results();
-
-
-
-
-            Buleys.session.database_is_open = true;
-
-        }
-
-    });
-
-    $('.get_settings').live('click', function (event) {
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_settings clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = 'http://buleys.com/settings';
-        console.log(history);
-        history.pushState(stateObj, "settings", urlString);
-        reload_results();
-    });
-
-
-    $('#get_login').live('click', function (event) {
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("get_login clicked");
-
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = "http://buleys.com/start";
-        history.pushState(stateObj, "login", urlString);
-        reload_results();
-    });
-
 
     $('#view_seen').live('click', function (event) {
         event.preventDefault();
@@ -348,10 +12,10 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/seen";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/seen";
+        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
+        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
         } else {
             urlString = "http://buleys.com/seen";
         }
@@ -370,10 +34,10 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/unseen";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/unseen";
+        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
+        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
         } else {
             urlString = "http://buleys.com/unseen";
         }
@@ -392,10 +56,10 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/read";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/read";
+        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
+        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
         } else {
             urlString = "http://buleys.com/read";
         }
@@ -414,10 +78,10 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/unread";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/unread";
+        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
+        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
         } else {
             urlString = "http://buleys.com/unread";
         }
@@ -436,10 +100,10 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/trash";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/trash";
+        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
+        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
         } else {
             urlString = "http://buleys.com/trash";
         }
@@ -458,10 +122,10 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof page != 'undefined' && page != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/archive";
-        } else if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/archive";
+        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
+        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
         } else {
             urlString = "http://buleys.com/archive";
         }
@@ -480,7 +144,13 @@
             "type": Buleys.view.type,
             "time": new Date().getTime()
         };
-        history.pushState(stateObj, "view_index", "http://buleys.com/");
+        var urlString = '';
+        if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/";
+        } else if (typeof Buleys.view.type != 'undefined' && Buleys.view.type != "") {
+            urlString = "http://buleys.com/" + Buleys.view.type + "/";
+        }
+        history.pushState(stateObj, "view_index", urlString);
         reload_results();
     });
     $('#view_home').live('click', function (event) {
@@ -494,25 +164,25 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        if (typeof slug != 'undefined' && slug != "") {
-            urlString = "http://buleys.com/" + type + "/" + slug + "/";
-        } else if (typeof type != 'undefined' && type != "") {
-            urlString = "http://buleys.com/" + type + "/";
-        }
+        urlString = "http://buleys.com/" + Buleys.view.type + "/";
         history.pushState(stateObj, "view_home", urlString);
         reload_results();
     });
 
-    $('#dologinsubmit').live('click', function (event) {
+    $('#view_settings').live('click', function (event) {
         event.preventDefault();
-
-        if ($('[name="password"]').val()) {
-
-            request_login($('[name="email"]').val(), $('[name="password"]').val());
-        } else {
-
-        }
+        console.log(location.pathname);
+        console.log("view_home clicked");
+        var stateObj = {
+            "page": Buleys.view.page,
+            "slug": Buleys.view.slug,
+            "type": Buleys.view.type,
+            "time": new Date().getTime()
+        };
+        history.pushState(stateObj, "view_settings", "http://buleys.com/settings/");
+        reload_results();
     });
+    
 
     $('.close_item_preview').live('click', function (event) {
         event.preventDefault();
@@ -707,6 +377,28 @@
         }
     });
 
+
+	$('#view_favorites').live('click', function (event) {
+	    event.preventDefault();
+	    console.log(location.pathname);
+	    console.log("view_favorites clicked")
+	    var stateObj = {
+	        "page": Buleys.view.page,
+	        "slug": Buleys.view.slug,
+	        "type": Buleys.view.type,
+	        "time": new Date().getTime()
+	    };
+	    var urlString = '';
+	    if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
+	        urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
+	    } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
+	        urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
+	    } else {
+	        urlString = "http://buleys.com/favorites";
+	    }
+	    history.pushState(stateObj, "view_favorites", urlString);
+	    reload_results();
+	});
 
 
     $('#deselect_seen').live('click', function (event) {
@@ -1057,243 +749,9 @@
             remove_item_from_read_database(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
         });
 
-
-
-        jQuery("#logout").live("click", function (event) {
-
-            account_logout();
-
-        });
-
-
-        jQuery(".do_logout").live("click", function (event) {
-
-            account_logout();
-
-        });
-
-        jQuery(".do_logout").live("click", function (event) {
-
-            account_logout();
-
-        });
-
-        jQuery(".submitthelogin").live("click", function (event) {
-
-
-        });
-
-
-
-
-
-
-        jQuery('.defaulttext').live('click', function (event) {
-            jQuery(this).val('');
-            jQuery(this).removeClass('defaulttext');
-        });
-
-
-
     });
 
 
-/*
-		jQuery("#overlay .vote_up_category").remove();    
-			jQuery("#overlay .vote_down_category").remove();    
-			jQuery("#overlay .delete_category").remove(); 
-*/
-    $('.delete_category').live('click', function (event) {
-        event.preventDefault();
-        var the_url = $(this).attr('link');
-        var the_type = $(this).attr('type');
-        var the_slug = $(this).attr('slug');
-        $(this).parent().parent().remove();
-        remove_category_for_item(the_url.replace(/[^a-zA-Z0-9-_]+/g, ""), the_type, the_slug);
-
-        if (!$(this).hasClass('voted')) {
-            post_feedback('delete_category', the_url, the_type, the_slug);
-        }
-    });
-
-
-    $('.follow_topic').live('click', function (event) {
-        event.preventDefault();
-        var the_key = $(this).attr('key');
-        var the_type = $(this).attr('type');
-
-        if (typeof the_key == 'undefined') {
-            the_key = slug;
-        } else {
-            the_key = the_key;
-        }
-        if (typeof the_type == 'undefined' || the_type == '') {
-            the_type = type;
-        } else {
-            the_type = the_type;
-        }
-
-        add_follow_if_doesnt_exist(the_type, the_key);
-        post_feedback('follow', '', the_key, the_type);
-
-        $(this).removeClass('empty_heart_icon').addClass('heart_icon');
-        $(this).removeClass('follow_topic');
-        $(this).addClass('unfollow_topic');
-
-    });
-    $('.unfollow_topic').live('click', function (event) {
-        event.preventDefault();
-        var the_key = $(this).attr('key');
-        var the_type = $(this).attr('type');
-
-        if (typeof the_key == 'undefined') {
-            the_key = slug;
-        } else {
-            the_key = the_key;
-        }
-        if (typeof the_type == 'undefined' || the_type == "") {
-            the_type = type;
-        } else {
-            the_type = the_type;
-        }
-
-        remove_follow(the_type, the_key);
-        post_feedback('unfollow', '', the_key, the_type);
-
-        $(this).removeClass('heart_icon').addClass('empty_heart_icon');
-        $(this).removeClass('unfollow_topic');
-        $(this).addClass('follow_topic');
-    });
-
-    $('.subscribe_topic').live('click', function (event) {
-        event.preventDefault();
-        var the_key = $(this).attr('key');
-        var the_type = $(this).attr('type');
-
-        if (typeof the_key == 'undefined') {
-            the_key = slug;
-        } else {
-            the_key = the_key;
-        }
-        if (typeof the_type == 'undefined' || the_type == "") {
-            the_type = type;
-        } else {
-            the_type = the_type;
-        }
-        add_subscription_if_doesnt_exist(the_type, the_key);
-        post_feedback('subscribe', "", the_key, the_type);
-
-        $(this).removeClass('empty_inbox_icon').addClass('inbox_icon');
-        $(this).removeClass('subscribe_topic');
-        $(this).addClass('unsubscribe_topic');
-    });
-
-    $('.unsubscribe_topic').live('click', function (event) {
-        event.preventDefault();
-        var the_key = $(this).attr('key');
-        var the_type = $(this).attr('type');
-
-        if (typeof the_key == 'undefined') {
-            the_key = slug;
-        } else {
-            the_key = the_key;
-        }
-        if (typeof the_type == 'undefined' || the_type == "") {
-            the_type = type;
-        } else {
-            the_type = the_type;
-        }
-
-        remove_subscription(the_type, the_key);
-        post_feedback('subscribe', "", the_key, the_type);
-
-        $(this).removeClass('inbox_icon').addClass('empty_inbox_icon');
-        $(this).removeClass('unsubscribe_topic');
-        $(this).addClass('subscribe_topic');
-    });
-
-    $('.vote_up_category').live('click', function (event) {
-        event.preventDefault();
-        var the_url = $(this).attr('link');
-        var the_type = $(this).attr('type');
-        var the_slug = $(this).attr('slug');
-        var vote_key = "";
-        vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-
-        add_or_update_vote(vote_key, 1);
-        if (!$(this).hasClass('voted')) {
-            post_feedback('category_upvote', the_url, the_type, the_slug);
-        }
-        $(this).addClass('voted');
-    });
-    $('.vote_down_category').live('click', function (event) {
-        event.preventDefault();
-        var the_url = $(this).attr('link');
-        var the_type = $(this).attr('type');
-        var the_slug = $(this).attr('slug');
-        var vote_key = "";
-        vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-        add_or_update_vote(vote_key, -1);
-        if (!$(this).hasClass('voted')) {
-            post_feedback('category_downvote', the_url, the_type, the_slug);
-        }
-        $(this).addClass('voted');
-    });
-
-    $('.vote_up').live('click', function (event) {
-        event.preventDefault();
-        var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
-        if (jQuery("#overlay_upvote_" + the_url).hasClass('vote')) {
-
-            jQuery("#overlay_upvote_" + the_url).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
-            $('.vote').removeClass('vote');
-            $(this).parent().removeClass('voted');
-            post_feedback('item_remove_upvote', the_url, Buleys.view.type, Buleys.view.slug);
-            remove_vote(the_url);
-
-        } else {
-
-            jQuery("#overlay_downvote_" + the_url).removeClass('thumb_icon').addClass('empty_thumb_icon');
-            jQuery("#overlay_upvote_" + the_url).removeClass('empty_thumb_up_icon').addClass('thumb_up_icon');
-            $('.vote').removeClass('vote');
-            $(this).parent().addClass('voted');
-            $(this).addClass('vote');
-
-            post_feedback('item_upvote', the_url, Buleys.view.type, Buleys.view.slug);
-            add_or_update_vote(the_url, 1);
-
-        }
-    });
-
-    $('.vote_down').live('click', function (event) {
-        event.preventDefault();
-        var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
-        var the_url_slug = the_url.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-        if (jQuery("#overlay_downvote_" + the_url_slug).hasClass('vote')) {
-
-            jQuery("#overlay_downvote_" + the_url_slug).removeClass('empty_thumb_icon').addClass('thumb_icon');
-            $('.vote').removeClass('vote');
-            $(this).parent().removeClass('voted');
-
-            post_feedback('item_remove_downvote', the_url, Buleys.view.type, Buleys.view.slug);
-            remove_vote(the_url);
-
-        } else {
-
-            jQuery("#overlay_downvote_" + the_url_slug).removeClass('empty_thumb_icon').addClass('thumb_icon');
-            jQuery("#overlay_upvote_" + the_url_slug).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
-
-            $('.vote').removeClass('vote');
-            $(this).parent().addClass('voted');
-            $(this).addClass('vote');
-
-            post_feedback('item_downvote', the_url, Buleys.view.type, Buleys.view.slug);
-            add_or_update_vote(the_url, -1);
-
-        }
-
-    });
 
     jQuery("#console_wrapper").stop(true).animate({
         opacity: 0
@@ -1303,18 +761,6 @@
         opacity: 0
     }, 0, function () {}).html('');
 
-
-    $('#overlay .category').live('mouseenter', function (event) {
-        event.preventDefault();
-        add_category_controls(jQuery(this));
-    });
-
-    $('#overlay .category').live('mouseleave', function (event) {
-        event.preventDefault();
-        jQuery("#overlay .vote_up_category").remove();
-        jQuery("#overlay .vote_down_category").remove();
-        jQuery("#overlay .delete_category").remove();
-    });
 
 
     $('.headline a').live('click', function (event) {
@@ -1521,8 +967,7 @@
     });
 
 
-    jQuery("#results li").live('click', function (event) {
-
+    jQuery("#results li:not(.favorite_status)").live('click', function (event) {
         var item_to_work_from = jQuery(this);
         var url_to_preview = item_to_work_from.children('a').attr('href');
 
@@ -1537,26 +982,31 @@
 			});
 			*/
         }
-        var thekey = "#overlay_" + url_to_preview.replace(/[^a-zA-Z0-9-_]+/g, "");
+        
+        if( jQuery(this).hasClass("star_icon") === false && jQuery(this).hasClass("empty_star_icon") === false) {
+	        
+	        var thekey = "#overlay_" + url_to_preview.replace(/[^a-zA-Z0-9-_]+/g, "");
+	
+	        if (jQuery(thekey).length > 0 && jQuery(item_to_work_from).hasClass('selected')) {
+	            jQuery("#overlay").stop(true).animate({
+	                opacity: 0
+	            }, 500, function () {
+	                jQuery("#overlay").html('');
+	            });
+	        } else if (!jQuery(item_to_work_from).hasClass('selected')) {
+	
+	            jQuery("#overlay").stop(true).animate({
+	                opacity: 1
+	            }, 100, function () {});
+	
+	            load_item_to_overlay(url_to_preview);
+	
+	        }
+	
+	        item_to_work_from.addClass('selected');
 
-        if (jQuery(thekey).length > 0 && jQuery(item_to_work_from).hasClass('selected')) {
-            jQuery("#overlay").stop(true).animate({
-                opacity: 0
-            }, 500, function () {
-                jQuery("#overlay").html('');
-            });
-        } else if (!jQuery(item_to_work_from).hasClass('selected')) {
-
-            jQuery("#overlay").stop(true).animate({
-                opacity: 1
-            }, 100, function () {});
-
-            load_item_to_overlay(url_to_preview);
-
-        }
-
-        item_to_work_from.addClass('selected');
-
+		}
+		
     });
 
     $(".selected").live('click', function (event) {
@@ -1572,8 +1022,4 @@
 		}, 500, function() {
 		} ).html('');
 		*/
-    });
-
-    $('#show_button').live('click', function (e) {
-        send_notification_to_desktop();
     });

@@ -53,13 +53,10 @@
 	    var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
 	
 	    item_request.onsuccess = function (event) {
-	
-	
-	
-	        if (typeof item_request.result == 'undefined' || item_request.result == "") {
-	
-	        } else {
-	
+
+	        if (typeof item_request.result !== 'undefined' || item_request.result.name !== "") {
+				load_page_title_info(item_request.result);	
+/*
 	            if (typeof item_request.result.name != 'undefined') {
 	                jQuery("#page_title").html("<a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a>");
 	                window.document.title = window.document.title.replace(/[|\s]*?Buley's/, "");
@@ -80,7 +77,7 @@
 	            } else {
 	    			jQuery("#subtitle_2").html("");
 	   			}
-	
+*/	
 	
 	        }
 	    };

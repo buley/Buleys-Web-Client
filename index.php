@@ -6,16 +6,24 @@ header('HTTP/1.0 200 OK');
 		<title>Buley's</title>
 		<link rel="stylesheet" href="/css/style.css">
 		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+
+
 	</head>
 	<body>
 		<div id='header'>
 			<!--<a href="#" class="logo">Buley's</a>-->
 			<div id='page_meta'>
 				<div id="page_title"></div>
+				<div id="page_status">
+					<div id="page_follow_status"></div>
+					<div id="page_subscription_status"></div>
+				</div>
 				<div id="subtitle_1"></div>
 				<div id="subtitle_2"></div>
 			</div>
 			<div id='service_status_pane'></div>
+			<div id='corner_pocket'>B</div>
+			
 		</div>
 			<ul id='result_controls'>
 				<li id='view_home_button'>
@@ -45,8 +53,6 @@ header('HTTP/1.0 200 OK');
 				<li id='view_trash_button'>
 					<a href='#' id='view_trash'>View Trash</a> (shift + x)
 				</li>
-	
-	
 				<li id='reload_button'>
 					<a href='#' class='refresh_results'>Refresh</a> (z)
 				</li>
@@ -198,14 +204,22 @@ header('HTTP/1.0 200 OK');
 		<div id='right'>
 			<ul id='results'></ul>
 		</div>
+		<div id="right_rail">
+			<div id='mini_inbox_box' class='right_rail_box empty_inbox'>
+				<div id="get_inbox" class="getinbox empty_inbox big_inbox_icon"></div>
+			</div>
+			<!--<div id='archive_button' class='right_rail_box'>
+				<div id="get_archive" class="big_box_icon"></div>
+			</div>
+			<div id='trash_button' class='right_rail_box'>
+				<div id="get_trash" class="big_trash_bin_icon"></div>
+			</div>-->
+		</div>
 		
 		<div id='overlay'></div>
-		<div id='help_box'>
-			<a href="#" id="dogethelpbox" class="getinbox help_icon"></a>
+		<div id='#' class="getinbox help_icon">
 		</div>
-		<div id='mini_inbox_box' class='empty_inbox'>
-			<a href="#" id="get_inbox" class="getinbox empty_inbox empty_inbox_icon"></a>
-		</div>
+		
 	
 	
 	</body>

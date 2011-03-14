@@ -178,7 +178,7 @@ function check_if_item_is_favorited_for_overlay(item_url) {
     var item_request = Buleys.objectStore.get(item_url);
     item_request.onsuccess = function (event) {
         if (typeof item_request.result != 'undefined') {
-            jQuery("#overlay_left").prepend("<div class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><div href='" + item_url + "' class='unfav_link star_icon'></div></div>");
+            jQuery("#overlay_left").prepend("<div class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><div href='" + item_url + "' class='unfav_link star_icon'></div></div>");		
             jQuery("#overlay_left").addClass('favorited');
         } else {
             jQuery("#overlay_left").prepend("<div class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><div href='" + item_url + "' class='fav_link empty_star_icon'></div></div>");
@@ -194,10 +194,14 @@ function check_if_item_is_favorited(item_url) {
     var item_request = Buleys.objectStore.get(item_url);
     item_request.onsuccess = function (event) {
         if (typeof item_request.result != 'undefined') {
-            jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='favorite_status'><div href='" + item_url + "' class='unfav_link star_icon'></div></span>");
+            if(Buleys.settings.show_favorite_status !== false) {
+	            jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='favorite_status'><div href='" + item_url + "' class='unfav_link star_icon'></div></span>");
+	        }
             jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('favorited');
         } else {
-            jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='favorite_status'><div href='" + item_url + "' class='fav_link empty_star_icon'></div></span>");
+            if(Buleys.settings.show_favorite_status !== false) {
+	            jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='favorite_status'><div href='" + item_url + "' class='fav_link empty_star_icon'></div></span>");
+			}
             jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('unfavorited');
         }
     };
@@ -233,14 +237,15 @@ function remove_item_from_favorites_database(item_url, item_slug, item_type) {
 
 $('.unfav_link').live('click', function (event) {
     event.preventDefault();
-    console.log( jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "") );
-    console.log("xxx");
     console.log( jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('.unfav_link') );
     jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
     jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
     jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
     jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
     jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+    if(typeof Buleys.view.page !== "undefined" && ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs" ) ) {
+    	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).remove();
+    }
     
     remove_item_from_favorites_database($(this).attr('href'), Buleys.view.slug, Buleys.view.type);
     post_feedback('unstar', $(this).attr('href'), Buleys.view.slug, Buleys.view.type);
@@ -285,6 +290,9 @@ $('#unfavorite').live('click', function (event) {
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
             jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
             jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+		    if(typeof Buleys.view.type !== "undefined" && ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs" ) ) {
+		    	jQuery("#" +  $(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).remove();
+		    }
             remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
             post_feedback('unstar', $(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
             send_to_console("<p>item removed from favorites</p>");
@@ -296,11 +304,15 @@ $('#unfavorite').live('click', function (event) {
         jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
         jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
         jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
+	    if(typeof Buleys.view.type !== "undefined" && ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs" ) ) {
+	    	jQuery("#" + $('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).remove();
+	    }
         remove_item_from_favorites_database($('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
         post_feedback('unstar', $('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
         send_to_console("<p>item removed from favorites</p>");
         setTimeout('fade_console_message()', 1000);
     }
+
 });
 
 
@@ -338,26 +350,4 @@ $('#deselect_favorites').live('click', function (event) {
         jQuery(item_to_mark).removeClass('selected');
         jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
     });
-});
-
-$('#view_favorites').live('click', function (event) {
-    event.preventDefault();
-    console.log(location.pathname);
-    console.log("view_favorites clicked")
-    var stateObj = {
-        "page": Buleys.view.page,
-        "slug": Buleys.view.slug,
-        "type": Buleys.view.type,
-        "time": new Date().getTime()
-    };
-    var urlString = '';
-    if (typeof page != 'undefined' && page != "") {
-        urlString = "http://buleys.com/" + type + "/" + slug + "/favorites";
-    } else if (typeof slug != 'undefined' && slug != "") {
-        urlString = "http://buleys.com/" + type + "/" + slug + "/favorites";
-    } else {
-        urlString = "http://buleys.com/favorites";
-    }
-    history.pushState(stateObj, "view_favorites", urlString);
-    reload_results();
 });

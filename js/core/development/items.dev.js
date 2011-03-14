@@ -144,18 +144,7 @@ function check_if_item_is_read(item_url) {
     };
 }
 
-function get_item_for_overlay(item_url) {
-    new_item_transaction();
-    var item_request = Buleys.objectStore.get(item_url);
-    item_request.onsuccess = function (event) {
-        if (typeof item_request.result !== 'undefined' && typeof item_request.result.link === 'string') {
-            var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><div class="close_sidebar_link cross_icon" id="' + item_url + '"></div></div>' + "<h3 id='overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item_request.result.link + "'>" + item_request.result.title + "</a></h3></div><div id='overlay_left'></div><div id='overlay_controls'><a href='" + item_url + "' class='favorite_item'>Favorite</a>&nbsp;<a href='" + item_url + "' class='unfavorite_item'>Unfavorite</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_read'>Mark as read</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unread'>Mark as unread</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_seen'>Mark as seen</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + item_url + "' class='archive_item'>Archive</a>&nbsp;<a href='" + item_url + "' class='delete_item'>Delete</a>&nbsp;<a href='" + item_url + "' class='unarchive_item'>Unarchive</a>&nbsp;<a href='" + item_url + "' class='vote_item_up'>Vote up</a>&nbsp;<a href='" + item_url + "' class='vote_item_down'>Vote down</a>&nbsp;<a href='" + item_url + "' class='close_item_preview'>Close preview</a></div>";
-            send_to_overlay(html_snippit);
-        }
-    };
-    item_request.onerror = function (e) {
-    };
-}
+
 
 function get_item_raw_no_trash(item_url) {
     if (typeof item_url !== 'undefined') {
@@ -211,7 +200,7 @@ function get_item(item_url) {
                             if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
 //   	alert('getting_item9: ' + item_url);
                                 add_item_to_results(item_request_1.result);
-                                check_if_item_is_favorited(item_request_1.result.link);
+                               	check_if_item_is_favorited(item_request_1.result.link);
                                 check_if_item_is_read(item_request_1.result.link);
                                 check_if_item_is_seen(item_request_1.result.link);
                             }
@@ -284,7 +273,6 @@ function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
                 if (typeof request.result !== "undefined") {
                     Buleys.cursor = request.result;
                     console.log("get_items() cursor value ", Buleys.cursor.value);
-					alert(Buleys.cursor.value.link);
 					get_item(Buleys.cursor.value.link);
                     if (typeof Buleys.cursor["continue"] === "function") {
                         Buleys.cursor["continue"]();

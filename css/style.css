@@ -32,16 +32,16 @@ ul {
 	position:absolute;
 	margin:4.5% 1% 0 0%;
 	border-left:1px dotted #eee;
-	right:5%;
-	padding:0 1% 0 1%;
+	right:4.25%;
+	padding:0% 1% 0 1%;
 	clear:left;
-	width:50%;
-	
+	width:51%;
+	background: #fff;
 }
 
 #console_wrapper {
 	left:5%;
-	width:45%;
+	width:36%;
 	bottom:2%;
 	background:url('/images/5percenttransparency.png') repeat;
 	z-index: 999;
@@ -63,48 +63,59 @@ ul {
 }
 
 #login_prompt {
-width:330px;
-margin:20px 0 0 0;
-z-index: 999;
-font: 1.3em Georgia,Helvetica;
-
+	width:330px;
+	margin:20px 0 0 0;
+	z-index: 999;
+	font: 1.3em Georgia,Helvetica;
 }
 
 #console_close_button {
 	padding: 0 20px 20px 20px;
 }
+
 #login_status_pane {
-padding:5px 5px 20px 10px;
-float:right;
-font: 1.3em Georgia,Helvetica;
+	padding:15px 10px 20px 10px;
+	float:right;
+	font: 1em Georgia,Helvetica;
+	
 }
 
-
 #login_status_pane a {
-	margin:0 10px 0 0;
-	color:#000;
-	font-size:1.25em Helvetica, Georgia;
+	margin:0px 10px 0 0;
+	color:#434950;
+	font:1.15em Helvetica, Georgia;
 }
 
 #service_status_pane {
-padding:5px;
-float:right;
+	padding:5px;
+	float:right;
+}
+
+.overlay_headline {
+	color:#000;
+	font:2em Helvetica, Georgia;
+	padding: 10px  10px 0px 0;
+	line-height: 1.2em;
+}
+
+#overlay_right ul {
+	padding: 10px  10px 40px 0;
+border:none;
 }
 #overlay {
-	padding: 10px 20px 20px 20px;
+	padding: 20px 20px 20px 20px;
 	margin:4.5% 1% 0 0%;
 	width:37%;
 	left:1%;
 	z-index:999;
 	position:fixed;
-	background:url('/images/5percenttransparency.png') repeat 32px -32px;
+	background:#fff ;
 	border:1px solid #eee;
-
+	
 }
 #overlay_controls {
 	margin:20px 0 0 0;
 	clear: both;
-	
 }
 #overlay_controls a, #overlay_controls a:visited {
 	margin:0 10px 0 0;
@@ -113,7 +124,6 @@ float:right;
 #overlay ul {
 	list-style-type:none;
 	margin:0 0px 30px 0px;
-	border-left:solid 3px #000;
 }
 #overlay ul li {
 	list-style-type:none;
@@ -226,8 +236,8 @@ ul#results {
 }
 ul#results > li {
 	margin:0;
-	padding:3% 2% 3% 2%;
-	line-height:32px;
+	padding:3% 2% 2% 2%;
+	line-height:42px;
 border-bottom:1px solid #eee;
 z-index: 1;
 	overflow: visible;
@@ -263,12 +273,15 @@ float:left;
 }
 #page_meta a {
 	margin:0 10px 0 0;
-	color: #000;
+	color: #434950;
 }
 
 #page_meta a:visited {
 	margin:0 10px 0 0;
-	color: #000;
+	color: #434950;
+}
+.category_list {
+border:none;
 }
 .category_list a {
 color:#666;
@@ -312,8 +325,15 @@ color:#999;
 }
 
 #corner_pocket {
-width:5%;
+margin-right:auto;
+margin-left:auto;
+height: 100%;
 float:right;
+padding:0 .65% 0 2%;
+	text-decoration: none;
+	font-family: Georgia;
+	font-size:2.75em;
+	color:#434950;
 }
 
 #help_box {
@@ -361,16 +381,14 @@ color:#fff;
 }
 
 #header {
-position: fixed;
-top:0;
-right:0;
-left:0;
-padding:.5% 1% 0% 1%;
-z-index: 10000;
-	border-bottom:1px dotted #eee;
-background: #fff;
-color:#000;
-
+	position: fixed;
+	top:0;
+	right:0;
+	left:0;
+	padding:.5% 0% 0% 2.5%;
+	z-index: 10000;
+	background:url('/images/5percenttransparency.png') repeat;
+	color:#fff;
 }
 a.logo {
 color:#000;
@@ -385,18 +403,14 @@ position:relative;
 border:1px solid #000;
 padding:.25% .5% 0 .5%;
 }
+
 #page_meta {
 font-size:125%;
 padding-top:3px;
 margin:7px 0 0 0;
 float:left;
 }
-#page_meta a {
-color:#000;
-}
-#page_meta a:visited {
-color:#000;
-}
+
 #page_title {
 float:left;
 }
@@ -412,24 +426,28 @@ float:left;
 }
 #page_follow_status {
 float:left;
+padding:0 10px 0 10px;
 }
 #page_subscription_status {
 float:left;
+padding:0 10px 0 10px;
 }
 
 #right_rail {
-width:5%;
-padding:5% 1% 0 0%;
-right:0;
-position:fixed;
-height:100%;
-border-left:1px dotted #eee;
+	width:4.75%;
+	padding:6.5% 0% 1.1% 0%;
+	right:0;
+	top:0;
+	height:100%;
+	background:url('/images/5percenttransparency.png') repeat;
+	position:fixed;
 }
+
 #mini_inbox_wrapper {
 	background:url('/images/5percenttransparency.png') repeat;
-position:absolute;
-margin:-10px 0 0 -80px;
-padding:12px;
+	position:absolute;
+	margin:-10px 0 0 -80px;
+	padding:12px;
 }
 
 .service_box_wrapper {
@@ -458,21 +476,23 @@ padding:12px;
 }
 
 #right li.selected {
-	background:url('/images/5percenttransparency.png') repeat;
-	color:#000;
+	background:#434950;
+	color:#fff;
 	margin:0px;
-	width:96%;
-
+	width:96.5%;
+}
+#right li.selected a {
+	color:#fff;
 }
 
 #right li.cursor {
 border-left:10px solid #a60000;
-
+width:95%;
 }
 
 #mini_inbox_box {
-	float:none;
-	margin:0 0 .5em 1.5em;
+margin-left: auto; margin-right: auto;
+width:25px;
 	color:#000;
 }
 

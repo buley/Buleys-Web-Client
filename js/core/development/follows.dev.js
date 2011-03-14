@@ -90,9 +90,9 @@ function get_page_follow_status(the_type, the_key) {
     var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
     item_request.onsuccess = function (event) {
         if (typeof item_request.result == 'undefined' || item_request.result == "") {
-            jQuery("#page_follow_status").append("<a href='#' class='follow_topic empty_heart_icon'></a>");
+            jQuery("#page_follow_status").html("<div class='follow_topic empty_heart_icon'></div>");
         } else {
-            jQuery("#page_follow_status").append("<a href='#' class='unfollow_topic heart_icon'></a>");
+            jQuery("#page_follow_status").html("<div class='unfollow_topic heart_icon'></div>");
         }
     };
     item_request.onerror = function (e) {
@@ -139,3 +139,51 @@ function add_follow_to_follows_database(the_type, the_key) {
     add_data_request.onerror = function (e) {
     };
 }
+
+    $('.follow_topic').live('click', function (event) {
+        event.preventDefault();
+        var the_key = $(this).attr('key');
+        var the_type = $(this).attr('type');
+
+        if (typeof the_key == 'undefined') {
+            the_key = Buleys.view.slug;
+        } else {
+            the_key = the_key;
+        }
+        if (typeof the_type == 'undefined' || the_type == '') {
+            the_type = Buleys.view.type;
+        } else {
+            the_type = the_type;
+        }
+
+        add_follow_if_doesnt_exist(the_type, the_key);
+        post_feedback('follow', '', the_key, the_type);
+
+        $(this).removeClass('empty_heart_icon').addClass('heart_icon');
+        $(this).removeClass('follow_topic');
+        $(this).addClass('unfollow_topic');
+
+    });
+    $('.unfollow_topic').live('click', function (event) {
+        event.preventDefault();
+        var the_key = $(this).attr('key');
+        var the_type = $(this).attr('type');
+
+        if (typeof the_key == 'undefined') {
+            the_key = Buleys.view.slug;
+        } else {
+            the_key = the_key;
+        }
+        if (typeof the_type == 'undefined' || the_type == "") {
+            the_type = Buleys.view.type;
+        } else {
+            the_type = the_type;
+        }
+
+        remove_follow(the_type, the_key);
+        post_feedback('unfollow', '', the_key, the_type);
+
+        $(this).removeClass('heart_icon').addClass('empty_heart_icon');
+        $(this).removeClass('unfollow_topic');
+        $(this).addClass('follow_topic');
+    });
