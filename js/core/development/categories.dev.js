@@ -189,7 +189,7 @@
 	
 	function add_categories_to_categories_database(item_url, categories) {
 	    jQuery.each(categories, function (c, the_category) {
-	        if (typeof the_category.key !== 'undefined' && the_category.key !== "" && the_category.key.toLowerCase() == "function" ) {
+	        if (typeof the_category.key !== 'undefined') {
 	            new_categories_transaction();
 	            var data = {
 	                "id": item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_category.key.toLowerCase() + the_category.type.toLowerCase(),

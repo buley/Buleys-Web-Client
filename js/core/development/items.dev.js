@@ -110,14 +110,14 @@ function add_item_to_items_database(item) {
             add_data_request.onsuccess = function (event) {
                 if (item.categories.length > 1 && typeof item.categories.type === "undefined" && typeof item.categories.key === "undefined") {
                     $.each(item.categories, function (cat_key, cat) {
-                        if (Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" || ( ( cat.key !== null && typeof cat.key !== "null" && cat.key === Buleys.view.slug ) ) ) {
+                        if (Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" || ( ( cat.key !== null && typeof cat.key !== "null" && cat.key === slug ) ) ) {
                             if (typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive") ) {
                                 add_item_to_results(get_data_object_for_item(item));
                             }
                         }
                     });
                 } else if (item.categories.length === 1 && typeof item.categories.key !== "undefined") {
-                    if (Buleys.view.type === "home" || ( item.categories[0].key.toLowerCase() === Buleys.view.slug && item.categories[0].type.toLowerCase() === Buleys.view.type ) ) {
+                    if (Buleys.view.type === "home" || ( item.categories[0].key.toLowerCase() === slug && item.categories[0].type.toLowerCase() === type ) ) {
                         add_item_to_results(get_data_object_for_item(item));
                     }
                 }
