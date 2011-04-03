@@ -9,5 +9,8 @@ foreach (glob("core/development/*.js") as $filename) {
 		$contents .= file_get_contents($filename);
 	}
 }
+foreach (glob("utilities/*.js") as $filename) {
+	$contents .= file_get_contents($filename);
+}
 echo $contents;
 ?>

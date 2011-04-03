@@ -217,13 +217,13 @@ header('HTTP/1.0 200 OK');
 		</div>
 		
 		<div id='overlay'></div>
-		<div id='#' class="getinbox help_icon">
-		</div>
+
 		
 	
 	
 	</body>
-
+		<div id="help_box" class="help_icon">
+		</div>
 	
 	<script type="text/javascript">
 	
