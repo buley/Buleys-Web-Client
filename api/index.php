@@ -21,7 +21,7 @@ header("HTTP/1.0 200 OK");
 	}
 
 	
-	include_once('/home/web/public_html/buleys.com/aggregator/aggregator.class.php');
+	include_once('/var/www/buleys/private/aggregator.class.php');
 	$aggregator = new Aggregator($user_id, $session_id);
 
 	/*
