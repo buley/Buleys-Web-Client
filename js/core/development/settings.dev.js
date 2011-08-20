@@ -3,7 +3,7 @@
 	
 	function new_settings_transaction() {
 	    try {
-	        var transaction = Buleys.db.transaction(["settings"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["settings"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
 	            delete Buleys.objectStore;
 	        };
@@ -51,7 +51,7 @@
 	        new_settings_transaction();
 	        Buleys.index = Buleys.objectStore.index("option_name");
 	
-	        var cursorRequest = Buleys.index.getAll();
+	        var cursorRequest = Buleys.index.openCursor();
 	        cursorRequest.onsuccess = function (event) {
 	            var objectCursor = cursorRequest.result;
 	            if (!objectCursor) {
@@ -96,7 +96,7 @@
 	    Buleys.index = Buleys.objectStore.index();
 	
 	
-	    var cursorRequest = Buleys.objectStore.getAll();
+	    var cursorRequest = Buleys.objectStore.openCursor();
 	    cursorRequest.onsuccess = function (event) {
 	
 	        new_settings_transaction();
@@ -147,7 +147,7 @@
 	    new_settings_transaction();
 	
 	
-	    var item_request = Buleys.objectStore.getAll();
+	    var item_request = Buleys.objectStore.openCursor();
 	
 	    item_request.onsuccess = function (event) {
 	        if (typeof item_request.result !== 'undefined') {
@@ -288,7 +288,7 @@ function set_setting(setting_to_set, setting_value) {
             "type": Buleys.view.type,
             "time": new Date().getTime()
         };
-        var urlString = 'http://buleys.com/settings';
+        var urlString = 'http://www.buleys.com/settings';
         console.log(history);
         history.pushState(stateObj, "settings", urlString);
         reload_results();

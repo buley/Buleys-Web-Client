@@ -15,7 +15,7 @@
 	        new_queue_transaction();
 	        Buleys.index = Buleys.objectStore.index("queue_name");
 	
-	        var cursorRequest = Buleys.index.getAll();
+	        var cursorRequest = Buleys.index.openCursor();
 	        cursorRequest.onsuccess = function (event) {
 	            var objectCursor = cursorRequest.result;
 	            if (!objectCursor) {
@@ -63,7 +63,7 @@
 	    new_queue_transaction();
 	
 	
-	    var item_request = Buleys.objectStore.getAll();
+	    var item_request = Buleys.objectStore.openCursor();
 	
 	    item_request.onsuccess = function (event) {
 	        if (typeof item_request.result !== 'undefined') {
@@ -169,7 +169,7 @@
 	
 	function new_queue_transaction() {
 	    try {
-	        var transaction = Buleys.db.transaction(["queue"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["queue"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
 	
 	            delete Buleys.objectStore;

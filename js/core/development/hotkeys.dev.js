@@ -9,6 +9,8 @@
 	} 
 	
 	function disable_hotkeys() {
+		console.log( "Disabling hotkeys" );
+		console.log( Buleys.settings );
 		Buleys.settings.hotkeys.disabled = true;
 	}
 	
@@ -36,7 +38,8 @@
 
 	
     $('html').live('keyup', function (e) {
-
+	console.log('disabled?');
+	console.log( Buleys.settings.hotkeys.disabled );
 		if( (  typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" && typeof Buleys.settings.hotkeys.disabled === "undefined" ) || ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" ) && ( typeof Buleys.settings.hotkeys.disabled !== "undefined" && Buleys.settings.hotkeys.disabled !== true ) ) {
 			//
 	

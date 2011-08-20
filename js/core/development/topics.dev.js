@@ -97,7 +97,7 @@
 	        new_topics_transaction();
 	        Buleys.index = Buleys.objectStore.index("topic_key");
 	
-	        var cursorRequest = Buleys.index.getAll();
+	        var cursorRequest = Buleys.index.openCursor();
 	        cursorRequest.onsuccess = function (event) {
 	            var objectCursor = cursorRequest.result;
 	            if (!objectCursor) {
@@ -197,7 +197,7 @@
 
 	function new_topics_transaction() {
 	    try {
-	        var transaction = Buleys.db.transaction(["topic"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["topic"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
 	
 	            delete Buleys.objectStore;

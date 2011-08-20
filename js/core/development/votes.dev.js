@@ -1,6 +1,6 @@
 function new_votes_transaction() {
     try {
-        var transaction = Buleys.db.transaction(["votes"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+        var transaction = Buleys.db.transaction(["votes"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
         transaction.oncomplete = function (e) {
             delete Buleys.objectStore;
         };
@@ -72,7 +72,7 @@ function get_votes() {
     try {
         new_votes_transaction();
         Buleys.index = Buleys.objectStore.index("vote_key");
-        var cursorRequest = Buleys.index.getAll();
+        var cursorRequest = Buleys.index.openCursor();
         cursorRequest.onsuccess = function (event) {
             var objectCursor = cursorRequest.result;
             if (!objectCursor) {

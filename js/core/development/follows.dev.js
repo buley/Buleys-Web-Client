@@ -1,6 +1,6 @@
 function new_follows_transaction() {
     try {
-        var transaction = Buleys.db.transaction(["follows"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+        var transaction = Buleys.db.transaction(["follows"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
         transaction.oncomplete = function (e) {
             delete Buleys.objectStore;
         };
@@ -26,7 +26,7 @@ function get_follows() {
     try {
         new_follows_transaction();
         Buleys.index = Buleys.objectStore;
-        var cursorRequest = Buleys.index.getAll();
+        var cursorRequest = Buleys.index.openCursor();
         cursorRequest.onsuccess = function (event) {
             var objectCursor = cursorRequest.result;
             if (!objectCursor) {
@@ -66,7 +66,7 @@ function get_follows_deleteme() {
     try {
         new_categories_transaction();
         Buleys.index = Buleys.objectStore.index("id");
-        var cursorRequest = Buleys.index.getAll();
+        var cursorRequest = Buleys.index.openCursor();
         cursorRequest.onsuccess = function (event) {
             var objectCursor = cursorRequest.result;
             if (!objectCursor) {

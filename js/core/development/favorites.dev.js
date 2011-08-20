@@ -1,6 +1,6 @@
 function new_favorite_transaction() {
     try {
-        var transaction = Buleys.db.transaction(["favorites"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+        var transaction = Buleys.db.transaction(["favorites"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
         transaction.oncomplete = function (e) {
             delete Buleys.objectStore;
         };
@@ -54,7 +54,7 @@ function get_favorites(type_filter, slug_filter, begin_timeframe, end_timeframe)
     }
     new_categories_transaction();
     Buleys.index = Buleys.objectStore.index("slug");
-    var cursorRequest = Buleys.index.getAll(slug_filter);
+    var cursorRequest = Buleys.index.openCursor(slug_filter);
     cursorRequest.onsuccess = function (event) {
         var objectCursor = cursorRequest.result;
         if (!objectCursor) {

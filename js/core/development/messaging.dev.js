@@ -7,7 +7,7 @@
 	        "context": context_string,
 	        "type": context_type_string
 	    };
-	    $.post("/feedback/index.php", data_to_send, function () {
+	    $.post("http://api.buleys.com/feedback/", data_to_send, function () {
 	
 	    }, dataType = "json");
 	}

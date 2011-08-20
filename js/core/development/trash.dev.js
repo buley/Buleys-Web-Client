@@ -1,20 +1,23 @@
 	
 	function new_deleted_transaction() {
 	    try {
-	        var transaction = Buleys.db.transaction(["deleted"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["deleted"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
-	
 	            delete Buleys.objectStore;
 	        };
-	        transaction.onabort = function (e) {
-	
+	        transaction.onerror = function (e) {
+			console.log("new_deleted_transaction error");
+			console.log(e);
+	        };
+        transaction.onabort = function (e) {
+			console.log("new_deleted_transaction abort");
+			console.log(e);
 	        };
 	        Buleys.objectStore = transaction.objectStore("deleted");
 	
 	    } catch (e) {
 	
-	
-	
+		console.log("big ol fail");	
 	
 	        var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
 	        request.onsuccess = function (e) {
@@ -69,7 +72,7 @@
 	    new_categories_transaction();
 	
 	    Buleys.index = Buleys.objectStore.index("slug");
-	    var cursorRequest = Buleys.index.getAll(slug_filter);
+	    var cursorRequest = Buleys.index.openCursor(slug_filter);
 	
 	    cursorRequest.onsuccess = function (event) {
 	

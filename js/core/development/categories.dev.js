@@ -1,7 +1,7 @@
 	function new_categories_transaction() {
 	
 	    try {
-	        var transaction = Buleys.db.transaction(["categories"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["categories"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
 	
 	            delete Buleys.objectStore;
@@ -226,7 +226,7 @@
 	        new_categories_transaction();
 	        Buleys.index = Buleys.objectStore.index("link");
 	
-	        var cursorRequest = Buleys.index.getAll(item_url);
+	        var cursorRequest = Buleys.index.openCursor(item_url);
 	        cursorRequest.onsuccess = function (event) {
 	            var objectCursor = cursorRequest.result;
 	            if (!objectCursor) {

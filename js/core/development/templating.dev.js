@@ -48,7 +48,7 @@
 	    };
 	
 	
-	    $.post("/feedback/index.php", data_to_send, function (data) {
+	    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
 	        jQuery("#small_profile").show();
 	        if (typeof data.display_name != "undefined" && data.display_name != null) {
 	            jQuery("#small_profile").append("<div id='small_profile_image'><a href='/profile/'><img src='http://www.gravatar.com/avatar/" + data.email_hash + "?s=42'></a></div><div><div id='small_profile_display_name'><a href='/profile/'>" + data.display_name + "</a></div>" + "</div>");
@@ -77,7 +77,7 @@
         if (Buleys.view.type !== "account" && Buleys.view.type !== "home" && Buleys.view.type !== "signin" && Buleys.view.type !== "" && Buleys.view.type !== "start" && Buleys.view.type !== "settings" && Buleys.view.type !== "favorites" && Buleys.view.type !== "read" && Buleys.view.type !== "unread" && Buleys.view.type !== "seen" && Buleys.view.type !== "unseen" && Buleys.view.type !== "unarchived" && Buleys.view.type !== "archived") {
 			enable_hotkeys();
             get_page_follow_status(Buleys.view.type, Buleys.view.slug);
-            get_page_subscription_status(Buleys.view.type, Buleys.view.slug);
+            /*get_page_subscription_status(Buleys.view.type, Buleys.view.slug);*/
             get_page_topic_info(Buleys.view.type, Buleys.view.slug);
 
         }

@@ -1,7 +1,7 @@
 
 	function new_social_transaction() {
 	    try {
-	        var transaction = Buleys.db.transaction(["social"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["social"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
 	
 	            delete Buleys.objectStore;

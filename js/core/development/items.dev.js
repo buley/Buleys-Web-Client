@@ -1,14 +1,24 @@
 function new_item_transaction() {
     try {
-        var transaction = Buleys.db.transaction(["items"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+        var transaction = Buleys.db.transaction(["items"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
+
         transaction.oncomplete = function (e) {
+		//console.log("new item trnasction complete");
+		//console.log(Buleys.objectStore);
+		//console.log(e);
             delete Buleys.objectStore;
         };
         transaction.onabort = function (e) {
+		//console.log(e);
+		//console.log("new item transaction aborted");
         };
+	//console.log("setting objectStore");
+	//console.log( transaction.objectStore("items") );
         Buleys.objectStore = transaction.objectStore("items");
     } catch (e) {
-        var request = Buleys.db.setVersion(parseInt(Buleys.db.version, 10) + 1);
+        console.log("trying to create");
+	//console.log( Buleys.db.version );
+	var request = Buleys.db.setVersion(parseInt(Buleys.db.version, 10) + 1);
         request.onsuccess = function (e) {
             Buleys.db.objectStore = Buleys.db.createObjectStore("items", {
                 "keyPath": "link"
@@ -27,46 +37,9 @@ function new_item_transaction() {
             });
         };
         request.onerror = function (e) {
+		//console.log("TRANSACTION ERROR");
+		//console.log(e);
         };
-    }
-}
-
-function new_item_transaction_old() {
-    try {
-        var transaction = Buleys.db.transaction(["items"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
-        transaction.oncomplete = function (e) {
-        };
-        transaction.onabort = function (e) {
-        };
-        Buleys.db.objectStore = transaction.objectStore("items");
-        console.log("New Transaction", Buleys.db.objectStore);
-    } catch (e) {
-        console.log("e", e);
-        console.log("new_item_transaction(): Create object store; db: " + Buleys.db);
-        console.log("Fail!", Buleys.db, typeof Buleys.db.setVersion);
-        if (typeof Buleys.db.setVersion === "function") {
-            var request = Buleys.db.setVersion(parseInt(Buleys.db.version, 10) + 1);
-            request.onsuccess = function (e) {
-                console.log("Version changed to ", Buleys.db.version, ", so trying to create a database now.");
-                Buleys.db.objectStore = Buleys.db.createObjectStore("items", {
-                    "keyPath": "link"
-                }, false);
-                Buleys.db.objectStore.createIndex("author", "author", {
-                    unique: false
-                });
-                Buleys.db.objectStore.createIndex("published_date", "published_date", {
-                    unique: false
-                });
-                Buleys.db.objectStore.createIndex("index_date", "index_date", {
-                    unique: false
-                });
-                Buleys.db.objectStore.createIndex("modified", "modified", {
-                    unique: false
-                });
-            };
-            request.onerror = function (e) {
-            };
-        }
     }
 }
 
@@ -93,8 +66,21 @@ function get_data_object_for_item(item) {
 }
 
 function add_item_to_results(item) {
+	//console.log("adding:");
+	//console.log(item);
     var id = item.link.replace(/[^a-zA-Z0-9-_]+/g, "");
     if (!(jQuery("#" + id).length)) {
+	//console.log("appending to #" + id);
+        jQuery("<li class='item' modified= '" + item.modified + "'  index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item magnify_icon' href='#'></a></li>").hide().appendTo("#results").fadeIn('slow');
+    }
+}
+
+function prepend_item_to_results(item) {
+	//console.log("adding:");
+	//console.log(item);
+    var id = item.link.replace(/[^a-zA-Z0-9-_]+/g, "");
+    if (!(jQuery("#" + id).length)) {
+	//console.log("appending to #" + id);
         jQuery("<li class='item' modified= '" + item.modified + "'  index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item magnify_icon' href='#'></a></li>").hide().prependTo("#results").fadeIn('slow');
     }
 }
@@ -102,6 +88,7 @@ function add_item_to_results(item) {
 function add_item_to_items_database(item) {
     var data = get_data_object_for_item(item);
     new_deleted_transaction();
+	//console.log( "adding to database: " + item );
     var item_request = Buleys.objectStore.get(item.link);
     item_request.onsuccess = function (event) {
         if (typeof item_request.result === 'undefined') {
@@ -109,10 +96,13 @@ function add_item_to_items_database(item) {
             var add_data_request = Buleys.objectStore.add(data);
             add_data_request.onsuccess = function (event) {
                 if (item.categories.length > 1 && typeof item.categories.type === "undefined" && typeof item.categories.key === "undefined") {
-                    $.each(item.categories, function (cat_key, cat) {
-                        if (Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" || ( ( cat.key !== null && typeof cat.key !== "null" && cat.key === slug ) ) ) {
+             		//console.log(item.entities);
+			//console.log("^ item cats");
+		       $.each(item.entities, function (cat_key, cat) {
+			//console.log(cat_key, cat);
+                        if (Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" || ( ( cat.key !== null && typeof cat.key !== "null" ) ) ) {
                             if (typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive") ) {
-                                add_item_to_results(get_data_object_for_item(item));
+                                prepend_item_to_results(get_data_object_for_item(item));
                             }
                         }
                     });
@@ -123,10 +113,14 @@ function add_item_to_items_database(item) {
                 }
             };
             add_data_request.onerror = function (e) {
-            };
+    		//console.log('there was some error with add_data_request');
+		//console.log(e);	
+	        };
         }
     };
     item_request.onerror = function (e) {
+	//console.log("cound not add to databaes");
+	//console.log(e);
     };
 }
 
@@ -172,50 +166,58 @@ function get_item_raw_no_trash(item_url) {
 }
 
 function get_item(item_url) {
-// 	alert('getting_item1: ' + item_url);
+ 	//console.log('getting_item1: ' + item_url);
     if (typeof item_url !== 'undefined') {
-// 	alert('getting_item2: ' + item_url);
+ 	//console.log('getting_item2: ' + item_url);
         new_deleted_transaction();
+	//console.log("we alive?");
         var item_request_0 = Buleys.objectStore.get(item_url);
         item_request_0.onsuccess = function (event) {
+		//console.log("item_request_0");
+		//console.log(event);
+		//console.log(item_request_0);
+		//console.log(item_request_0.result);
             if (typeof item_request_0.result === 'undefined') {
-// 	alert('getting_item3: ' + item_url);
+ 	//console.log('getting_item3: ' + item_url);
                new_item_transaction();
                 var item_request_1 = Buleys.objectStore.get(item_url);
                 item_request_1.onsuccess = function (event) {
-//   	alert('getting_item4: ' + item_url);
+  	//console.log('getting_item4: ' + item_url);
                   if (typeof item_request_1.result !== 'undefined') {
-//   	alert('getting_item5: ' + item_url);
+   	//console.log('getting_item5: ' + item_url);
                         new_archived_transaction();
                         var item_request_2 = Buleys.objectStore.get(item_url);
                         item_request_2.onsuccess = function (event) {
-//   	alert('getting_item6: ' + item_url);
+   	//console.log('getting_item6: ' + item_url);
                             if (typeof item_request_2.result === 'undefined') {
-//   	alert('getting_item7: ' + item_url);
+   	//console.log('getting_item7: ' + item_url);
                                 get_item_raw_no_trash(item_request_1.result.link);
                             } 
                         };
                         item_request_2.onerror = function (e) {
-//   	alert('getting_item8: ' + item_url);
+   	//console.log('getting_item8: ' + item_url);
                             if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-//   	alert('getting_item9: ' + item_url);
+   	//console.log('getting_item9: ' + item_url);
                                 add_item_to_results(item_request_1.result);
                                	check_if_item_is_favorited(item_request_1.result.link);
                                 check_if_item_is_read(item_request_1.result.link);
                                 check_if_item_is_seen(item_request_1.result.link);
                             }
                         };
-                    }
+                    } else {
+			//console.log("something else entirely");
+		}
                 };
                 item_request_1.onerror = function (e) {
-//   	alert('getting_item10: ' + item_url);
+   	//console.log('getting_item10: ' + item_url);
                 };
             } else {
-//	alert('getting_item11: ' + item_url);
+	//console.log('getting_item11: ' + item_url);
             }
         };
-	    item_request_0.onerror = function (e) {
-//	alert('getting_item12: ' + item_url);
+	 item_request_0.onerror = function (e) {
+		//console.log('getting_item12: ' + item_url);
+		//console.log(e);
 	    };
     }
 }
@@ -249,7 +251,8 @@ function get_item_raw(item_url) {
 
 
 function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
-    var begin_date = 0;
+	//console.log("inside get_items()");  
+  var begin_date = 0;
     if (typeof begin_timeframe === "undefined") {
         begin_date = 0
     } else {
@@ -261,18 +264,22 @@ function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
     } else {
         end_date = parseInt(end_timeframe, 10);
     }
+	//console.log(slug_filter);
+	//console.log(type_filter);
     if (typeof slug_filter === "undefined" || type_filter === "home") {
         Buleys.keyRange = new IDBKeyRange.bound(begin_date, end_date, true, false);
-        console.log("Range Defined", Buleys.db,Buleys.keyRange);
+        //console.log("Range Defined", Buleys.db,Buleys.keyRange);
         Buleys.db.onCursor = function (callback) {
-            console.log("get_items callback objectStore", callback, Buleys.db.objectStore);
+            //console.log("get_items callback objectStore", callback, Buleys.db.objectStore);
+	//console.log(callback);
+	//console.log(Buleys.db.objectStore);
             new_item_transaction();
             Buleys.db.indexItem = Buleys.db.objectStore.index("published_date");
             var request = Buleys.db.indexItem.openCursor(Buleys.keyRange);
             request.onsuccess = function (event) {
                 if (typeof request.result !== "undefined") {
                     Buleys.cursor = request.result;
-                    console.log("get_items() cursor value ", Buleys.cursor.value);
+                    //console.log("get_items() cursor value ", Buleys.cursor.value);
 					get_item(Buleys.cursor.value.link);
                     if (typeof Buleys.cursor["continue"] === "function") {
                         Buleys.cursor["continue"]();
@@ -287,16 +294,26 @@ function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
     } else {
         new_categories_transaction();
         Buleys.index = Buleys.objectStore.index("slug");
-        console.log("get_items db stuff ", Buleys.db, Buleys.index);
-        var cursorRequest = Buleys.index.getAll(slug_filter);
+        //console.log("get_items db stuff ", Buleys.db, Buleys.index);
+	//console.log("slug filter");
+	//console.log(slug_filter);
+        var cursorRequest = Buleys.index.openCursor(slug_filter);
         cursorRequest.onsuccess = function (event) {
+	//console.log("the result");
+		//console.log(event);
+		//console.log("EXPERIMENTAL");
+		//console.log(event.result);
+		//console.log(cursorRequest.result);
             var objectCursor = cursorRequest.result;
             if (!objectCursor) {
-                return;
+        	//console.log("!objectCursor");
+	        return;
             }
+		//console.log("OBJECTCURSOR");
+		//console.log(objectCursor);
             if (objectCursor.length > 1) {
                 jQuery.each(objectCursor, function (k, item) {
-					console.log("get_item(): ",item.link);
+					//console.log("get_item(): ",item.link);
                     get_item(item.link);
                 });
             } else {
@@ -304,6 +321,8 @@ function get_items(type_filter, slug_filter, begin_timeframe, end_timeframe) {
             }
         };
         cursorRequest.onerror = function (event) {
+		//console.log("THERE WAS AN ERROR");
+		//console.log(event);
         };
     }
 }
@@ -331,9 +350,9 @@ function fire_off_request() {
     };
     var the_url;
     if (typeof Buleys.view.type === "undefined" || Buleys.view.type === "") {
-        the_url = "/feedback/index.php";
+        the_url = "http://api.buleys.com/feedback/";
     } else {
-        the_url = "http://static.buleys.com/js/collections/" + Buleys.view.type + "/" + Buleys.view.slug + ".js";
+        the_url = "http://cdn.buleys.com/js/collections/" + Buleys.view.type + "/" + Buleys.view.slug + ".js";
     }
     $.ajax({
         url: the_url,

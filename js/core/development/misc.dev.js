@@ -13,11 +13,11 @@
         };
         var urlString = '';
         if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
         } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
         } else {
-            urlString = "http://buleys.com/seen";
+            urlString = "http://www.buleys.com/seen";
         }
         history.pushState(stateObj, "view_seen", urlString);
         reload_results();
@@ -35,11 +35,11 @@
         };
         var urlString = '';
         if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
         } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
         } else {
-            urlString = "http://buleys.com/unseen";
+            urlString = "http://www.buleys.com/unseen";
         }
         history.pushState(stateObj, "view_unseen", urlString);
         reload_results();
@@ -57,11 +57,11 @@
         };
         var urlString = '';
         if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
         } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
         } else {
-            urlString = "http://buleys.com/read";
+            urlString = "http://www.buleys.com/read";
         }
         history.pushState(stateObj, "view_read", urlString);
         reload_results();
@@ -79,11 +79,11 @@
         };
         var urlString = '';
         if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
         } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
         } else {
-            urlString = "http://buleys.com/unread";
+            urlString = "http://www.buleys.com/unread";
         }
         history.pushState(stateObj, "view_unread", urlString);
         reload_results();
@@ -101,11 +101,11 @@
         };
         var urlString = '';
         if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
         } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
         } else {
-            urlString = "http://buleys.com/trash";
+            urlString = "http://www.buleys.com/trash";
         }
         history.pushState(stateObj, "view_trash", urlString);
         reload_results();
@@ -123,11 +123,11 @@
         };
         var urlString = '';
         if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
         } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
         } else {
-            urlString = "http://buleys.com/archive";
+            urlString = "http://www.buleys.com/archive";
         }
         history.pushState(stateObj, "view_archive", urlString);
         reload_results();
@@ -146,9 +146,9 @@
         };
         var urlString = '';
         if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/";
         } else if (typeof Buleys.view.type != 'undefined' && Buleys.view.type != "") {
-            urlString = "http://buleys.com/" + Buleys.view.type + "/";
+            urlString = "http://www.buleys.com/" + Buleys.view.type + "/";
         }
         history.pushState(stateObj, "view_index", urlString);
         reload_results();
@@ -164,7 +164,7 @@
             "time": new Date().getTime()
         };
         var urlString = '';
-        urlString = "http://buleys.com/" + Buleys.view.type + "/";
+        urlString = "http://www.buleys.com/" + Buleys.view.type + "/";
         history.pushState(stateObj, "view_home", urlString);
         reload_results();
     });
@@ -179,7 +179,7 @@
             "type": Buleys.view.type,
             "time": new Date().getTime()
         };
-        history.pushState(stateObj, "view_settings", "http://buleys.com/settings/");
+        history.pushState(stateObj, "view_settings", "http://www.buleys.com/settings/");
         reload_results();
     });
     
@@ -390,11 +390,11 @@
 	    };
 	    var urlString = '';
 	    if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-	        urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
+	        urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
 	    } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-	        urlString = "http://buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
+	        urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
 	    } else {
-	        urlString = "http://buleys.com/favorites";
+	        urlString = "http://www.buleys.com/favorites";
 	    }
 	    history.pushState(stateObj, "view_favorites", urlString);
 	    reload_results();
@@ -783,7 +783,7 @@
             "type": Buleys.view.type
         };
 
-        $.post("/feedback/index.php", data_to_send, dataType = "json", function (data) {
+        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function (data) {
             new_window = window.open(uri_string, click_window);
         });
     });
@@ -803,7 +803,7 @@
             "type": Buleys.view.type
         };
 
-        $.post("/feedback/index.php", data_to_send, dataType = "json", function (data) {
+        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function (data) {
             new_window = window.open(uri_string, click_window);
 
         });

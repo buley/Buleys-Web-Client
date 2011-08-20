@@ -38,7 +38,7 @@ function account_logout() {
     data_to_send = {
         "method": "logout"
     };
-    $.post("/feedback/index.php", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
         if (typeof(data.result) !== 'undefined') {
             delete Buleys.store["session_id"];
             jQuery("#login").fadeIn('fast');
@@ -60,7 +60,7 @@ function request_login(email, password) {
         "email": email,
         "token": session_token
     };
-    $.post("/api/index.php", data_to_send, function (data) {
+    $.post("http://api.buleys.com/login", data_to_send, function (data) {
         if (data != null && typeof data.result !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 console.log('fail');
@@ -100,7 +100,7 @@ function request_registration(password, display_name, first_name, last_name, add
         "country": country
     };
 
-    $.post("/feedback/index.php", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
         if (typeof(data.request_status) !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 if (typeof(data.message) !== 'undefined') {
@@ -131,7 +131,7 @@ function confirm_registration(secret) {
     };
 
 
-    $.post("/feedback/index.php", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
         if (typeof(data.request_status) !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 jQuery("#login_status_pane").html('');
@@ -204,7 +204,7 @@ function send_confirmation(email, page, context, resend) {
         };
     }
 
-    $.post("/feedback/index.php", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
         if (typeof(data.result) !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 jQuery("#login_status_pane").html('');
@@ -235,7 +235,7 @@ function account_login(email, password) {
         "secret": secret
     };
 
-    $.post("/feedback/index.php", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
 
         if (typeof data.result !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
@@ -338,7 +338,7 @@ $('#get_login').live('click', function (event) {
         "type": Buleys.view.type,
         "time": new Date().getTime()
     };
-    var urlString = "http://buleys.com/start";
+    var urlString = "http://www.buleys.com/start";
     history.pushState(stateObj, "login", urlString);
     reload_results();
 });

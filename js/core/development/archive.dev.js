@@ -1,7 +1,7 @@
 	
 	function new_archived_transaction() {
 	    try {
-	        var transaction = Buleys.db.transaction(["archive"], 1 /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["archive"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
 	        transaction.oncomplete = function (e) {
 	
 	            delete Buleys.objectStore;
@@ -72,7 +72,7 @@
 	    new_categories_transaction();
 	
 	    Buleys.index = Buleys.objectStore.index("slug");
-	    var cursorRequest = Buleys.index.getAll(slug_filter);
+	    var cursorRequest = Buleys.index.openCursor(slug_filter);
 	
 	    cursorRequest.onsuccess = function (event) {
 	

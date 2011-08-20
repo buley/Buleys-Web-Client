@@ -10,7 +10,7 @@
 	
 	function open_database() {
 	
-	    var database_open_request = window.indexedDB.open("Buleys-317");
+	    var database_open_request = window.indexedDB.open("Buleys-318", "www.buleys.com");
 	    database_open_request.onsuccess = function (event) {
 	        console.log("!!!", database_open_request.result);
 	        database_is_open(database_open_request.result);
