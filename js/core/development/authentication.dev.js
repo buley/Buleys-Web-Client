@@ -280,17 +280,9 @@ function check_login_status() {
 
     var session_id = get_local_storage("session_id");
     if (typeof session_id == "undefined" || session_id == null || session_id == "") {
-    	if(jQuery("#login_status_pane").length >= 1) {
-        	jQuery("#login_status_pane").html('<a href="#" id="get_login" class="getloginform">Login or Signup</a>');
-    	} else {
-        	jQuery("#header").append("<div id='login_status_pane'>" + '<a href="#" id="get_login" class="getloginform">Login or Signup</a>' + "</div>");
-    	}
+       	jQuery("#account_dropdown").append('<li><a href="#" id="get_login">Login or Signup</a></li>');
     } else {
-    	if(jQuery("#login_status_pane").length >= 1) {
-	        jQuery("#login_status_pane").html('');
-		} else {
-	        jQuery("#header").append("<div id='login_status_pane'>" + "</div>");
-	    }
+       	jQuery("#account_dropdown").append('<li><a href="/settings" id="get_settings">Settings</a></li>');
     }
 
 }
