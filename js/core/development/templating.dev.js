@@ -1,6 +1,7 @@
 
 
-    $(window).bind("popstate", function (e) {
+    $(window).bind("popstate", function ( e ) {
+
         console.log(location.pathname);
         if (!Buleys.session.database_is_open) {
         } else {
@@ -11,7 +12,9 @@
     });
 
 	
-	function load_page_title_info(page_info) {
+	function load_page_title_info( page_info ) {
+	jQuery(document).trigger('load_page_title_info');
+
 	console.log("LOAD PAGE TITLE:",page_info);
 	// && jQuery("a .topic_name").length > 0 && !jQuery("#page_title").indexOf( "<a href='/" + page_info.type + "/" + page_info.key + "' class='topic_name'>" + page_info.name + "</a>")
 	    if (typeof page_info.name !== 'undefined' ) {
@@ -26,13 +29,17 @@
 	    }
 	}
 	
-	function show_loading() {
+	function show_loading(  ) {
+	jQuery(document).trigger('show_loading');
+
 	
 	    $("#index").html("<div class='loading'>&nbsp;</div>");
 	
 	}
 	
-	function hide_loading() {
+	function hide_loading(  ) {
+	jQuery(document).trigger('hide_loading');
+
 	
 	    $("#index .loading").hide();
 	
@@ -40,7 +47,9 @@
 	
 	
 	
-	function load_profile_info() {
+	function load_profile_info(  ) {
+	jQuery(document).trigger('load_profile_info');
+
 	
 	    var data_to_send;
 	    data_to_send = {
@@ -48,11 +57,13 @@
 	    };
 	
 	
-	    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
+	    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+
 	        jQuery("#small_profile").show();
 	        if (typeof data.display_name != "undefined" && data.display_name != null) {
 	            jQuery("#small_profile").append("<div id='small_profile_image'><a href='/profile/'><img src='http://www.gravatar.com/avatar/" + data.email_hash + "?s=42'></a></div><div><div id='small_profile_display_name'><a href='/profile/'>" + data.display_name + "</a></div>" + "</div>");
-	            jQuery.each(data, function (key, val) {
+	            jQuery.each(data, function ( key, val ) {
+
 	                add_or_update_setting(key, val);
 	            });
 	        }
@@ -60,13 +71,17 @@
 	
 	}
 		
-	function clear_page() {
+	function clear_page(  ) {
+	jQuery(document).trigger('clear_page');
+
 	    hide_overlay();
 	    jQuery("#right").html("<ul id='results'></ul>");
 	    jQuery("#main").html('');
 	}
 
-	function load_current_page() {
+	function load_current_page(  ) {
+	jQuery(document).trigger('load_current_page');
+
         fire_off_request();
 
         if (Buleys.view.type == "account") {
@@ -159,14 +174,18 @@
 	
 	}
 	
-	function reload_results() {
+	function reload_results(  ) {
+	jQuery(document).trigger('reload_results');
+
 	
 	    clear_page();
 		set_page_vars();
 	    load_current_page();
 	}
 
-	function set_page_vars() {
+	function set_page_vars(  ) {
+	jQuery(document).trigger('set_page_vars');
+
 	
 	    console.log("Setting page vars: ", location.pathname);
 	
@@ -183,7 +202,8 @@
 
 
 
-        jQuery('.defaulttext').live('click', function (event) {
+        jQuery('.defaulttext').live('click', function ( event ) {
+
             jQuery(this).val('');
             jQuery(this).removeClass('defaulttext');
         });

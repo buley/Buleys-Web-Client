@@ -1,21 +1,4 @@
 if (typeof window.webkitIndexedDB !== "undefined") {
-/* 
-Currently in Chrome, these are not yet official:
-webkitIDBCursor: function IDBCursor() { [native code] }
-webkitIDBDatabase: function IDBDatabase() { [native code] }
-webkitIDBDatabaseError: function IDBDatabaseError() { [native code] }
-webkitIDBDatabaseException: function IDBDatabaseException() { [native code] }
-webkitIDBErrorEvent: function IDBErrorEvent() { [native code] }
-webkitIDBEvent: function IDBEvent() { [native code] }
-webkitIDBFactory: function IDBFactory() { [native code] }
-webkitIDBIndex: function IDBIndex() { [native code] }
-webkitIDBKeyRange: function IDBKeyRange() { [native code] }
-webkitIDBObjectStore: function IDBObjectStore() { [native code] }
-webkitIDBRequest: function IDBRequest() { [native code] }
-webkitIDBSuccessEvent: function IDBSuccessEvent() { [native code] }
-webkitIDBTransaction: function IDBTransaction() { [native code] }
-webkitIndexedDB: IDBFactory
-*/
 window.IDBCursor = window.webkitIDBCursor;
 window.IDBDatabase = window.webkitIDBDatabase;
 window.IDBDatabaseError = window.webkitIDBDatabaseError;
@@ -30,13 +13,13 @@ window.IDBRequest = window.webkitIDBRequest;
 window.IDBSuccessEvent = window.webkitIDBSuccessEvent;
 window.IDBTransaction = window.webkitIDBTransaction;
 window.indexedDB = window.webkitIndexedDB;
-
 } else if ('mozIndexedDB' in window) {
 window.indexedDB = window.mozIndexedDB;
 }
 
 var Buleys = {};
 Buleys.db = {};
+Buleys.version = 7;
 Buleys.queues = {};
 Buleys.settings = {};
 Buleys.profile = {};

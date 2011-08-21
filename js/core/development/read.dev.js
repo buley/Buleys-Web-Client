@@ -1,7 +1,6 @@
 
-	function get_read(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
-	
-	
+	function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
+	jQuery(document).trigger('get_read');
 	
 	    if (typeof make_inverse == "undefined") {
 	        make_inverse = false;
@@ -23,10 +22,12 @@
 	
 	    new_categories_transaction();
 	
-	    Buleys.index = Buleys.objectStore.index("slug");
-	    var cursorRequest = Buleys.index.openCursor(slug_filter);
+	    Buleys.index = Buleys.objectStoreCategories.index("slug");
+	        var keyRange = IDBKeyRange.only(slug_filter);
+	    var cursorRequest = Buleys.index.openCursor(keyRange);
 	
-	    cursorRequest.onsuccess = function (event) {
+	    cursorRequest.onsuccess = function ( event ) {
+
 	
 	        var objectCursor = cursorRequest.result;
 	        if (!objectCursor) {
@@ -36,7 +37,8 @@
 	
 	
 	        if (objectCursor.length > 1) {
-	            jQuery.each(objectCursor, function (k, item) {
+	            jQuery.each(objectCursor, function ( k, item ) {
+
 	
 	
 	
@@ -46,7 +48,8 @@
 	                new_status_transaction();
 	
 	                var item_request_2 = Buleys.objectStore.get(item.link);
-	                item_request_2.onsuccess = function (event) {
+	                item_request_2.onsuccess = function ( event ) {
+
 	
 	                    if (typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
 	
@@ -79,7 +82,8 @@
 	            get_item(objectCursor.link);
 	        }
 	    };
-	    cursorRequest.onerror = function (event) {
+	    cursorRequest.onerror = function ( event ) {
+
 	
 	    };
 	
@@ -91,7 +95,9 @@
 	
 	
 	
-	function mark_item_as_read(item_url, item_slug, item_type) {
+	function mark_item_as_read( item_url, item_slug, item_type ) {
+	jQuery(document).trigger('mark_item_as_read');
+
 	
 	
 	    new_status_transaction();
@@ -105,25 +111,31 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function new_status_transaction() {
+	function new_status_transaction(  ) {
+	jQuery(document).trigger('new_status_transaction');
+
 	    try {
 	        var transaction = Buleys.db.transaction(["status"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function (e) {
+	        transaction.oncomplete = function ( e ) {
+
 	
 	            delete Buleys.objectStore;
 	        };
-	        transaction.onabort = function (e) {
+	        transaction.onabort = function ( e ) {
+
 	
 	        };
 	        Buleys.objectStore = transaction.objectStore("status");
@@ -133,8 +145,9 @@
 	
 	
 	
-	        var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
-	        request.onsuccess = function (e) {
+	        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10 ));
+	        request.onsuccess = function ( e ) {
+
 	
 	            Buleys.objectStore = Buleys.db.createObjectStore("status", {
 	                "keyPath": "link"
@@ -153,7 +166,8 @@
 	
 	
 	        };
-	        request.onerror = function (e) {
+	        request.onerror = function ( e ) {
+
 	
 	        };
 	
@@ -161,18 +175,22 @@
 	}
 
 	
-	function remove_item_from_read_database(item_url, item_slug, item_type) {
+	function remove_item_from_read_database( item_url, item_slug, item_type ) {
+	jQuery(document).trigger('remove_item_from_read_database');
+
 	
 	
 	    new_status_transaction();
 	
 	
 	    var request = Buleys.objectStore["delete"](item_url);
-	    request.onsuccess = function (event) {
+	    request.onsuccess = function ( event ) {
+
 	
 	        delete Buleys.objectId;
 	    };
-	    request.onerror = function () {
+	    request.onerror = function (  ) {
+
 	
 	    };
 	
@@ -180,7 +198,9 @@
 	}
 	
 		
-	function add_item_to_readstatus_database(item, status) {
+	function add_item_to_readstatus_database( item, status ) {
+	jQuery(document).trigger('add_item_to_readstatus_database');
+
 	
 	    if (typeof status == 'undefined') {
 	        status = "unread";
@@ -196,11 +216,13 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	

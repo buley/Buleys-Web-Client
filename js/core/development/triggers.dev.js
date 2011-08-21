@@ -1,7 +1,9 @@
-$('body').bind('favorite', function (event) {
+$('body').bind('favorite', function ( event ) {
+
     event.preventDefault();
     if (!is_in_cursor_mode()) {
-        $.each($('.selected'), function (i, item_to_mark) {
+        $.each($('.selected'), function ( i, item_to_mark ) {
+
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('empty_star_icon').addClass('star_icon');
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
@@ -26,10 +28,12 @@ $('body').bind('favorite', function (event) {
 
 });
 
-$('body').bind('favorite', function (event) {
+$('body').bind('favorite', function ( event ) {
+
     event.preventDefault();
     if (!is_in_cursor_mode()) {
-        $.each($('.selected'), function (i, item_to_mark) {
+        $.each($('.selected'), function ( i, item_to_mark ) {
+
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
             jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');

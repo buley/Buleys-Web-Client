@@ -1,15 +1,20 @@
-function new_votes_transaction() {
+function new_votes_transaction(  ) {
+	jQuery(document).trigger('new_votes_transaction');
+
     try {
         var transaction = Buleys.db.transaction(["votes"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-        transaction.oncomplete = function (e) {
+        transaction.oncomplete = function ( e ) {
+
             delete Buleys.objectStore;
         };
-        transaction.onabort = function (e) {
+        transaction.onabort = function ( e ) {
+
         };
         Buleys.objectStore = transaction.objectStore("votes");
     } catch (e) {
-        var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
-        request.onsuccess = function (e) {
+        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10) );
+        request.onsuccess = function ( e ) {
+
             Buleys.objectStore = Buleys.db.createObjectStore("votes", {
                 "keyPath": "vote_key"
             }, false);
@@ -20,15 +25,19 @@ function new_votes_transaction() {
                 unique: false
             });
         };
-        request.onerror = function (e) {
+        request.onerror = function ( e ) {
+
         };
     };
 }
 
-function check_item_vote_status_for_overlay(item_url) {
+function check_item_vote_status_for_overlay( item_url ) {
+	jQuery(document).trigger('check_item_vote_status_for_overlay');
+
     new_votes_transaction();
     var item_request = Buleys.objectStore.get(item_url.replace(/[^a-zA-Z0-9-_]+/g, ""));
-    item_request.onsuccess = function (event) {
+    item_request.onsuccess = function ( event ) {
+
         checker = item_request;
         if (typeof event.target.result !== 'undefined') {
             if (event.target.result.vote_value == -1) {
@@ -44,15 +53,19 @@ function check_item_vote_status_for_overlay(item_url) {
             jQuery("#overlay_left").parent().addClass('unvoted');
         }
     };
-    item_request.onerror = function (e) {
+    item_request.onerror = function ( e ) {
+
     };
 }
 
-function get_vote_info(the_url, the_type, the_key) {
+function get_vote_info( the_url, the_type, the_key ) {
+	jQuery(document).trigger('get_vote_info');
+
     new_votes_transaction();
     var vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_key.toLowerCase();
     var item_request = Buleys.objectStore.get(vote_key);
-    item_request.onsuccess = function (event) {
+    item_request.onsuccess = function ( event ) {
+
         if (typeof item_request.result == 'undefined' || item_request.result == "") {
         } else {
             if (typeof item_request.result != 'undefined') {
@@ -64,59 +77,75 @@ function get_vote_info(the_url, the_type, the_key) {
             }
         }
     };
-    item_request.onerror = function (e) {
+    item_request.onerror = function ( e ) {
+
     };
 }
 
-function get_votes() {
+function get_votes(  ) {
+	jQuery(document).trigger('get_votes');
+
     try {
         new_votes_transaction();
         Buleys.index = Buleys.objectStore.index("vote_key");
         var cursorRequest = Buleys.index.openCursor();
-        cursorRequest.onsuccess = function (event) {
+        cursorRequest.onsuccess = function ( event ) {
+
             var objectCursor = cursorRequest.result;
             if (!objectCursor) {
                 return;
             }
             if (objectCursor.length >= 0) {
-                jQuery.each(objectCursor, function (k, item) {
+                jQuery.each(objectCursor, function ( k, item ) {
+
                 });
             }
         };
-        request.onerror = function (event) {
+        request.onerror = function ( event ) {
+
         };
     } catch (e) {
     }
 }
 
-function remove_vote(vote_key) {
+function remove_vote( vote_key ) {
+	jQuery(document).trigger('remove_vote');
+
     new_votes_transaction();
     var request = Buleys.objectStore["delete"](vote_key);
-    request.onsuccess = function (event) {
+    request.onsuccess = function ( event ) {
+
         delete Buleys.objectId;
     };
-    request.onerror = function () {
+    request.onerror = function (  ) {
+
     };
 }
 
-function add_or_update_vote(vote_key, vote_value) {
+function add_or_update_vote( vote_key, vote_value ) {
+	jQuery(document).trigger('add_or_update_vote');
+
     new_votes_transaction();
     if (typeof vote_value == 'undefined') {
         vote_value = '';
     }
     var item_request = Buleys.objectStore.get(vote_key);
-    item_request.onsuccess = function (event) {
+    item_request.onsuccess = function ( event ) {
+
         if (typeof item_request.result == 'undefined') {
             add_vote_to_votes_database(vote_key, vote_value);
         } else {
             update_vote_in_votes_database(vote_key, vote_value);
         }
     };
-    item_request.onerror = function (e) {
+    item_request.onerror = function ( e ) {
+
     };
 }
 
-function add_vote_to_votes_database(vote_key, vote_value) {
+function add_vote_to_votes_database( vote_key, vote_value ) {
+	jQuery(document).trigger('add_vote_to_votes_database');
+
     new_votes_transaction();
     var data = {
         "vote_key": vote_key,
@@ -124,14 +153,18 @@ function add_vote_to_votes_database(vote_key, vote_value) {
         "modified": new Date().getTime()
     };
     var add_data_request = Buleys.objectStore.add(data);
-    add_data_request.onsuccess = function (event) {
+    add_data_request.onsuccess = function ( event ) {
+
         Buleys.objectId = add_data_request.result;
     };
-    add_data_request.onerror = function (e) {
+    add_data_request.onerror = function ( e ) {
+
     };
 }
 
-function update_vote_in_votes_database(vote_key, vote_value) {
+function update_vote_in_votes_database( vote_key, vote_value ) {
+	jQuery(document).trigger('update_vote_in_votes_database');
+
     new_votes_transaction();
     var data = {
         "vote_key": vote_key,
@@ -139,14 +172,17 @@ function update_vote_in_votes_database(vote_key, vote_value) {
         "modified": new Date().getTime()
     };
     var add_data_request = Buleys.objectStore.put(data);
-    add_data_request.onsuccess = function (event) {
+    add_data_request.onsuccess = function ( event ) {
+
         Buleys.objectId = add_data_request.result;
     };
-    add_data_request.onerror = function (e) {
+    add_data_request.onerror = function ( e ) {
+
     };
 }
 
-    $('.vote_up').live('click', function (event) {
+    $('.vote_up').live('click', function ( event ) {
+
         event.preventDefault();
         var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
         var the_url_slug = the_url.replace(/[^a-zA-Z0-9-_]+/g, "");
@@ -172,7 +208,8 @@ function update_vote_in_votes_database(vote_key, vote_value) {
         }
     });
 
-    $('.vote_down').live('click', function (event) {
+    $('.vote_down').live('click', function ( event ) {
+
         event.preventDefault();
         var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
         var the_url_slug = the_url.replace(/[^a-zA-Z0-9-_]+/g, "");

@@ -1,5 +1,7 @@
 	
-	function parse_single_topic(topic_slug) {
+	function parse_single_topic( topic_slug ) {
+	jQuery(document).trigger('parse_single_topic');
+
 	
 	    var split_string = topic_slug.split("_");
 	    var type_to_get = split_string[0];
@@ -14,7 +16,9 @@
 	}
 
 	
-	function update_topic_in_topics_database(topic_key, topic) {
+	function update_topic_in_topics_database( topic_key, topic ) {
+	jQuery(document).trigger('update_topic_in_topics_database');
+
 	
 	
 	    new_topics_transaction();
@@ -34,11 +38,13 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.put(topic);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
@@ -47,14 +53,17 @@
 	
 	
 	
-	function get_page_topic_info(the_type, the_key) {
+	function get_page_topic_info( the_type, the_key ) {
+	jQuery(document).trigger('get_page_topic_info');
+
 	    new_topics_transaction();
 	
 	    var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
 	
-	    item_request.onsuccess = function (event) {
+	    item_request.onsuccess = function ( event ) {
 
-	        if (typeof item_request.result !== 'undefined' || item_request.result.name !== "") {
+
+	        if (typeof item_request.result !== 'undefined') {
 				load_page_title_info(item_request.result);	
 /*
 	            if (typeof item_request.result.name != 'undefined') {
@@ -82,7 +91,8 @@
 	        }
 	    };
 	
-	    item_request.onerror = function (e) {
+	    item_request.onerror = function ( e ) {
+
 	
 	
 	    };
@@ -90,7 +100,9 @@
 	}
 	
 	
-	function get_topics() {
+	function get_topics(  ) {
+	jQuery(document).trigger('get_topics');
+
 	
 	    try {
 	
@@ -98,7 +110,8 @@
 	        Buleys.index = Buleys.objectStore.index("topic_key");
 	
 	        var cursorRequest = Buleys.index.openCursor();
-	        cursorRequest.onsuccess = function (event) {
+	        cursorRequest.onsuccess = function ( event ) {
+
 	            var objectCursor = cursorRequest.result;
 	            if (!objectCursor) {
 	                return;
@@ -108,13 +121,15 @@
 	
 	
 	            if (objectCursor.length >= 0) {
-	                jQuery.each(objectCursor, function (k, item) {
+	                jQuery.each(objectCursor, function ( k, item ) {
+
 	
 	                });
 	            }
 	
 	        };
-	        request.onerror = function (event) {
+	        request.onerror = function ( event ) {
+
 	
 	        };
 	
@@ -127,21 +142,27 @@
 	}
 	
 	
-	function remove_topic(topic_key) {
+	function remove_topic( topic_key ) {
+	jQuery(document).trigger('remove_topic');
+
 	
 	    new_topics_transaction();
 	
 	    var request = Buleys.objectStore["delete"](topic_key);
-	    request.onsuccess = function (event) {
+	    request.onsuccess = function ( event ) {
+
 	
 	        delete Buleys.objectId;
 	    };
-	    request.onerror = function () {
+	    request.onerror = function (  ) {
+
 	
 	    };
 	}
 	
-	function add_or_update_topic(topic_key, topic) {
+	function add_or_update_topic( topic_key, topic ) {
+	jQuery(document).trigger('add_or_update_topic');
+
 	
 	    new_topics_transaction();
 	    if (typeof topic == 'undefined') {
@@ -150,7 +171,8 @@
 	
 	    var item_request = Buleys.objectStore.get(topic_key);
 	
-	    item_request.onsuccess = function (event) {
+	    item_request.onsuccess = function ( event ) {
+
 	
 	
 	
@@ -163,14 +185,17 @@
 	        }
 	    };
 	
-	    item_request.onerror = function (e) {
+	    item_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function add_topic_to_topics_database(topic_key, topic) {
+	function add_topic_to_topics_database( topic_key, topic ) {
+	jQuery(document).trigger('add_topic_to_topics_database');
+
 	
 	
 	    new_topics_transaction();
@@ -183,11 +208,13 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.add(topic);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
@@ -195,14 +222,18 @@
 	}
 
 
-	function new_topics_transaction() {
+	function new_topics_transaction(  ) {
+	jQuery(document).trigger('new_topics_transaction');
+
 	    try {
 	        var transaction = Buleys.db.transaction(["topic"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function (e) {
+	        transaction.oncomplete = function ( e ) {
+
 	
 	            delete Buleys.objectStore;
 	        };
-	        transaction.onabort = function (e) {
+	        transaction.onabort = function ( e ) {
+
 	
 	        };
 	        Buleys.objectStore = transaction.objectStore("topic");
@@ -213,8 +244,9 @@
 	
 	
 	
-	        var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
-	        request.onsuccess = function (e) {
+	        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10 ) );
+	        request.onsuccess = function ( e ) {
+
 	
 	            Buleys.objectStore = Buleys.db.createObjectStore("topic", {
 	                "keyPath": "topic_key"
@@ -232,7 +264,8 @@
 	
 	
 	        };
-	        request.onerror = function (e) {
+	        request.onerror = function ( e ) {
+
 	
 	        };
 	

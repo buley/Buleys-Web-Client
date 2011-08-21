@@ -4,40 +4,50 @@
 
 	//Buleys.settings is declared in loader.js
 	
-	function temporarily_disable_hotkeys() {
+	function temporarily_disable_hotkeys(  ) {
+	jQuery(document).trigger('temporarily_disable_hotkeys');
+
 
 	} 
 	
-	function disable_hotkeys() {
+	function disable_hotkeys(  ) {
+	jQuery(document).trigger('disable_hotkeys');
+
 		console.log( "Disabling hotkeys" );
 		console.log( Buleys.settings );
 		Buleys.settings.hotkeys.disabled = true;
 	}
 	
-	function enable_hotkeys() {
+	function enable_hotkeys(  ) {
+	jQuery(document).trigger('enable_hotkeys');
+
 		delete Buleys.settings.hotkeys.disabled;
 	}
 
 
-    $('#show_commands').live('click', function (event) {
+    $(document).bind('show_commands', function ( event ) {
+
         event.preventDefault();
 
         $('#result_controls').show();
     });
 
 
-    $('#hide_commands').live('click', function (event) {
+    $(document).bind('hide_commands', function ( event ) {
+
         event.preventDefault();
         $('#result_controls').hide();
     });
 
 
-    $('#show_button').live('click', function (e) {
+    $(document).bind('show_button', function ( e ) {
+
         send_notification_to_desktop();
     });
 
 	
-    $('html').live('keyup', function (e) {
+    $('html').live('keyup', function ( e ) {
+
 	console.log('disabled?');
 	console.log( Buleys.settings.hotkeys.disabled );
 		if( (  typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" && typeof Buleys.settings.hotkeys.disabled === "undefined" ) || ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" ) && ( typeof Buleys.settings.hotkeys.disabled !== "undefined" && Buleys.settings.hotkeys.disabled !== true ) ) {
@@ -60,18 +70,18 @@
 	        } else if (e.keyCode == 72) {
 	
 	            if (Buleys.shortcuts.s_depressed) {} else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_index').click();
+	                $(document).trigger('view_index');
 	            } else {
-	                $('#close_item_preview').click();
+	                $(document).trigger('close_item_preview');
 	            }
 	
 	
 	        } else if (e.keyCode == 76) {
 	
 	            if (Buleys.shortcuts.s_depressed) {} else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_home').click();
+	                $(document).trigger('view_home');
 	            } else {
-	                $('#preview_item').click();
+	                $(document).trigger('preview_item');
 	
 	                if (jQuery('.cursor').length > 0) {
 	                    //alert(jQuery('.cursor').text());
@@ -81,7 +91,7 @@
 	
 	
 	        } else if (e.keyCode == 78) {
-	            $('#preview_item').click();
+	            $(document).trigger('preview_item');
 	            if (jQuery('.selected').length > 0) {
 	                jQuery('#results li.selected:first').addClass('cursor');
 	            } else {
@@ -110,7 +120,7 @@
 	
 	        } else if (e.keyCode == 27) {
 	            jQuery('.cursor').removeClass('cursor');
-	            $('#close_all').click();
+	            $(document).trigger('close_all');
 	
 	
 	        } else if (e.keyCode == 77) {
@@ -118,39 +128,39 @@
 	
 	
 	        } else if (e.keyCode == 219) {
-	            $('#preview_item').click();
+	            $(document).trigger('preview_item');
 	
 	        } else if (e.keyCode == 221) {
-	            $('#close_item_preview').click();
+	            $(document).trigger('close_item_preview');
 	
 	
 	        } else if (e.keyCode == 89) {
-	            $('#show_commands').click();
+	            $(document).trigger('show_commands');
 	
 	
 	        } else if (e.keyCode == 85) {
-	            $('#hide_commands').click();
+	            $(document).trigger('hide_commands');
 	
 	
 	        } else if (e.keyCode == 65) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_all').click();
+	                $(document).trigger('select_all');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#select_none').click();
+	                $(document).trigger('select_none');
 	            } else {}
 	
 	
 	        } else if (e.keyCode == 82) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_unread').click();
+	                $(document).trigger('select_unread');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_unread').click();
+	                $(document).trigger('deselect_unread');
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_unread').click();
+	                $(document).trigger('view_unread');
 	            } else {
-	                $('#mark_unread').click();
+	                $(document).trigger('mark_unread');
 	            }
 	
 	
@@ -159,120 +169,121 @@
 	
 	
 	        } else if (e.keyCode == 73) {
-	            $('#select').click();
+	            $(document).trigger('select');
 	
 	        } else if (e.keyCode == 79) {
-	            $('#deselect').click();
+	            $(document).trigger('deselect');
 	
 	        } else if (e.keyCode == 69) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_read').click();
+	                $(document).trigger('select_read');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_read').click();
+	                $(document).trigger('deselect_read');
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_read').click();
+	                $(document).trigger('view_read');
 	            } else {
-	                $('#mark_read').click();
+	                $(document).trigger('mark_read');
 	            }
-	
-	        } else if (e.keyCode == 88) {
+	        	
+		} else if (e.keyCode == 88) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_none').click();
-	            } else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_trash').click();
+	                $(document).trigger('select_none');
+	            } else if (Buleys.shortcuts.d_depressed) {
+		    } else if (Buleys.shortcuts.shift_depressed) {
+	                $(document).trigger('view_trash');
 	            } else {
-	                $('#delete').click();
+	                $(document).trigger('delete');
 	            }
 	
 	
 	        } else if (e.keyCode == 67) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_archived').click();
+	                $(document).trigger('select_archived');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_archived').click();
+	                $(document).trigger('deselect_archived');
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_archive').click();
+	                $(document).trigger('view_archive');
 	            } else {
-	                $('#archive').click();
+	                $(document).trigger('archive');
 	            }
 	
 	        } else if (e.keyCode == 86) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_unarchived').click();
+	                $(document).trigger('select_unarchived');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_unarchived').click();
+	                $(document).trigger('deselect_unarchived');
 	            } else {
-	                $('#unarchive').click();
+	                $(document).trigger('unarchive');
 	            }
 	
 	        } else if (e.keyCode == 70) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_favorites').click();
+	                $(document).trigger('select_favorites');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_favorites').click();
+	                $(document).trigger('deselect_favorites');
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_favorites').click();
+	                $(document).trigger('view_favorites');
 	            } else {
-	                $('#favorite').click();
+	                $(document).trigger('favorite');
 	            }
 	
 	        } else if (e.keyCode == 71) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_unfavorite').click();
+	                $(document).trigger('select_unfavorite');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_unfavorite').click();
+	                $(document).trigger('deselect_unfavorite');
 	            } else {
-	                $('#unfavorite').click();
+	                $(document).trigger('unfavorite');
 	            }
 	
 	        } else if (e.keyCode == 81) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_seen').click();
+	                $(document).trigger('select_seen');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_seen').click();
+	                $(document).trigger('deselect_seen');
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_seen').click();
+	                $(document).trigger('view_seen');
 	            } else {
-	                $('#mark_seen').click();
+	                $(document).trigger('mark_seen');
 	            }
 	
 	        } else if (e.keyCode == 87) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_unseen').click();
+	                $(document).trigger('select_unseen');
 	            } else if (Buleys.shortcuts.d_depressed) {
-	                $('#deselect_unseen').click();
+	                $(document).trigger('deselect_unseen');
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_unseen').click();
+	                $(document).trigger('view_unseen');
 	            } else {
-	                $('#mark_unseen').click();
+	                $(document).trigger('mark_unseen');
 	            }
 	
 	        } else if (e.keyCode == 90) {
 	
 	            if (Buleys.shortcuts.s_depressed) {
-	                $('#select_inverse').click();
+	                $(document).trigger('select_inverse');
 	            } else if (Buleys.shortcuts.d_depressed) {
 	            
 	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $('#view_index').click();
+	                $(document).trigger('view_index');
 	            } else {
-	                $('#refresh').click();
+	                $(document).trigger('undelete');
 	            }
 	
 	        } else if (e.keyCode == 73) {
-	            $('#deselect').click();
+	            $(document).trigger('deselect');
 	
 	        } else if (e.keyCode == 79) {
 	
-	            $('#select').click();
+	            $(document).trigger('select');
 	        }
 			
 		}
@@ -280,7 +291,8 @@
     });
 
 
-    $('html').live('keydown', function (e) {
+    $('html').live('keydown', function ( e ) {
+
 
 		if( ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" && typeof Buleys.settings.hotkeys.disabled === "undefined" ) || ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" ) && ( typeof Buleys.settings.hotkeys.disabled !== "undefined" && Buleys.settings.hotkeys.disabled !== true ) ) {
 

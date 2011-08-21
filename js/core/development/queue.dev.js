@@ -1,5 +1,7 @@
 	
-	function save_queues() {
+	function save_queues(  ) {
+	jQuery(document).trigger('save_queues');
+
 	
 	    add_or_update_queue("new_items", Buleys.queues.new_items);
 	    add_or_update_queue("pending_crawls", Buleys.queues.pending_crawls);
@@ -8,7 +10,9 @@
 
 	
 	
-	function get_queues() {
+	function get_queues(  ) {
+	jQuery(document).trigger('get_queues');
+
 	
 	    try {
 	
@@ -16,7 +20,8 @@
 	        Buleys.index = Buleys.objectStore.index("queue_name");
 	
 	        var cursorRequest = Buleys.index.openCursor();
-	        cursorRequest.onsuccess = function (event) {
+	        cursorRequest.onsuccess = function ( event ) {
+
 	            var objectCursor = cursorRequest.result;
 	            if (!objectCursor) {
 	                return;
@@ -26,13 +31,15 @@
 	
 	
 	            if (objectCursor.length >= 0) {
-	                jQuery.each(objectCursor, function (k, item) {
+	                jQuery.each(objectCursor, function ( k, item ) {
+
 	
 	                });
 	            }
 	
 	        };
-	        request.onerror = function (event) {
+	        request.onerror = function ( event ) {
+
 	
 	        };
 	
@@ -44,33 +51,41 @@
 	
 	}
 	
-	function remove_queue(queue_name) {
+	function remove_queue( queue_name ) {
+	jQuery(document).trigger('remove_queue');
+
 	
 	    new_queue_transaction();
 	
 	    var request = Buleys.objectStore["delete"](queue_name);
-	    request.onsuccess = function (event) {
+	    request.onsuccess = function ( event ) {
+
 	
 	        delete Buleys.objectId;
 	    };
-	    request.onerror = function () {
+	    request.onerror = function (  ) {
+
 	
 	    };
 	}
 	
-	function load_all_queues_into_dom() {
+	function load_all_queues_into_dom(  ) {
+	jQuery(document).trigger('load_all_queues_into_dom');
+
 	
 	    new_queue_transaction();
 	
 	
 	    var item_request = Buleys.objectStore.openCursor();
 	
-	    item_request.onsuccess = function (event) {
+	    item_request.onsuccess = function ( event ) {
+
 	        if (typeof item_request.result !== 'undefined') {
 	
 	
 	            if (item_request.result.length >= 0) {
-	                jQuery.each(item_request.result, function (k, item) {
+	                jQuery.each(item_request.result, function ( k, item ) {
+
 	
 	                    Buleys.queues[item.queue_name] = item.queue_value;
 	
@@ -82,14 +97,17 @@
 	        }
 	    };
 	
-	    item_request.onerror = function (e) {
+	    item_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function add_or_update_queue(queue_name, queue_value) {
+	function add_or_update_queue( queue_name, queue_value ) {
+	jQuery(document).trigger('add_or_update_queue');
+
 	
 	    new_queue_transaction();
 	    if (typeof queue_value == 'undefined') {
@@ -98,7 +116,8 @@
 	
 	    var item_request = Buleys.objectStore.get(queue_name);
 	
-	    item_request.onsuccess = function (event) {
+	    item_request.onsuccess = function ( event ) {
+
 	
 	
 	
@@ -111,14 +130,17 @@
 	        }
 	    };
 	
-	    item_request.onerror = function (e) {
+	    item_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function add_queue_to_queues_database(queue_name, queue_value) {
+	function add_queue_to_queues_database( queue_name, queue_value ) {
+	jQuery(document).trigger('add_queue_to_queues_database');
+
 	
 	
 	    new_queue_transaction();
@@ -131,18 +153,22 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function update_queue_in_queues_database(queue_name, queue_value) {
+	function update_queue_in_queues_database( queue_name, queue_value ) {
+	jQuery(document).trigger('update_queue_in_queues_database');
+
 	
 	
 	    new_queue_transaction();
@@ -155,11 +181,13 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.put(data);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
@@ -167,14 +195,18 @@
 	}
 	
 	
-	function new_queue_transaction() {
+	function new_queue_transaction(  ) {
+	jQuery(document).trigger('new_queue_transaction');
+
 	    try {
 	        var transaction = Buleys.db.transaction(["queue"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function (e) {
+	        transaction.oncomplete = function ( e ) {
+
 	
 	            delete Buleys.objectStore;
 	        };
-	        transaction.onabort = function (e) {
+	        transaction.onabort = function ( e ) {
+
 	
 	        };
 	        Buleys.objectStore = transaction.objectStore("queue");
@@ -185,8 +217,9 @@
 	
 	
 	
-	        var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
-	        request.onsuccess = function (e) {
+	        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10 ) );
+	        request.onsuccess = function ( e ) {
+
 	
 	            Buleys.objectStore = Buleys.db.createObjectStore("queue", {
 	                "keyPath": "queue_name"
@@ -198,7 +231,8 @@
 	
 	
 	        };
-	        request.onerror = function (e) {
+	        request.onerror = function ( e ) {
+
 	
 	        };
 	

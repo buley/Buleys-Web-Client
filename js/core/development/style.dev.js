@@ -1,4 +1,6 @@
-	function getURLSlug(rough) {
+	function getURLSlug( rough ) {
+	jQuery(document).trigger('getURLSlug');
+
 	    var type = typeof rough;
 	    if (type != 'object') {
 	        if (rough != null && rough != "undefined" && rough != '') {

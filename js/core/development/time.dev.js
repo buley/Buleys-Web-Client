@@ -1,6 +1,8 @@
 	/*not mine*/
 	
-	function minutes_ago(time) {
+	function minutes_ago( time ) {
+	jQuery(document).trigger('minutes_ago');
+
 	
 	    var d = Date.parse(time);
 	    var dateFunc = new Date();

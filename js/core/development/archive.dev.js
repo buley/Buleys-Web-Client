@@ -1,23 +1,20 @@
 	
-	function new_archived_transaction() {
+	function new_archived_transaction(  ) {
+	jQuery(document).trigger('new_archived_transaction');
+
 	    try {
 	        var transaction = Buleys.db.transaction(["archive"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function (e) {
-	
+	        transaction.oncomplete = function ( e ) {
 	            delete Buleys.objectStore;
 	        };
-	        transaction.onabort = function (e) {
-	
+	        transaction.onabort = function ( e ) {
 	        };
 	        Buleys.objectStore = transaction.objectStore("archive");
 	
 	    } catch (e) {
 	
-	
-	
-	
-	        var request = Buleys.db.setVersion(parseInt(Buleys.db.version) + 1);
-	        request.onsuccess = function (e) {
+	        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10));
+	        request.onsuccess = function ( e ) {
 	
 	            Buleys.objectStore = Buleys.db.createObjectStore("archive", {
 	                "keyPath": "link"
@@ -36,7 +33,8 @@
 	
 	
 	        };
-	        request.onerror = function (e) {
+	        request.onerror = function ( e ) {
+
 	
 	        };
 	
@@ -44,12 +42,9 @@
 	}
 	
 	
-	
-	
-	function get_archived(type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse) {
-	
-	
-	
+	function get_archived( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
+	jQuery(document).trigger('get_archived');
+	console.log( 'archive.js > get_archived' );
 	    if (typeof make_inverse == "undefined") {
 	        make_inverse = false;
 	    }
@@ -71,48 +66,35 @@
 	
 	    new_categories_transaction();
 	
-	    Buleys.index = Buleys.objectStore.index("slug");
-	    var cursorRequest = Buleys.index.openCursor(slug_filter);
+	    Buleys.index = Buleys.objectStoreCategories.index("slug");
+	var keyCursor = IDBKeyRange.only(slug_filter);
+	console.log(keyCursor);
+	console.log("^key");
+	    var cursorRequest = Buleys.index.openCursor( keyCursor );
 	
-	    cursorRequest.onsuccess = function (event) {
-	
-	        var objectCursor = cursorRequest.result;
-	        if (!objectCursor) {
-	            return;
-	        }
-	
-	
-	
-	        if (objectCursor.length > 1) {
-	            jQuery.each(objectCursor, function (k, item) {
-	
-	
-	
-	
-	
-	
-	                new_archived_transaction();
+	    cursorRequest.onsuccess = function ( event ) {
+
+	        var result = event.target.result;
+			var item = result.value;
+	                if( !item ) {
+				return;
+			}
+			new_archived_transaction();
 	
 	                var item_request_2 = Buleys.objectStore.get(item.link);
-	                item_request_2.onsuccess = function (event) {
+	                item_request_2.onsuccess = function ( event1 ) {
 	
-	                    if (typeof item_request_2.result !== 'undefined' && make_inverse !== true) {
-	
-	
+	                    if (typeof event1.target.result !== 'undefined' && make_inverse !== true) {
 	                        new_item_transaction();
+	                        var item_request = Buleys.objectStore.get(event1.target.result.link);
+	                        item_request.onsuccess = function ( event2 ) {
 	
-	                        var item_request = Buleys.objectStore.get(item_request_2.result.link);
-	
-	                        item_request.onsuccess = function (event) {
-	
-	                            if (typeof item_request.result !== 'undefined') {
-	
-	
-	                                if (typeof item_request.result.link !== 'undefined') {
-	
-	
-	                                    if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-	                                        get_item_raw(item_request.result.link);
+	                            if (typeof event2.target.result !== 'undefined') {
+	                                if (typeof event2.target.result.link !== 'undefined') {
+	                                    if (jQuery("#" +event2.target.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+						console.log("get_item_raw");
+						console.log( event2.target.result );
+	                                        get_item_raw(event2.target.result.link);
 	                                    }
 	
 	                                } else {
@@ -127,7 +109,8 @@
 	
 	                        var item_request = Buleys.objectStore.get(item.link);
 	
-	                        item_request.onsuccess = function (event) {
+	                        item_request.onsuccess = function ( event ) {
+
 	
 	                            if (typeof item_request.result !== 'undefined') {
 	
@@ -145,25 +128,13 @@
 	                            }
 	
 	                        };
-	
-	                    }
-	
-	                };
-	
-	
-	
-	
-	
-	
-	
-	
-	            });
-	
-	        } else {
-	            get_item(objectCursor.link);
-	        }
-	    };
-	    cursorRequest.onerror = function (event) {
+			}	
+
+		};
+		result.continue();
+	     };
+	    cursorRequest.onerror = function ( event ) {
+
 	
 	    };
 	
@@ -174,7 +145,9 @@
 	
 	
 	
-	function archive_item(item_url) {
+	function archive_item( item_url ) {
+	jQuery(document).trigger('archive_item');
+
 	
 	
 	    new_archived_transaction();
@@ -186,25 +159,30 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function check_if_item_is_archived(item_url) {
+	function check_if_item_is_archived( item_url ) {
+	jQuery(document).trigger('check_if_item_is_archived');
+
 	
 	
 	    new_archived_transaction();
 	
 	    var item_request = Buleys.objectStore.get(item_url);
 	
-	    item_request.onsuccess = function (event) {
+	    item_request.onsuccess = function ( event ) {
+
 	
 	        checker = item_request;
 	
@@ -220,7 +198,8 @@
 	        }
 	    };
 	
-	    item_request.onerror = function (e) {
+	    item_request.onerror = function ( e ) {
+
 	
 	
 	    };
@@ -229,7 +208,9 @@
 	
 	}
 	
-	function add_item_to_archives_database(item_url, item_slug, item_type) {
+	function add_item_to_archives_database( item_url, item_slug, item_type ) {
+	jQuery(document).trigger('add_item_to_archives_database');
+
 	
 	
 	    new_archived_transaction();
@@ -243,29 +224,35 @@
 	
 	
 	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function (event) {
+	    add_data_request.onsuccess = function ( event ) {
+
 	
 	        Buleys.objectId = add_data_request.result;
 	    };
-	    add_data_request.onerror = function (e) {
+	    add_data_request.onerror = function ( e ) {
+
 	
 	
 	    };
 	
 	}
 	
-	function unarchive_item(item_url, item_slug, item_type) {
+	function unarchive_item( item_url, item_slug, item_type ) {
+	jQuery(document).trigger('unarchive_item');
+
 	
 	
 	    new_archived_transaction();
 	
 	
 	    var request = Buleys.objectStore["delete"](item_url);
-	    request.onsuccess = function (event) {
+	    request.onsuccess = function ( event ) {
+
 	
 	        delete Buleys.objectId;
 	    };
-	    request.onerror = function () {
+	    request.onerror = function (  ) {
+
 	
 	    };
 	
@@ -274,18 +261,22 @@
 	
 	
 		
-	function remove_item_from_archives_database(item_url, item_slug, item_type) {
+	function remove_item_from_archives_database( item_url, item_slug, item_type ) {
+	jQuery(document).trigger('remove_item_from_archives_database');
+
 	
 	
 	    new_archived_transaction();
 	
 	
 	    var request = Buleys.objectStore["delete"](item_url);
-	    request.onsuccess = function (event) {
+	    request.onsuccess = function ( event ) {
+
 	
 	        delete Buleys.objectId;
 	    };
-	    request.onerror = function () {
+	    request.onerror = function (  ) {
+
 	
 	    };
 	

@@ -5,7 +5,9 @@
 	}
 	
 	
-	function createNotificationInstance(options) {
+	function createNotificationInstance( options ) {
+	jQuery(document).trigger('createNotificationInstance');
+
 	    if (options.notificationType == 'simple') {
 	        return window.webkitNotifications.createNotification('fire.png', 'Notification Title', 'Notification content...');
 	    } else if (options.notificationType == 'html') {
@@ -13,15 +15,19 @@
 	    }
 	}
 	
-	function send_notification_to_desktop() {
+	function send_notification_to_desktop(  ) {
+	jQuery(document).trigger('send_notification_to_desktop');
+
 	
 	    if (window.webkitNotifications.checkPermission() == 0) {
 	
 	        notification_test = createNotificationInstance({
 	            notificationType: 'html'
 	        });
-	        notification_test.ondisplay = function () {};
-	        notification_test.onclose = function () {};
+	        notification_test.ondisplay = function (  ) {
+};
+	        notification_test.onclose = function (  ) {
+};
 	        notification_test.show();
 	    } else {
 	        window.webkitNotifications.requestPermission();
@@ -30,7 +36,9 @@
 	
 	}
 	
-	function notify_user_of_new_items(number, thetype, thecompany) {
+	function notify_user_of_new_items( number, thetype, thecompany ) {
+	jQuery(document).trigger('notify_user_of_new_items');
+
 	
 	    if ((Buleys.view.type === thetype && thecompany === Buleys.view.slug) || Buleys.view.type == "home" || typeof Buleys.view.type === "undefined") {
 	        flash_console("<p>" + number + " new items added to " + thetype + " " + thecompany + " </p>");
@@ -39,7 +47,9 @@
 	}
 	
 
-		function do_pending_crawl() {
+		function do_pending_crawl(  ) {
+	jQuery(document).trigger('do_pending_crawl');
+
 	
 	    var topic_slug = Buleys.queues.pending_crawls.splice(0, 1);
 	
@@ -59,10 +69,12 @@
 	        url: the_url,
 	        dataType: 'jsonp',
 	        jsonpCallback: 'load_collection',
-	        error: function () {
+	        error: function (  ) {
+
 	            $("#index").html("<li class='item'>No results.</li>");
 	        },
-	        success: function (data) {
+	        success: function ( data ) {
+
 	
 	
 	            add_items(data.items, type_to_get, company_to_get);
@@ -77,7 +89,9 @@
 	
 	
 		
-	function check_for_waiting_items() {
+	function check_for_waiting_items(  ) {
+	jQuery(document).trigger('check_for_waiting_items');
+
 	
 	
 	

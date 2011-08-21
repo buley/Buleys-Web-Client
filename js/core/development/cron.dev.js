@@ -1,4 +1,6 @@
-	function do_work() {
+	function do_work(  ) {
+	jQuery(document).trigger('do_work');
+
 	    if (Buleys.queues.pending_crawls.length > 0) {
 	        do_pending_crawl();
 	    } else {

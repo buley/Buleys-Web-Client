@@ -1,4 +1,6 @@
-function get_signin() {
+function get_signin(  ) {
+	jQuery(document).trigger('get_signin');
+
     var session_id = get_local_storage("session_id");
     if (typeof session_id == "undefined" || session_id == null || session_id == "") {
         jQuery("#main").append('<div id="login_prompt"><div id="login_form"><input id="email" type="email" placeholder="Email" name="email" class="defaulttext" required/><br/><input id="password"  type="password" name="password" placeholder="Password" /><br/><br/><a href="#" id="doregistration" class="registrationlink">Register</a> or <a href="#" id="dologinsubmit" class="submitloginform">Login</a></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a></div></div></div>');
@@ -8,15 +10,21 @@ function get_signin() {
     Buleys.view.loaded = "signin";
 }
 
-function get_registration() {
+function get_registration(  ) {
+	jQuery(document).trigger('get_registration');
+
     console.log("get_registration(): ");
 }
 
-function get_confirmation() {
+function get_confirmation(  ) {
+	jQuery(document).trigger('get_confirmation');
+
     console.log("get_confirmation(): ");
 }	
 	
-function submit_registration() {
+function submit_registration(  ) {
+	jQuery(document).trigger('submit_registration');
+
     if ($('#password_once').val() == $('#password_twice').val()) {
         var password = $('#password_once').val();
         var first_name = $('#first_name').val();
@@ -34,11 +42,14 @@ function submit_registration() {
     }
 }
 
-function account_logout() {
+function account_logout(  ) {
+	jQuery(document).trigger('account_logout');
+
     data_to_send = {
         "method": "logout"
     };
-    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+
         if (typeof(data.result) !== 'undefined') {
             delete Buleys.store["session_id"];
             jQuery("#login").fadeIn('fast');
@@ -51,7 +62,9 @@ function account_logout() {
 
 
 
-function request_login(email, password) {
+function request_login( email, password ) {
+	jQuery(document).trigger('request_login');
+
     password = md5(password);
     var data_to_send;
     data_to_send = {
@@ -60,7 +73,8 @@ function request_login(email, password) {
         "email": email,
         "token": session_token
     };
-    $.post("http://api.buleys.com/login", data_to_send, function (data) {
+    $.post("http://api.buleys.com/login", data_to_send, function ( data ) {
+
         if (data != null && typeof data.result !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 console.log('fail');
@@ -82,7 +96,9 @@ function request_login(email, password) {
 }
 
 
-function request_registration(password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country) {
+function request_registration( password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country ) {
+	jQuery(document).trigger('request_registration');
+
 
     password = md5(password);
 
@@ -100,7 +116,8 @@ function request_registration(password, display_name, first_name, last_name, add
         "country": country
     };
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+
         if (typeof(data.request_status) !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 if (typeof(data.message) !== 'undefined') {
@@ -123,7 +140,9 @@ function request_registration(password, display_name, first_name, last_name, add
 
 }
 
-function confirm_registration(secret) {
+function confirm_registration( secret ) {
+	jQuery(document).trigger('confirm_registration');
+
 
     data_to_send = {
         "method": "confirm_account",
@@ -131,7 +150,8 @@ function confirm_registration(secret) {
     };
 
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+
         if (typeof(data.request_status) !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 jQuery("#login_status_pane").html('');
@@ -171,7 +191,9 @@ function confirm_registration(secret) {
 }
 
 
-function send_confirmation(email, page, context, resend) {
+function send_confirmation( email, page, context, resend ) {
+	jQuery(document).trigger('send_confirmation');
+
 
     if (typeof(page) == undefined) {
         page = "";
@@ -204,7 +226,8 @@ function send_confirmation(email, page, context, resend) {
         };
     }
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+
         if (typeof(data.result) !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
                 jQuery("#login_status_pane").html('');
@@ -227,7 +250,9 @@ function send_confirmation(email, page, context, resend) {
     }, "json");
 }
 
-function account_login(email, password) {
+function account_login( email, password ) {
+	jQuery(document).trigger('account_login');
+
     var secret = md5(password);
     data_to_send = {
         "method": "email_login",
@@ -235,7 +260,8 @@ function account_login(email, password) {
         "secret": secret
     };
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function (data) {
+    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+
 
         if (typeof data.result !== 'undefined') {
             if (data.result.toLowerCase() == "failure") {
@@ -272,11 +298,15 @@ function account_login(email, password) {
 
 	
 
-function cancel_confirmation(user_id) {
+function cancel_confirmation( user_id ) {
+	jQuery(document).trigger('cancel_confirmation');
+
 
 }
 
-function check_login_status() {
+function check_login_status(  ) {
+	jQuery(document).trigger('check_login_status');
+
 
     var session_id = get_local_storage("session_id");
     if (typeof session_id == "undefined" || session_id == null || session_id == "") {
@@ -287,39 +317,45 @@ function check_login_status() {
 
 }
 
-jQuery("#logout").live("click", function (event) {
+$(document).bind('logout', function ( event ) {
+
     account_logout();
 });
 
 
-jQuery(".do_logout").live("click", function (event) {
+jQuery(".do_logout").live("click", function ( event ) {
+
+	event.preventDefault();
+    account_logout();
+});
+
+jQuery(".do_logout").live("click", function ( event ) {
+
 event.preventDefault();
     account_logout();
 });
 
-jQuery(".do_logout").live("click", function (event) {
-event.preventDefault();
-    account_logout();
-});
-
-jQuery(".submitthelogin").live("click", function (event) {
+jQuery(".submitthelogin").live("click", function ( event ) {
 
 	alert('submitlogin');
 });
 
-$('#dologin').live('click', function (event) {
+$(document).bind('dologin', function ( event ) {
+
     event.preventDefault();
     $('#dologin').remove();
     $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" /><br/><input id="password"  type="password" xxx name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
 });
 
-$('#dologinboxminimize').live('click', function (event) {
+$(document).bind('dologinboxminimize', function ( event ) {
+
     event.preventDefault();
 
     $('#login_status_pane').html('<a href="#" id="dologin" class="getloginform exit_door_link"></a>');
 });
 
-$('#get_login').live('click', function (event) {
+$(document).bind('get_login', function ( event ) {
+
     event.preventDefault();
     console.log(location.pathname);
     console.log("get_login clicked");
@@ -336,7 +372,8 @@ $('#get_login').live('click', function (event) {
 });
 
 
-$('#dologinsubmit').live('click', function (event) {
+$(document).bind('dologinsubmit', function ( event ) {
+
     event.preventDefault();
     if (typeof $('[name="password"]') !== undefined && $('[name="password"]').val() !== "") {
         request_login($('[name="email"]').val(), $('[name="password"]').val());

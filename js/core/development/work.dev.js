@@ -1,13 +1,17 @@
 var results = [];
 
-function resultReceiver(event) {
+function resultReceiver( event ) {
+	jQuery(document).trigger('resultReceiver');
+
   results.push(parseInt(event.data));
   if (results.length == 2) {
     postMessage(results[0] + results[1]);
   }
 }
 
-function errorReceiver(event) {
+function errorReceiver( event ) {
+	jQuery(document).trigger('errorReceiver');
+
   throw event.data;
 }
 

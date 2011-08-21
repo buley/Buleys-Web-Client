@@ -1,6 +1,7 @@
 
 
-    $('#view_seen').live('click', function (event) {
+    $(document).bind('view_seen', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_seen clicked");
@@ -23,7 +24,8 @@
         reload_results();
     });
 
-    $('#view_unseen').live('click', function (event) {
+    $(document).bind('view_unseen', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_unseen clicked")
@@ -45,7 +47,8 @@
         reload_results();
     });
 
-    $('#view_read').live('click', function (event) {
+    $(document).bind('view_read', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_read clicked")
@@ -67,7 +70,8 @@
         reload_results();
     });
 
-    $('#view_unread').live('click', function (event) {
+    $(document).bind('view_unread', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_unread clicked")
@@ -89,7 +93,8 @@
         reload_results();
     });
 
-    $('#view_trash').live('click', function (event) {
+    $(document).bind('view_trash', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_trash clicked")
@@ -111,7 +116,8 @@
         reload_results();
     });
 
-    $('#view_archive').live('click', function (event) {
+    $(document).bind('view_archive', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_archive clicked")
@@ -134,7 +140,8 @@
     });
 
 
-    $('#view_index').live('click', function (event) {
+    $(document).bind('view_index', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_index clicked");
@@ -153,7 +160,8 @@
         history.pushState(stateObj, "view_index", urlString);
         reload_results();
     });
-    $('#view_home').live('click', function (event) {
+    $(document).bind('view_home', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_home clicked");
@@ -169,7 +177,8 @@
         reload_results();
     });
 
-    $('#view_settings').live('click', function (event) {
+    $(document).bind('view_settings', function ( event ) {
+
         event.preventDefault();
         console.log(location.pathname);
         console.log("view_home clicked");
@@ -184,35 +193,42 @@
     });
     
 
-    $('.close_item_preview').live('click', function (event) {
+    $('.close_item_preview').live('click', function ( event ) {
+
         event.preventDefault();
         jQuery("#overlay").stop(true).animate({
             opacity: 0
-        }, 500, function () {
+        }, 500, function (  ) {
+
             jQuery("#overlay").html('');
         });
     });
 
 
-    $('.sidebar_close_link').live('click', function (event) {
+    $('.sidebar_close_link').live('click', function ( event ) {
+
         event.preventDefault();
         jQuery("#overlay").stop(true).animate({
             opacity: 0
-        }, 500, function () {
+        }, 500, function (  ) {
+
             jQuery("#overlay").html('');
         });
     });
 
-    $('#close_all').live('click', function (event) {
+    $(document).bind('close_all', function ( event ) {
+
         event.preventDefault();
         jQuery("#overlay").stop(true).animate({
             opacity: 0
-        }, 500, function () {
+        }, 500, function (  ) {
+
             jQuery("#overlay").html('');
         });
     });
 
-    $('.mark_item_as_unread').live('click', function (event) {
+    $('.mark_item_as_unread').live('click', function ( event ) {
+
         event.preventDefault();
         $(this).removeClass('empty_star_icon').addClass('star_icon');
         $(this).removeClass('unfav_link');
@@ -232,10 +248,12 @@
         setTimeout('fade_console_message()', 1000);
     });
 
-    $('#mark_all_items_as_read').live('click', function (event) {
+    $(document).bind('mark_all_items_as_read', function ( event ) {
+
         event.preventDefault();
 
-        jQuery.each(jQuery(".unread"), function (k, item_to_mark) {
+        jQuery.each(jQuery(".unread"), function ( k, item_to_mark ) {
+
 
 
             var item_to_work_from = jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
@@ -249,13 +267,15 @@
 
     });
 
-    $('#mark_seen').live('click', function (event) {
+    $(document).bind('mark_seen', function ( event ) {
+
         event.preventDefault();
 
         if (!is_in_cursor_mode()) {
 
 
-            jQuery.each(jQuery(".selected"), function (k, item_to_mark) {
+            jQuery.each(jQuery(".selected"), function ( k, item_to_mark ) {
+
 
 
                 jQuery(item_to_mark).removeClass('unseen');
@@ -284,13 +304,15 @@
 
     });
 
-    $('#mark_unseen').live('click', function (event) {
+    $(document).bind('mark_unseen', function ( event ) {
+
         event.preventDefault();
 
         if (!is_in_cursor_mode()) {
 
 
-            jQuery.each(jQuery(".selected"), function (k, item_to_mark) {
+            jQuery.each(jQuery(".selected"), function ( k, item_to_mark ) {
+
 
                 jQuery(item_to_mark).removeClass('seen');
                 jQuery(item_to_mark).addClass('unseen');
@@ -316,20 +338,24 @@
 
     });
 
-    $('#select_all').live('click', function (event) {
+    $(document).bind('select_all', function ( event ) {
+
         event.preventDefault();
-        $.each($('#results > li'), function (i, item_to_mark) {
+        $.each($('#results > li'), function ( i, item_to_mark ) {
+
             if (jQuery(item_to_mark).hasClass('selected')) {} else {
                 jQuery(item_to_mark).addClass('selected');
                 jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
             }
         });
     });
-    $('#select_none').live('click', function (event) {
+    $(document).bind('select_none', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
 
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                 jQuery(item_to_mark).removeClass('selected');
                 jQuery(item_to_mark).attr('status', jQuery(item_to_mark).attr('status').replace(' selected', ''));
@@ -340,11 +366,13 @@
             jQuery('.cursor').attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         }
     });
-    $('#select_inverse').live('click', function (event) {
+    $(document).bind('select_inverse', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
 
-            $.each($('#results li'), function (i, item_to_mark) {
+            $.each($('#results li'), function ( i, item_to_mark ) {
+
                 if (jQuery(item_to_mark).hasClass('selected')) {
                     jQuery(item_to_mark).removeClass('selected');
 
@@ -378,7 +406,8 @@
     });
 
 
-	$('#view_favorites').live('click', function (event) {
+	$(document).bind('view_favorites', function ( event ) {
+
 	    event.preventDefault();
 	    console.log(location.pathname);
 	    console.log("view_favorites clicked")
@@ -401,9 +430,11 @@
 	});
 
 
-    $('#deselect_seen').live('click', function (event) {
+    $(document).bind('deselect_seen', function ( event ) {
+
         event.preventDefault();
-        $.each($('.seen'), function (i, item_to_mark) {
+        $.each($('.seen'), function ( i, item_to_mark ) {
+
 
 
             jQuery(item_to_mark).removeClass('selected');
@@ -412,9 +443,11 @@
 
         });
     });
-    $('#deselect_unseen').live('click', function (event) {
+    $(document).bind('deselect_unseen', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unseen'), function (i, item_to_mark) {
+        $.each($('.unseen'), function ( i, item_to_mark ) {
+
 
 
             jQuery(item_to_mark).removeClass('selected');
@@ -424,57 +457,71 @@
         });
     });
 
-    $('#deselect_read').live('click', function (event) {
+    $(document).bind('deselect_read', function ( event ) {
+
         event.preventDefault();
-        $.each($('.read'), function (i, item_to_mark) {
+        $.each($('.read'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         });
     });
-    $('#deselect_unread').live('click', function (event) {
+    $(document).bind('deselect_unread', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unread'), function (i, item_to_mark) {
+        $.each($('.unread'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         });
     });
-    $('#deselect_archived').live('click', function (event) {
+    $(document).bind('deselect_archived', function ( event ) {
+
         event.preventDefault();
-        $.each($('.archived'), function (i, item_to_mark) {
+        $.each($('.archived'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         });
     });
-    $('#deselect_unarchived').live('click', function (event) {
+    $(document).bind('deselect_unarchived', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unarchived'), function (i, item_to_mark) {
+        $.each($('.unarchived'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         });
     });
-    $('#deselect_unseen').live('click', function (event) {
+    $(document).bind('deselect_unseen', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unseen'), function (i, item_to_mark) {
+        $.each($('.unseen'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         });
     });
-    $('#deselect_unread').live('click', function (event) {
+    $(document).bind('deselect_unread', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unread'), function (i, item_to_mark) {
+        $.each($('.unread'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
         });
     });
-    $('#deselect_unarchived').live('click', function (event) {
+    $(document).bind('deselect_unarchived', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unarchived'), function (i, item_to_mark) {
+        $.each($('.unarchived'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).removeClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
@@ -482,60 +529,74 @@
     });
 
 
-    $('#select_seen').live('click', function (event) {
+    $(document).bind('select_seen', function ( event ) {
+
         event.preventDefault();
-        $.each($('.seen'), function (i, item_to_mark) {
+        $.each($('.seen'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).addClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
         });
     });
-    $('#select_unseen').live('click', function (event) {
+    $(document).bind('select_unseen', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unseen'), function (i, item_to_mark) {
+        $.each($('.unseen'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).addClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
         });
     });
-    $('#select_read').live('click', function (event) {
+    $(document).bind('select_read', function ( event ) {
+
         event.preventDefault();
-        $.each($('.read'), function (i, item_to_mark) {
+        $.each($('.read'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).addClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
         });
     });
-    $('#select_unread').live('click', function (event) {
+    $(document).bind('select_unread', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unread'), function (i, item_to_mark) {
+        $.each($('.unread'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).addClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
         });
     });
-    $('#select_archived').live('click', function (event) {
+    $(document).bind('select_archived', function ( event ) {
+
         event.preventDefault();
-        $.each($('.archived'), function (i, item_to_mark) {
+        $.each($('.archived'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).addClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
         });
     });
-    $('#select_unarchived').live('click', function (event) {
+    $(document).bind('select_unarchived', function ( event ) {
+
         event.preventDefault();
-        $.each($('.unarchived'), function (i, item_to_mark) {
+        $.each($('.unarchived'), function ( i, item_to_mark ) {
+
 
             jQuery(item_to_mark).addClass('selected');
             jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
         });
     });
 
-    $('#delete').live('click', function (event) {
+     $(document).bind('delete', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
 
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                 delete_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
                 jQuery(item_to_mark).remove();
@@ -554,52 +615,86 @@
         }
     });
 
-    $('#select').live('click', function (event) {
-        event.preventDefault();
-        if (is_in_cursor_mode()) {
+    $(document).bind('undelete', function ( event ) {
 
-            $.each($('.cursor'), function (i, item_to_mark) {
-
-                jQuery(item_to_mark).addClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-            });
-        } else {
-
-            $.each($('.selected'), function (i, item_to_mark) {
-
-                jQuery(item_to_mark).addClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-            });
-
-
-        }
-    });
-
-    $('#deselect').live('click', function (event) {
-        event.preventDefault();
-        if (is_in_cursor_mode()) {
-
-            $.each($('.cursor'), function (i, item_to_mark) {
-
-                jQuery(item_to_mark).removeClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-            });
-        } else {
-
-            $.each($('.selected'), function (i, item_to_mark) {
-
-                jQuery(item_to_mark).removeClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-            });
-
-        }
-    });
-
-    $('#archive').live('click', function (event) {
         event.preventDefault();
         if (!is_in_cursor_mode()) {
 
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
+		console.log("undeleting");
+		console.log(jQuery(item_to_mark).children('a').attr('href'));
+                undelete_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
+                jQuery(item_to_mark).remove();
+            });
+        } else {
+
+            undelete_item(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
+
+            if (jQuery('.cursor').next().length > 0) {
+                jQuery('.cursor').next().addClass('cursor').prev().remove();
+            } else {
+                jQuery('.cursor').remove();
+                jQuery('#results li:first').addClass('cursor');
+            }
+
+        }
+    });
+
+    $(document).bind('select', function ( event ) {
+
+        event.preventDefault();
+        if (is_in_cursor_mode()) {
+
+            $.each($('.cursor'), function ( i, item_to_mark ) {
+
+
+                jQuery(item_to_mark).addClass('selected');
+                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
+            });
+        } else {
+
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
+
+                jQuery(item_to_mark).addClass('selected');
+                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
+            });
+
+
+        }
+    });
+
+    $(document).bind('deselect', function ( event ) {
+
+        event.preventDefault();
+        if (is_in_cursor_mode()) {
+
+            $.each($('.cursor'), function ( i, item_to_mark ) {
+
+
+                jQuery(item_to_mark).removeClass('selected');
+                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
+            });
+        } else {
+
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
+
+                jQuery(item_to_mark).removeClass('selected');
+                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
+            });
+
+        }
+    });
+
+    $(document).bind('archive', function ( event ) {
+
+        event.preventDefault();
+        if (!is_in_cursor_mode()) {
+
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                 archive_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
                 if (Buleys.view.page !== "favorites" && Buleys.view.page !== "archive") {
@@ -625,11 +720,13 @@
     });
 
 
-    $('#read').live('click', function (event) {
+    $(document).bind('read', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
 
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                 var new_window = window.open(jQuery(item_to_mark).children('a').attr('href'), jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
                 mark_item_as_read(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
@@ -656,10 +753,12 @@
 
 
 
-    $('#unarchive').live('click', function (event) {
+    $(document).bind('unarchive', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                 unarchive_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
                 if (Buleys.view.page == "archive") {
@@ -679,10 +778,12 @@
 
 
 
-    $('#mark_read').live('click', function (event) {
+    $(document).bind('mark_read', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                 mark_item_as_read(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
                 jQuery(item_to_mark).addClass('read');
@@ -704,11 +805,13 @@
         }
     });
 
-    $('#mark_unread').live('click', function (event) {
+    $(document).bind('mark_unread', function ( event ) {
+
         event.preventDefault();
         if (!is_in_cursor_mode()) {
 
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
 
                 remove_item_from_read_database(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
@@ -732,10 +835,12 @@
     });
 
 
-    $('#mark_all_items_as_unread').live('click', function (event) {
+    $(document).bind('mark_all_items_as_unread', function ( event ) {
+
         event.preventDefault();
 
-        jQuery.each(jQuery(".read"), function (k, item_to_mark) {
+        jQuery.each(jQuery(".read"), function ( k, item_to_mark ) {
+
 
             var item_to_work_from = jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
             if (item_to_work_from.hasClass('read')) {
@@ -755,15 +860,18 @@
 
     jQuery("#console_wrapper").stop(true).animate({
         opacity: 0
-    }, 0, function () {});
+    }, 0, function (  ) {
+});
 
     jQuery("#overlay").stop(true).animate({
         opacity: 0
-    }, 0, function () {}).html('');
+    }, 0, function (  ) {
+}).html('');
 
 
 
-    $('.headline a').live('click', function (event) {
+    $('.headline a').live('click', function ( event ) {
+
         var related_cats = new Array();
         var related_tags = new Array();
         var uri_string = $(this).attr('href');
@@ -783,12 +891,14 @@
             "type": Buleys.view.type
         };
 
-        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function (data) {
+        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function ( data ) {
+
             new_window = window.open(uri_string, click_window);
         });
     });
 
-    $('.sidebar_headline a').live('click', function (event) {
+    $('.sidebar_headline a').live('click', function ( event ) {
+
         var related_cats = new Array();
         var related_tags = new Array();
         var uri_string = $(this).attr('href');
@@ -803,7 +913,8 @@
             "type": Buleys.view.type
         };
 
-        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function (data) {
+        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function ( data ) {
+
             new_window = window.open(uri_string, click_window);
 
         });
@@ -811,7 +922,8 @@
     });
 
 
-    jQuery("#results li").live('mouseenter', function (event) {
+    jQuery("#results li").live('mouseenter', function ( event ) {
+
 
         var item_to_work_from = jQuery(this);
 
@@ -829,12 +941,16 @@
 
     });
 
-    jQuery("#preview_item").live('click', function (event) {
+    $(document).bind('preview_item', function ( event ) {
 
         event.preventDefault();
-        if (!is_in_cursor_mode() && $('.selected').length > 0) {
+	if( 0 === $('.selected').length ) {
+		console.log(jQuery(event.target).attr('id') );
+		open_preview( jQuery(event.target).attr('id') );
+        } else if (!is_in_cursor_mode() && $('.selected').length > 0) {
 
-            $.each($('.selected'), function (i, item_to_mark) {
+            $.each($('.selected'), function ( i, item_to_mark ) {
+
 
 
 
@@ -853,7 +969,8 @@
 
                 jQuery("#overlay").stop(true).animate({
                     opacity: 1
-                }, 100, function () {});
+                }, 100, function (  ) {
+});
 
 
 
@@ -877,7 +994,8 @@
 
             jQuery("#overlay").stop(true).animate({
                 opacity: 1
-            }, 100, function () {});
+            }, 100, function (  ) {
+});
 
 
         }
@@ -885,13 +1003,15 @@
     });
 
 
-    $('#close_item_preview').live('click', function (event) {
+    $(document).bind('close_item_preview', function ( event ) {
+
         event.preventDefault();
 
         if (!is_in_cursor_mode()) {
 
             if ($('.selected').length > 0) {
-                $.each($('.selected'), function (i, item_to_mark) {
+                $.each($('.selected'), function ( i, item_to_mark ) {
+
 
                     var item_to_work_from = jQuery(item_to_mark);
                     var url_to_preview = item_to_work_from.children('a').attr('href');
@@ -921,7 +1041,8 @@
 
                         jQuery("#overlay").stop(true).animate({
                             opacity: 0
-                        }, 500, function () {
+                        }, 500, function (  ) {
+
                             jQuery("#overlay").html('');
                         });
 
@@ -933,7 +1054,8 @@
 
                 jQuery("#overlay").stop(true).animate({
                     opacity: 0
-                }, 500, function () {
+                }, 500, function (  ) {
+
                     jQuery("#overlay").html('');
                 });
 
@@ -956,7 +1078,8 @@
 
                 jQuery("#overlay").stop(true).animate({
                     opacity: 0
-                }, 500, function () {
+                }, 500, function (  ) {
+
                     jQuery("#overlay").html('');
                 });
 
@@ -967,7 +1090,8 @@
     });
 
 
-    jQuery("#results li:not(.favorite_status)").live('click', function (event) {
+    $(document).bind('results li:not(.favorite_status)', function ( event ) {
+
         var item_to_work_from = jQuery(this);
         var url_to_preview = item_to_work_from.children('a').attr('href');
 
@@ -990,14 +1114,16 @@
 	        if (jQuery(thekey).length > 0 && jQuery(item_to_work_from).hasClass('selected')) {
 	            jQuery("#overlay").stop(true).animate({
 	                opacity: 0
-	            }, 500, function () {
+	            }, 500, function (  ) {
+
 	                jQuery("#overlay").html('');
 	            });
 	        } else if (!jQuery(item_to_work_from).hasClass('selected')) {
 	
 	            jQuery("#overlay").stop(true).animate({
 	                opacity: 1
-	            }, 100, function () {});
+	            }, 100, function (  ) {
+});
 	
 	            load_item_to_overlay(url_to_preview);
 	
@@ -1009,11 +1135,13 @@
 		
     });
 
-    $(".selected").live('click', function (event) {
+    $(".selected").live('click', function ( event ) {
+
         $(this).removeClass('selected');
     });
 
-    $("#results li").live('mouseleave', function (event) {
+    $("#results li").live('mouseleave', function ( event ) {
+
 		/*
 		jQuery("#overlay").stop(true).animate({
 			opacity: 0,
