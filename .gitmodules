@@ -1,3 +1,6 @@
 [submodule "css/bootstrap"]
 	path = css/bootstrap
 	url = https://github.com/twitter/bootstrap.git
+[submodule "core/development/dependencies/indb"]
+	path = core/development/dependencies/indb
+	url = git@github.com:editor/InDB.git
