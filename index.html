@@ -1,62 +1,67 @@
-
 <html>
 	<head>
 		<title>Buley's</title>
-		<!--<link rel="stylesheet" href="/css/style.css">-->
-		<link rel="stylesheet" href="http://twitter.github.com/bootstrap/assets/css/bootstrap-1.0.0.min.css">
-		<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+		<link rel="stylesheet" href="/css/bootstrap/bootstrap-1.0.0.min.css">
+		<link rel="stylesheet" href="/css/style.css">
+
 	</head>
 	<body>
+	<div class="topbar">
+		<div class="container fixed">
+			<a href="/" class="logo">BULEY'S</a>
+			<ul>
+			  <li class="active"><a href="/">Stream</a></li>
+			  <li><a href="/read">Read</a></li>
+			  <li><a href="/unread">Unread</a></li>
+			  <li><a href="/archive">Archive</a></li>
+			  <li><a href="/trash">Trash</a></li>
+			</ul>
+			<div id='mini_inbox_box' class='right_rail_box empty_inbox'>
+				<div id="get_inbox" class="getinbox empty_inbox big_inbox_icon"></div>
+			</div>
+			<ul class="nav secondary-nav">
+				<li class="menu">
+					<a href="#" class="menu">Account</a>
+					<ul id="account_dropdown" class="menu-dropdown" style="display: none; ">
+			    		</ul>
+				</li>
+			</ul>
+		</div>
+	</div>
 
-	<div class="container-fluid">
-		<div id='header'>
-			<!--<a href="#" class="logo">Buley's</a>-->
-			<div id='page_meta'>
-				<div id="page_title"></div>
+ 	<div class="container-fluid" style="margin-top:30px">
+		<div class='row'>
+        	<div id='left' class='span6 columns'>
+			<h1 id='header' class='page-header'>
+
 				<div id="page_status">
 					<div id="page_follow_status"></div>
 					<div id="page_subscription_status"></div>
 				</div>
+				<div id="page_title"></div>
 				<div id="subtitle_1"></div>
 				<div id="subtitle_2"></div>
-			</div>
-			<div id='service_status_pane'></div>
-		</div>
-
-
-	
-		<div id='console_wrapper'>
-			<div id='console'></div>
-			<div id='console_controls'>
-				<div id='console_close_button cross_icon'></div>
+				<div id='service_status_pane'></div>
+			</h1>
+			<div id='console_wrapper'>
+				<div id='console'></div>
+				<div id='console_controls'>
+					<div id='console_close_button cross_icon'></div>
 				</div>
 			</div>
-		</div>
-	
-		<div id='main'>
-		</div>
-		<div id='right'>
+
+
+
+			<div id='overlay'></div>
+		
+                </div>
+		<div id='right' class='span10 columns'>
 			<ul id='results'></ul>
 		</div>
-		<div id="right_rail">
-			<div id='mini_inbox_box' class='right_rail_box empty_inbox'>
-				<div id="get_inbox" class="getinbox empty_inbox big_inbox_icon"></div>
-			</div>
-			<!--<div id='archive_button' class='right_rail_box'>
-				<div id="get_archive" class="big_box_icon"></div>
-			</div>
-			<div id='trash_button' class='right_rail_box'>
-				<div id="get_trash" class="big_trash_bin_icon"></div>
-			</div>-->
-		</div>
-		
-		<div id='overlay'></div>
-		<!--<div id='#' class="getinbox help_icon">-->
-		</div>
-		
+	</div>
 	</div><!--end bootstrap container-->	
-	
 		<!--Hotkeys-->
+<!--
 		<ul id='result_controls'>
 			<li id='view_home_button'>
 				<a href='#' id='view_home'>View Home</a> (shift + h)
@@ -221,25 +226,21 @@
 			</li>
 		
 		</ul>
-	
+-->	
 	</body>
-
 	
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+	<script type="text/javascript" src="/js/combined.js"></script>
 	<script type="text/javascript">
-	
-	var _gaq = _gaq || [];
-	_gaq.push(['_setAccount', 'UA-20447741-1']);
-	_gaq.push(['_setDomainName', '.buleys.com']);
-	_gaq.push(['_trackPageview']);
-	
-	(function() {
-	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-	})();
-	
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-20447741-1']);
+		_gaq.push(['_setDomainName', '.buleys.com']);
+		_gaq.push(['_trackPageview']);
+		(function() {
+		    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
 	</script>
-		<script type="text/javascript" src="/js/combined.js"></script>
-
 </html>
 <!-- All Rights Reserved -->

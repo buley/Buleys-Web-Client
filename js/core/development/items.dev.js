@@ -45,6 +45,27 @@ function new_item_transaction(    ) {
             Buleys.db.objectStore.createIndex("modified", "modified", {
                 unique: false
             });
+
+        var transaction = Buleys.db.transaction(["items"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
+
+        transaction.oncomplete = function (  e  ) {
+                //console.log("new item trnasction complete");
+                //console.log(Buleys.objectStore);
+                //console.log(e);
+            delete Buleys.objectStore;
+        };
+        transaction.onabort = function (  e  ) {
+
+
+        //console.log(e);
+        //console.log("new item transaction aborted");
+        };
+        //console.log("setting objectStore");
+        //console.log( transaction.objectStore("items") );
+        Buleys.objectStore = transaction.objectStore("items");
+
+
+
         };
         request.onerror = function (  e  ) {
 	//console.log("TRANSACTION ERROR");
@@ -405,7 +426,7 @@ function get_items(  type_filter, slug_filter, begin_timeframe, end_timeframe  )
 
 		};
 		*/
-		result.continue();
+	        result[ "continue" ]();
 	};
 
 }
@@ -481,7 +502,7 @@ function index_items_by_field(  type_filter, slug_filter, field ) {
 
 		};
 		*/
-		result.continue();
+		result["continue"]();
 	};
 
 }

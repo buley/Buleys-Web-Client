@@ -31,6 +31,21 @@ function new_favorite_transaction(  ) {
             Buleys.objectStore.createIndex("modified", "modified", {
                 unique: false
             });
+
+        var transaction = Buleys.db.transaction(["favorites"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
+        transaction.oncomplete = function ( e ) {
+
+            delete Buleys.objectStore;
+        };
+        transaction.onabort = function ( e ) {
+
+
+        };
+        Buleys.objectStore = transaction.objectStore("favorites");
+
+
+
+
         };
         request.onerror = function ( e ) {
 
@@ -101,7 +116,7 @@ function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe
                         check_if_item_is_seen(item.link);
                     }
                 };
-	result.continue();
+	result[ "continue" ]();
             };
     cursorRequest.onerror = function ( event ) {
 

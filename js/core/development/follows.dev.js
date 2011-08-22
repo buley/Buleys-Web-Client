@@ -21,6 +21,17 @@ function new_follows_transaction(  ) {
             Buleys.objectStore.createIndex("modified", "modified", {
                 unique: false
             });
+
+        var transaction = Buleys.db.transaction(["follows"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
+        transaction.oncomplete = function ( e ) {
+
+            delete Buleys.objectStore;
+        };
+        transaction.onabort = function ( e ) {
+
+        };
+        Buleys.objectStore = transaction.objectStore("follows");
+
         };
         request.onerror = function ( e ) {
 
@@ -106,21 +117,27 @@ function get_follows_deleteme(  ) {
 }
 
 function get_page_follow_status( the_type, the_key ) {
+
 	jQuery(document).trigger('get_page_follow_status');
 
-    new_follows_transaction();
-    var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
-    item_request.onsuccess = function ( event ) {
+	var on_complete = function(e) { console.log( "follow transaction completed" ); }
+	var on_error = function(e) { console.log( "follow transaction errored" ); }
+	var on_abort = function(e) { console.log( "follow transaction aborted" ); }
+	var transaction = InDB.new_transaction( "follows", IDBTransaction.READ_WRITE, on_complete, on_error, on_abort ); 
 
-        if (typeof item_request.result == 'undefined' || item_request.result == "") {
-            jQuery("#page_follow_status").html("<div class='follow_topic empty_heart_icon'></div>");
-        } else {
-            jQuery("#page_follow_status").html("<div class='unfollow_topic heart_icon'></div>");
-        }
-    };
-    item_request.onerror = function ( e ) {
+    	var item_request = follows_transaction.get( the_type + "_" + the_key );
 
-    };
+	item_request.onsuccess = function ( event ) {
+
+		if (typeof item_request.result == 'undefined' || item_request.result == "") {
+		    jQuery("#page_follow_status").html("<div class='follow_topic empty_heart_icon'></div>");
+		} else {
+		    jQuery("#page_follow_status").html("<div class='unfollow_topic heart_icon'></div>");
+		}
+	};
+	item_request.onerror = function ( e ) {
+
+	};
 }
 
 function remove_follow( the_type, the_key ) {

@@ -1,25 +1,14 @@
-if (typeof window.webkitIndexedDB !== "undefined") {
-window.IDBCursor = window.webkitIDBCursor;
-window.IDBDatabase = window.webkitIDBDatabase;
-window.IDBDatabaseError = window.webkitIDBDatabaseError;
-window.IDBDatabaseException = window.webkitIDBDatabaseException;
-window.IDBErrorEvent = window.webkitIDBErrorEvent;
-window.IDBEvent = window.webkitIDBEvent;
-window.IDBFactory = window.webkitIDBFactory;
-window.IDBIndex = window.webkitIDBIndex;
-window.IDBKeyRange = window.webkitIDBKeyRange;
-window.IDBObjectStore = window.webkitIDBObjectStore;
-window.IDBRequest = window.webkitIDBRequest;
-window.IDBSuccessEvent = window.webkitIDBSuccessEvent;
-window.IDBTransaction = window.webkitIDBTransaction;
-window.indexedDB = window.webkitIndexedDB;
-} else if ('mozIndexedDB' in window) {
-window.indexedDB = window.mozIndexedDB;
-}
-
 var Buleys = {};
+/* IndexedDB */
 Buleys.db = {};
 Buleys.version = 7;
+Buleys.database_name = "Buleys-320";
+Buleys.database_description = "www.buleys.com";
+Buleys.on_complete = function( e ) { console.log( "indexeddb request completed" ); console.log( e ); }
+Buleys.on_error = function( e ) { console.log( "indexeddb request errored" ); console.log( e ); }
+Buleys.on_abort = function( e ) { console.log( "indexeddb request aborted" ); console.log( e ); }
+
+
 Buleys.queues = {};
 Buleys.settings = {};
 Buleys.profile = {};
@@ -59,17 +48,26 @@ Buleys.session.database_is_open = false;
 var session_token = '';
 var debug;
 //webkitIDBCursor
+
 $(document).ready(function() {
-    set_page_vars();
+	set_page_vars();
 	check_login_status();
 	if(typeof Buleys.db === "object") {
-	    open_database();
-    } else if(typeof Buleys.db === "IDBDatabase") {
-    	console.log('database loaded');
-	    reload_results();
-    }
- });
- 
+		var database_open_on_complete = function( event ) {
+			Buleys.db = event.request.result;
+			jQuery( document ).trigger( 'database_loaded' );
+		};
+		open_database( Buleys.database_name, Buleys.database_description, database_open_on_complete, Buleys.on_error, Buleys.on_abort );
+	} else if( typeof Buleys.db === "IDBDatabase" ) {
+		//database already loaded
+		jQuery( document ).trigger( 'database_loaded' );
+	}
+});
+
+jQuery( document ).bind( 'database_open', function( event, parameters ) {
+	Buleys.session.database_is_open = true;
+	load_current_page();
+});
 
 /*
 Buleys.loader.announce_loaded_script = function(loaded_script) {

@@ -107,7 +107,7 @@
 
 			};
 
-			result.continue();	
+			result["continue"]();
 	    	};
 	
 	    	cursorRequest.onerror = function ( event ) {

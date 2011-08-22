@@ -121,7 +121,7 @@ function get_deleted( type_filter, slug_filter, begin_timeframe, end_timeframe, 
 			//console.log('result');
 			//console.log(result);
 				try {
-					result.continue();
+					result[ "continue" ]();
 				} catch(e) {
 
 					item = false;
@@ -197,7 +197,7 @@ function undelete_item( item_url, the_type, the_slug ) {
 	console.log("UNDELETING ITEM!");
 	console.log(Array( item_url, the_type, the_slug ));
 	new_deleted_transaction();
-	var remove_data_request = Buleys.objectStoreDeleted.delete(item_url);
+	var remove_data_request = Buleys.objectStoreDeleted["delete"](item_url);
 	remove_data_request.onsuccess = function ( event ) {
 
 		Buleys.objectId = event.target.result;

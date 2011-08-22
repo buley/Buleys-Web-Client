@@ -1,13 +1,17 @@
 	
 	function new_archived_transaction(  ) {
-	jQuery(document).trigger('new_archived_transaction');
+		
+		jQuery(document).trigger('new_archived_transaction');
 
 	    try {
-	        var transaction = Buleys.db.transaction(["archive"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
+	        var transaction = Buleys.db.transaction(["archive"], IDBTransaction.READ_WRITE /*Read-Write*/ , 5000 /*Time out in ms*/ );
 	        transaction.oncomplete = function ( e ) {
+			console.log("archive transaction complete");
 	            delete Buleys.objectStore;
 	        };
 	        transaction.onabort = function ( e ) {
+			console.log("archive transaction aborted");
+			console.log(e);
 	        };
 	        Buleys.objectStore = transaction.objectStore("archive");
 	
@@ -30,7 +34,17 @@
 	                unique: false
 	            });
 	
-	
+		       var transaction = Buleys.db.transaction(["archive"], IDBTransaction.READ_WRITE /*Read-Write*/ , 5000 /*Time out in ms*/ );
+			transaction.oncomplete = function ( e ) {
+				console.log("archive transaction complete");
+			    delete Buleys.objectStore;
+			};
+			transaction.onabort = function ( e ) {
+				console.log("archive transaction aborted");
+				console.log(e);
+			};
+			Buleys.objectStore = transaction.objectStore("archive");
+		
 	
 	        };
 	        request.onerror = function ( e ) {
@@ -131,7 +145,7 @@
 			}	
 
 		};
-		result.continue();
+		result["continue"]();
 	     };
 	    cursorRequest.onerror = function ( event ) {
 
@@ -148,7 +162,8 @@
 	function archive_item( item_url ) {
 	jQuery(document).trigger('archive_item');
 
-	
+
+		console.log("Archiving item: " + item_url );
 	
 	    new_archived_transaction();
 	
@@ -161,12 +176,13 @@
 	    var add_data_request = Buleys.objectStore.add(data);
 	    add_data_request.onsuccess = function ( event ) {
 
-	
+		console.log(event.target.result);	
 	        Buleys.objectId = add_data_request.result;
 	    };
 	    add_data_request.onerror = function ( e ) {
 
-	
+		console.log(e);
+		console.log('error archiving item');	
 	
 	    };
 	

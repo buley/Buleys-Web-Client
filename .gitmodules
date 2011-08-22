@@ -4,3 +4,6 @@
 [submodule "core/development/dependencies/indb"]
 	path = core/development/dependencies/indb
 	url = git@github.com:editor/InDB.git
+[submodule "cdn_invalidate/CloudFront-PHP-Invalidator"]
+	path = cdn_invalidate/CloudFront-PHP-Invalidator
+	url = git://github.com/subchild/CloudFront-PHP-Invalidator.git

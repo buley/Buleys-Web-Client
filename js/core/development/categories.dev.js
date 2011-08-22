@@ -37,7 +37,18 @@
 	            Buleys.objectStoreCategories.createIndex("modified", "modified", {
 	                unique: false
 	            });
-	
+			//if at first you don't succeed..
+			var transaction = Buleys.db.transaction(["categories"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
+			transaction.oncomplete = function ( e ) {
+			//console.log("categories transaction complete");
+			    delete Buleys.objectStoreCategories;
+			};
+			transaction.onabort = function ( e ) {
+			//console.log("cateogries transcation aborted");
+
+			};
+			Buleys.objectStoreCategories = transaction.objectStore("categories");
+		
 	
 	
 	        };
