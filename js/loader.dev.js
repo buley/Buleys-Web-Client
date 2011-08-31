@@ -50,24 +50,288 @@ var debug;
 //webkitIDBCursor
 
 $(document).ready(function() {
+
+	var browser_check = InDB.checkBrowser();
+	InDB.assert( -1 !== browser_check, 'incompatible browser' );
+	if ( 0 === browser_check ) {
+		InDB.fixBrowser();
+	}
+
 	set_page_vars();
 	check_login_status();
-	if(typeof Buleys.db === "object") {
-		var database_open_on_complete = function( event ) {
-			Buleys.db = event.request.result;
-			jQuery( document ).trigger( 'database_loaded' );
-		};
-		open_database( Buleys.database_name, Buleys.database_description, database_open_on_complete, Buleys.on_error, Buleys.on_abort );
-	} else if( typeof Buleys.db === "IDBDatabase" ) {
-		//database already loaded
-		jQuery( document ).trigger( 'database_loaded' );
-	}
+
+	InDB.debug = true;
+	InDB.trigger( 'InDB_do_database_load', { 'name': Buleys.database_name, 'description': Buleys.database_description } ) ;
 });
 
-jQuery( document ).bind( 'database_open', function( event, parameters ) {
+jQuery( document ).bind( 'InDB_database_load_success', function( event, parameters ) {
 	Buleys.session.database_is_open = true;
 	load_current_page();
 });
+
+jQuery( document ).bind( 'InDB_database_created', function( event, parameters ) {
+	install_stores();
+});
+
+Buleys.install_stores = function() {
+
+	/* Archive */
+
+	var archive = {
+		'archive': {
+			'key': 'link', 'incrementing_key': false, 'unique': true
+		}
+	};	
+
+	var archive_idxs = {
+		'archive': {
+			'topic_slug': { 'topic_slug': false },
+			'topic_type': { 'topic_type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( archive, archive_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': archive, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': archive_idxs, 'on_success': function( context ) { 
+			console.log( 'Archive store loaded', context );
+		} } );		
+	} } );
+
+
+	/* Categories */
+
+	var categories = {
+		'categories': { 'key': 'id', 'incrementing_key': false, 'unique': true }	
+	}
+
+	var categories_idxs = {
+		'categories': {
+			'slug': { 'slug': false },
+			'link': { 'link': false },
+			'type': { 'type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( categories, categories_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': categories, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': categories_idxs, 'on_success': function( context ) { 
+			console.log( 'Categories store loaded', context );
+		} } );		
+	} } );
+
+
+	/* Favorites */
+
+	var favorites = {
+		'favorites': { 'key': 'link', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var favorites_idxs = {
+		'favorites': {
+			'topic_slug': { 'topic_slug': false },
+			'topic_type': { 'topic_type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( favorites, favorites_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': favorites, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': favorites_idxs, 'on_success': function( context ) { 
+			console.log( 'Favorites store loaded', context );
+		} } );		
+	} } );
+
+
+	/* Follows */
+
+	var follows = {
+		'follows': { 'key': 'key', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var follows_idxs = {
+		'follows': {
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( follows, follows_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': follows, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': follows_idxs, 'on_success': function( context ) { 
+			console.log( 'Follows store loaded', context );
+		} } );		
+	} } );
+
+
+	/*  Items */
+
+	var items = {
+		'items': { 'key': 'link', 'incrementing_key': false, 'unique': true }	
+	}
+
+	var items_idxs = {
+		'items': {
+			'author': { 'slug': false },
+			'published_date': { 'link': false },
+			'index_date': { 'type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( items, items_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': items, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': items_idxs, 'on_success': function( context ) { 
+			console.log( 'Items store loaded', context );
+		} } );	
+	} } );
+
+
+	
+	/* Status */
+
+	var status = {
+		'status': { 'key': 'link', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var status_idxs = {
+		'status': {
+			'topic_slug': { 'topic_slug': false },
+			'topic_type': { 'topic_type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': status, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': status_idxs, 'on_success': function( context ) { 
+			console.log( 'Topics store loaded', context );
+		} } );		
+	} } );
+
+
+	console.log( status, status_idxs );
+
+	
+	/* Seen */
+
+	var seen = {
+		'seen': { 'key': 'link', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var seen_idxs = {
+		'seen': {
+			'topic_slug': { 'topic_slug': false },
+			'topic_type': { 'topic_type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( seen, seen_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': seen, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': seen_idxs, 'on_success': function( context ) { 
+			console.log( 'Seen store loaded', context );
+		} } );		
+	} } );
+
+
+	/* Subscriptions */
+
+	var subscriptions = {
+		'subscriptions': { 'key': 'key', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var subscriptions_idxs = {
+		'subscriptions': {
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( follows, follows_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': follows, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': follows_idxs, 'on_success': function( context ) { 
+			console.log( 'Follows store loaded', context );
+		} } );		
+	} } );
+
+
+	
+	/* Topics */
+
+	var topics = {
+		'topics': { 'key': 'topic_key', 'incrementing_key': false, 'unique': true }
+	};	
+
+	// TODO: Why is last_updated not modified like the rest?
+	var topics_idxs = {
+		'status': {
+			'slug': { 'topic_slug': false },
+			'type': { 'topic_type': false },
+			'last_updated': { 'modified': false }
+		}
+	};
+
+	console.log( topics, topics_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': topics, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': topics_idxs, 'on_success': function( context ) { 
+			console.log( 'Topics store loaded', context );
+		} } );		
+	} } );
+
+
+	/* Deleted */
+
+	var deleted = {
+		'deleted': { 'key': 'link', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var deleted_idxs = {
+		'deleted': {
+			'topic_slug': { 'topic_slug': false },
+			'topic_type': { 'topic_type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( deleted, deleted_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': deleted, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': deleted_idxs, 'on_success': function( context ) { 
+			console.log( 'Deleted store loaded', context );
+		} } );		
+	} } );
+
+
+	/* Votes */
+
+	var votes = {
+		'votes': { 'key': 'vote_key', 'incrementing_key': false, 'unique': true }
+	};	
+
+	var votes_idxs = {
+		'deleted': {
+			'vote_value': { 'topic_type': false },
+			'modified': { 'modified': false }
+		}
+	};
+
+	console.log( votes, votes_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': votes, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': votes_idxs, 'on_success': function( context ) { 
+			console.log( 'Votes store loaded', context );
+		} } );		
+	} } );
+
+
+}
 
 /*
 Buleys.loader.announce_loaded_script = function(loaded_script) {
