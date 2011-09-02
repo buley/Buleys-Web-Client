@@ -1,6 +1,6 @@
 
 /**
- * Items.js
+ * Seen.js
  **/
 
 function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
