@@ -130,13 +130,12 @@ function add_item_to_items_database(  item  ) {
 
 	var data = get_data_object_for_item(item);
 	var deleted_on_success = function (  context  ) {
-
-	var event = context.event;
-		if (typeof item_request.result === 'undefined') {
+	
+		var event = context.event;
+		if (typeof event.result === 'undefined') {
 
 			var add_on_success = function (  context2  ) {
 		var event2 = context2.event;
-	console.log(event2);
 
 	//console.log(item);
 				if (item.entities.length > 1 && typeof item.entities.type === "undefined" && typeof item.entities.slug === "undefined") {
@@ -163,7 +162,7 @@ function add_item_to_items_database(  item  ) {
 	//console.log(e);	
 		};
 
-			InDB.trigger( 'InDB_row_add', { 'store': 'items', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+			InDB.trigger( 'InDB_do_row_add', { 'store': 'items', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
 
 		}
 	};
@@ -236,7 +235,7 @@ function get_item_raw_no_trash(  item_url  ) {
 
 	InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context ) {
 		var event = context.event;
-		if( InDB.isEmpty( InDB.row.value( event ) ) ) { 
+		if( !InDB.isEmpty( InDB.row.value( event ) ) ) { 
 			if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
 				add_item_to_results(item_request_1.result);
 				check_if_item_is_favorited(item_request_1.result.link);
@@ -255,21 +254,21 @@ function get_item(  item_url  ) {
 	var on_error = function() {
 		console.log( 'Error in get_item', item_url );
 	}	
-
-	InDB.trigger( 'InDB_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context ) {
-		var event_1 = context.event;
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context_1 ) {
+		var event_1 = context_1.event;
 		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) { 
-				InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context ) {
-				var event2 = context.event;
+				InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context_2 ) {
+				var event_2 = context_2.event;
 				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
-						InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context ) {
-						var event3 = context.event;
-						if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
-							if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-								add_item_to_results(item_request_1.result);
-								check_if_item_is_favorited(item_request_1.result.link);
-								check_if_item_is_read(item_request_1.result.link);
-								check_if_item_is_seen(item_request_1.result.link);
+						InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context_3 ) {
+						var event_3 = context_3.event;
+						if( InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
+							if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+								console.log('adding item to result');
+								add_item_to_results(event_3.result);
+								check_if_item_is_favorited(event_3.result.link);
+								check_if_item_is_read(event_3.result.link);
+								check_if_item_is_seen(event_3.result.link);
 							}
 						}		
 					}, 'on_error': on_error } );
@@ -331,18 +330,19 @@ function get_items(  type_filter, slug_filter, begin_timeframe, end_timeframe  )
 
 	var cursor_on_success = function ( context ) {
 		var event1 = context.event;
-		console.log(event1.target.result);
-		console.log("successsssss");
 
 		var result = event1.target.result;
-		var item = event1.target.result.value;
+		var item;
+		if( "undefined" !== typeof result && null !== result ) {
+			item  = result.value;
+		}
 		if( !!item ) {
+			//
 			get_item( item.link );
 		}
 	};
 	
-	InDB.trigger( 'InDB_rows_get', { 'store': 'categories', 'keyRange': InDB.transaction.only( slug_filter ), 'on_success': cursor_on_success } );	
-
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success } );	
 
 }
 
@@ -426,7 +426,7 @@ function get_item_for_console(  item_url  ) {
 	jQuery(document).trigger('get_item_for_console');
 
 	item_on_success = function ( context  ) {
-	var event = context.event;
+		var item_request = context.event;
 
 		if (typeof item_request.result !== 'undefined' && typeof item_request.result.id === 'string') {
 			var html_snippit = "<div id='console_" + item_request.result.id.replace(/[^a-zA-Z0-9-_]+/g, "") + "'>";
@@ -472,19 +472,22 @@ function fire_off_request(	) {
 //console.log("the results are in");
 			Buleys.view.slug = data.info.key;
 			Buleys.view.type = data.info.type;
+			if( "undefined" !== typeof data.info && "undefined" === typeof data.info.topic_key ) {
+				data.info.topic_key = data.info.type + "_" + data.info.key;
+			}
 			//populate_and_maybe_setup_indexeddbs(data.items);
-			
-		//get_data_for_items(data.items);
+			//get_data_for_items(data.items);
 			add_items(data.items, data.info.type, data.info.key);
-		console.log('load_page_title_info(data.info)');
+			console.log('load_page_title_info(data.info)');
 			load_page_title_info(data.info);
-		console.log('add_or_update_topic');
-			add_or_update_topic((data.info.type + "_" + data.info.key), data.info);
+			console.log('add_or_update_topic', data.info.type, data.info.key, data.info);
+			add_or_update_topic( data.info);
 		}
 	});
 }
 
 function get_data_for_items(  items  ) {
+
 	jQuery(document).trigger('get_data_for_items');
 
 	$.each(items, function (  i, item  ) {
@@ -496,46 +499,52 @@ function get_data_for_items(  items  ) {
 }
 
 function add_items(  items_to_database, type_to_get, company_to_get  ) {
+
 	jQuery(document).trigger('add_items');
 
+	if( !!Buleys.debug ) {
+		//console.log('items.js > add_items', items_to_database, type_to_get, company_to_get );
+	}
 
 	$.each(items_to_database, function (  i, item  ) {
-
-
+		if( !!Buleys.debug ) {
+			//console.log('items.js > add_items > each', item );
+		}
 		add_item_if_new(item, type_to_get, company_to_get);
 	});
 }
 
 function populate_and_maybe_setup_indexeddbs(  items_to_database  ) {
+
 	jQuery(document).trigger('populate_and_maybe_setup_indexeddbs');
 
-
 	$.each(items_to_database, function (  i, item  ) {
-
-
 		add_item_if_doesnt_exist(item);
 	});
+
 }
 
 function add_item_if_new(  item, type_to_get, company_to_get  ) {
+
 	jQuery(document).trigger('add_item_if_new');
+
 	if( !item.link ) {
 		return;
 	}
-//console.log("add_item_if_new");
-//console.log( new Array( item, type_to_get, company_to_get ) );
-//console.log(item.link);
-
-	
+		
 	var on_error = function() {
 		console.log( 'Error in get_item', item.link );
 	}	
 
-	InDB.trigger( 'InDB_row_get', { 'store': 'deleted', 'key': item.link, 'on_success': function( context ) {
-		var event_1 = context.event;
+	var on_abort = function() {
+		console.log( 'Abort in get_item', item.link );
+	}	
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item.link, 'on_success': function( context_1 ) {
+		var event_1 = context_1.event;
 		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) { 
-			InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item.link, 'on_success': function( context2 ) {
-				var event2 = context2.event;
+			InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item.link, 'on_success': function( context_2 ) {
+				var event_2 = context_2.event;
 				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
 					add_item_to_items_database(item);
 					send_to_console("<p>Added: <a href='" + item.link + "'>" + item.title + "</a></p>");

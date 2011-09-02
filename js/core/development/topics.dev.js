@@ -105,8 +105,8 @@
 		InDB.trigger( 'InDB_row_delete', { 'store': topic, 'key': topic_key, 'on_success': on_success, 'on_error': on_error } );
 	}
 	
-	function add_or_update_topic( topic_key, topic ) {
-
+	function add_or_update_topic( topic ) {
+		
 		jQuery(document).trigger('add_or_update_topic');
 	
 		if (typeof topic == 'undefined') {
@@ -116,11 +116,12 @@
 		var on_success = function( context ) {
 			console.log( 'Topic added or updated', context );
 		}
+
 		var on_error = function( context ) {
 			console.log( 'There was an error adding or updating the topic', context );
 		}
-
-		InDB.trigger( 'InDB_row_put', { 'store': topic_key, 'data': topic, 'on_success': on_success, 'on_error': on_error } );
+		console.log('adding topic', topic );
+		InDB.trigger( 'InDB_do_row_put', { 'store': 'topics', 'data': topic, 'on_success': on_success, 'on_error': on_error } );
 
 	}
 	
