@@ -82,8 +82,6 @@ function get_archived( type_filter, slug_filter, begin_timeframe, end_timeframe,
 }
 
 
-
-
 function archive_item( item_url ) {
 	
 	/* Action */
