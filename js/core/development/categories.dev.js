@@ -182,6 +182,8 @@ function add_categories_to_categories_database( item_url, categories ) {
 				"value": the_category.display,
 				"modified": new Date().getTime()
 			};
+
+			/* Callbacks */
 			
 			add_on_success = function ( context ) {
 				var event = context.event;
@@ -212,6 +214,8 @@ function get_item_categories_for_overlay( item_url ) {
 
 	jQuery(document).trigger('get_item_categories_for_overlay');
 
+	/* Callbacks */
+
 	var cursor_on_success = function ( event ) {
 
 		if (jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length < 1) {
@@ -229,6 +233,8 @@ function get_item_categories_for_overlay( item_url ) {
 	var cursor_on_error = function ( event ) {
 
 	};
+
+	/* Request */
 
 	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': on_success, 'on_error': on_error } );
 
