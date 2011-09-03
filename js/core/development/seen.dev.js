@@ -3,41 +3,53 @@
  * Seen.js
  **/
 
+
 function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
+
+	/* Debug */
 
 	if( !!InDB.debug ) {
 		console.log( 'get_seen', type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse );
 	}
 
+	/* Action */
+
 	jQuery(document).trigger('get_seen');
+
+	/* Defaults */
 
 	if (typeof make_inverse == "undefined") {
 		make_inverse = false;
 	}
 
+	/* Setup */
+
 	var begin_date = 0;
+	var end_date = 0;
+
 	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
 		begin_date = 0
 	} else {
 		begin_date = parseInt(begin_timeframe);
 	}
 
-	var end_date = 0;
 	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
 		end_date = new Date().getTime();
 	} else {
 		end_date = parseInt(end_timeframe);
 	}
 
+	/* Callbacks */
+
 	var on_success = function ( context_1 ) {
+
+		/* Setup */
 
 		var event_1 = context_1.event;
 		var result = event_1.target.result;
-		if ( !result ) {
-			return;
-		}
 		var item = result.value;
-		var item_request_2 = Buleys.objectStore.get(item.link);
+
+		/* Callbacks */
 
 		var seen_on_success = function ( context_2 ) {
 
@@ -62,13 +74,13 @@ function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 			console.log( 'error in get_seen', context_2 );
 		}		
 
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'seen', 'key': item_link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
+		/* Request */
 
-		};
+		InDB.trigger( 'InDB_do_row_get', { 'store': 'seen', 'key': item.link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
 
-		var on_error = function ( context_1 ) {
-		console.log( 'error in get_seen', context_1 );
 	};
+
+	/* Request */
 
 	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': on_success, 'on_error': on_error } );
 	
@@ -77,7 +89,12 @@ function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 
 
 function mark_item_as_seen( item_url, item_slug, item_type ) {
-jQuery(document).trigger('mark_item_as_seen');
+
+	/* Action */
+
+	jQuery(document).trigger('mark_item_as_seen');
+
+	/* Setup */
 
 	var data = {
 		"link": item_url,
@@ -86,12 +103,17 @@ jQuery(document).trigger('mark_item_as_seen');
 		"modified": new Date().getTime()
 	};
 
+	/* Callbacks */
+
 	var on_success = function ( context ) {
 
 	};
+
 	var on_error = function ( context ) {
 
 	};
+
+	/* Request */
 
 	InDB.trigger( 'InDB_do_row_add', { 'store': 'seen', 'data': data, 'on_success': on_success, 'on_error': on_error } );
 
@@ -100,7 +122,11 @@ jQuery(document).trigger('mark_item_as_seen');
 //TODO: two vars are gratuitous	
 function mark_item_as_unseen( item_url, item_slug, item_type ) {
 
+	/* Action */
+
 	jQuery(document).trigger('mark_item_as_unseen');
+
+	/* Callbacks */
 
 	var on_success = function ( context ) {
 
@@ -110,25 +136,37 @@ function mark_item_as_unseen( item_url, item_slug, item_type ) {
 
 	};
 
+	/* Request */
+
 	InDB.trigger( 'InDB_do_row_delete', { 'store': 'seen', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
 
 }
 
+
 function add_item_as_seen( item_url ) {
 
+	/* Action */
+
 	jQuery(document).trigger('add_item_as_seen');
+
+	/* Setup */
 
 	var data = {
 		"link": item_url,
 		"modified": new Date().getTime()
 	};
 
+	/* Callbacks */
+
 	var on_success = function ( context ) {
 
 	};
+
 	var on_error = function ( context ) {
 
 	};
+
+	/* Request */
 
 	InDB.trigger( 'InDB_do_row_add', { 'store': 'seen', 'data': data, 'on_success': on_success, 'on_error': on_error } );
 
@@ -137,7 +175,11 @@ function add_item_as_seen( item_url ) {
 //TODO: Function name really descriptive of method
 function check_if_item_is_seen( item_url ) {
 
+	/* Action */
+
 	jQuery(document).trigger('check_if_item_is_seen');
+
+	/* Callbacks */
 
 	var on_success = function ( context ) {
 		var item_request = context.event;
@@ -152,13 +194,19 @@ function check_if_item_is_seen( item_url ) {
 	
 	};
 
+	/* Request */
+
 	InDB.trigger( 'InDB_do_row_get', { 'store': 'seen', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
 
 }
 
 function add_item_to_seens_database( item_url, item_slug, item_type ) {
 
+	/* Action */
+
 	jQuery(document).trigger('add_item_to_seens_database');	
+
+	/* Setup */
 	
 	var data = {
 		"item_link": item_url,
@@ -167,12 +215,17 @@ function add_item_to_seens_database( item_url, item_slug, item_type ) {
 		"modified": new Date().getTime()
 	};
 
+	/* Callbacks */
+
 	var on_success = function ( event ) {
 
 	};
+
 	var on_error = function ( e ) {
 	
 	};
+
+	/* Request */
 
 	InDB.trigger( 'InDB_do_row_add', { 'store': 'seen', 'data': data, 'on_success': on_success, 'on_error': on_error } );
 
@@ -181,14 +234,21 @@ function add_item_to_seens_database( item_url, item_slug, item_type ) {
 //TODO: two gratuitious args	
 function remove_item_from_seens_database( item_url, item_slug, item_type ) {
 
+	/* Action */
+
 	jQuery(document).trigger('remove_item_from_seens_database');
+
+	/* Callbacks */
 
 	var on_success = function ( event ) {
 	
 	};
+
 	var on_error = function (  ) {
 
 	};
+
+	/* Request */
 
 	InDB.trigger( 'InDB_do_row_delete', { 'store': 'seen', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
 
