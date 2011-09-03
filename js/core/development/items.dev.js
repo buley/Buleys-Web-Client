@@ -314,56 +314,57 @@ function get_item( item_url ) {
 		// Verify the item wasn't deleted
 		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) {
 
-				/* Request */
- 
-				// Check if the item was archived
-				InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context_2 ) {
+			/* Request */
 
-					/* Setup */
-					var event_2 = context_2.event;
+			// Check if the item was archived
+			InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context_2 ) {
 
-					// Verify that the item wasn't archived
-					if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
+				/* Setup */
+				var event_2 = context_2.event;
 
-						/* Request */
+				// Verify that the item wasn't archived
+				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
 
-						// Get the item
-						InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context_3 ) {
+					/* Request */
 
-							/* Setup */
-				
-							var event_3 = context_3.event;
+					// Get the item
+					InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context_3 ) {
 
-							// Verify the item exists		
-							if( InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
-		
-								/* UI */
+						/* Setup */
+			
+						var event_3 = context_3.event;
 
-								if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-	
-									console.log('adding item to result');
-									add_item_to_results(event_3.result);
-									check_if_item_is_favorited(event_3.result.link);
-									check_if_item_is_read(event_3.result.link);
-									check_if_item_is_seen(event_3.result.link);
+						// Verify the item exists		
+						if( InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
 
-								}
-		
-							} // End verify the item exists
+							/* UI */
 
-						}, 'on_error': on_error } ); // End get the item
+							if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
 
-					} // End verify that the item wasn't archived
+								console.log('adding item to result');
+								add_item_to_results(event_3.result);
+								check_if_item_is_favorited(event_3.result.link);
+								check_if_item_is_read(event_3.result.link);
+								check_if_item_is_seen(event_3.result.link);
 
-				}, 'on_error': on_error } ); // End check if the item was archived
+							}
 
-			} // End verify the item wasn't deleted
+						} // End verify the item exists
 
-		}, 'on_error': on_error } ); // End check if the item was deleted
+					}, 'on_error': on_error } ); // End get the item
 
-		/* Request */
+				} // End verify that the item wasn't archived
 
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
+			}, 'on_error': on_error } ); // End check if the item was archived
+
+		} // End verify the item wasn't deleted
+
+	}; // End on_success
+
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
 
 }
 
@@ -674,7 +675,7 @@ function get_data_for_items( items ) {
 		/* Debug */
 
 		if( !!Buleys.debug ) {
-			console.log("getting data for item, item);
+			console.log("getting data for item", item);
 		}
 
 		/* Work */

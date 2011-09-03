@@ -34,16 +34,25 @@ function get_deleted( type_filter, slug_filter, begin_timeframe, end_timeframe, 
 
 	/* Request */
 
-	var categories_on_success = function ( context_1 ) {
+	var cursor_on_success = function ( context_1 ) {
 
 		var result = context_1.event.target.result;
 		var item = result.value;
 		
 		var deleted_on_success = function ( context_2 ) {
+
+			/* Setup */
+
 			var event_2 = context_2.event;
-			if( typeof event_2.target.result !== 'undefined' )
+
+			if( typeof event_2.target.result !== 'undefined' ) {
+
+				/* Setup */
 
 				var on_success_2, on_error_2;
+
+				/* Work */
+
 				// TODO: These don't actually handle asc/desc
 				if( make_inverse !== true) {
 					on_success_2 = function ( event ) {
@@ -71,7 +80,7 @@ function get_deleted( type_filter, slug_filter, begin_timeframe, end_timeframe, 
 				InDB.trigger( 'InDB_do_row_get', { 'context': 'deleted', 'key': item.link, 'on_success': on_success_2, 'on_error': on_error_2 } );
 
 			}
-		
+
 		}
 
 		var deleted_on_error = function ( context ) {
@@ -84,16 +93,13 @@ function get_deleted( type_filter, slug_filter, begin_timeframe, end_timeframe, 
 
 	};
 
-	cursorRequest.onerror = function ( context ) {
+	var cursor_on_error = function ( context ) {
 	
 	};
 
 	/* Request */
 
-	new_categories_transaction();
-	Buleys.indexCategoriesSlug = Buleys.objectStoreCategories.index("slug");
-		var keyRange = IDBKeyRange.lowerBound(slug_filter);
-		var cursorRequest = Buleys.indexCategoriesSlug.openCursor( keyRange );
+	InDB.trigger( 'InDB_do_cursor_get', { 'context': 'categories', 'keyRange': InDB.range.only( slug_filter ), 'index': 'slug', 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
 	
 }
 
