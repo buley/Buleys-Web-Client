@@ -1,9 +1,3 @@
-
-/**
- * Items.js
- **/
-
-
 function check_item_vote_status_for_overlay( item_url ) {
 
 	/* Action */
@@ -61,8 +55,7 @@ function get_vote_info( the_url, the_type, the_key ) {
 
 	var vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_key.toLowerCase();
 
-	/* Callbacks */
-	
+
 	var on_success = function ( context ) {
 
 		/* Setup */
@@ -86,27 +79,17 @@ function get_vote_info( the_url, the_type, the_key ) {
 
 	};
 
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'votes', 'key': vote_key, 'on_success': on_success, 'on_error': on_error } );
+	var item_request = Buleys.objectStore.get(vote_key);
 	
 }
 
-// TODO: Do timeframes do anything?
-function get_voted( type_filter, slug_filter, vote_value, begin_timeframe, end_timeframe, make_inverse ) {
+function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
 
 	/* Action */
 
-	jQuery(document).trigger('get_voted');
+	jQuery(document).trigger('get_read');
 
 	/* Defaults */
-
-	var keyRange;
-	if( !!vote_value ) {
-		keyRange = InDB.range.left_open( '0' ); // Everything
-	} else {
-		keyRange = InDB.range.only( vote_value );
-	}
 
 	if (typeof make_inverse == "undefined") {
 		make_inverse = false;
@@ -134,17 +117,16 @@ function get_voted( type_filter, slug_filter, vote_value, begin_timeframe, end_t
 	cursor_on_success = function ( context_1 ) {
 
 		var event_1 = context_1.event;
-		var item = InDB.cursor.value( event_1 );
-	
+
 		if( !InDB.isEmpty( InDB.cursor.value( event_1 ) ) ) { 
 
 			if ( make_inverse !== true) {
 				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw( item.link );
+					get_item_raw(item_request_2.result.link);
 				}
 			} else { 
 				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw( item.link );
+					get_item_raw(item.link);
 				}
 			}
 		}
@@ -157,10 +139,36 @@ function get_voted( type_filter, slug_filter, vote_value, begin_timeframe, end_t
 
 	/* Request */
 	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'voted', 'index': 'vote_value', 'keyRange': keyRange, 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
 
 }
 
+
+function get_votes(  ) {
+	jQuery(document).trigger('get_votes');
+
+	try {
+		new_votes_transaction();
+		Buleys.index = Buleys.objectStore.index("vote_key");
+		var cursorRequest = Buleys.index.openCursor();
+		cursorRequest.onsuccess = function ( event ) {
+
+			var objectCursor = cursorRequest.result;
+			if (!objectCursor) {
+				return;
+			}
+			if (objectCursor.length >= 0) {
+				jQuery.each(objectCursor, function ( k, item ) {
+
+				});
+			}
+		};
+		request.onerror = function ( event ) {
+
+		};
+	} catch (e) {
+	}
+}
 
 function remove_vote( vote_key ) {
 	
