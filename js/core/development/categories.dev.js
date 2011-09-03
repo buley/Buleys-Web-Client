@@ -1,3 +1,8 @@
+
+/**
+ * Categories.js
+ **/
+
 function add_category_controls( event_context ) {
 
 	/* Setup */
@@ -133,7 +138,7 @@ function remove_category_for_item( item_url, item_slug, item_type ) {
 
 	/* Request */
 
-	InDB.trigger( 'store': 'categories', 'key': (item_url + item_type + item_slug), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_delete', { 'store': 'categories', 'key': (item_url + item_type + item_slug), 'on_success': on_success, 'on_error': on_error } );
 
 }
 
