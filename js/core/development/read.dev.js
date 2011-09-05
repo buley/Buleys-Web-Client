@@ -33,18 +33,45 @@ function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 	cursor_on_success = function ( context_1 ) {
 
 		var event_1 = context_1.event;
+		var item_1 = InDB.cursor.value( event_1 );
+		if ( null === item_1 ) {
+			return;
+		}
+		console.log('got from status db ',event_1,item_1);
 
-		if( !InDB.isEmpty( InDB.cursor.value( event_1 ) ) ) { 
+		if( !make_inverse ) {
+			get_item_raw( item_1.link );
+			return;
+		} else {
 
-			if ( make_inverse !== true) {
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw(item_request_2.result.link);
+			var seen_on_success = function( context_2 ) { 
+				
+				var event_2 = context_2.event;
+				var item_2 = InDB.cursor.value( event_2 );
+
+				// Proceed if:
+				// 1) Item is unseen (isEmpty) but we want to get unseen (make_inverse = true)
+				// 2) Item is seen (!isEmpty) and we want to get seen
+				console.log('seen_on_success', item_2 );
+				if( ( !InDB.isEmpty( item_2 ) && true !== make_inverse ) || ( InDB.isEmpty( item_2 ) && true === make_inverse )  ) { 
+
+					if (jQuery("#" + item_1.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+
+						console.log('getting raw item in get_read() > ', item_1.link );
+						get_item_raw(item_1.link);
+
+					}
+
 				}
-			} else { 
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw(item.link);
-				}
-			}
+
+			};
+
+			var seen_on_error = function( context_2 ) {
+
+			};
+			
+			InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_1.link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
+
 		}
 
 	};
@@ -54,10 +81,19 @@ function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 	};
 
 	/* Request */
-	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+
+	if( !!make_inverse ) {	
+
+		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+
+	} else {
+
+		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'status', 'index': 'topic_slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+
+	}
 
 }
+
 
 
 function mark_item_as_read( item_url, item_slug, item_type ) {
@@ -73,21 +109,21 @@ function mark_item_as_read( item_url, item_slug, item_type ) {
 		"topic_slug": item_slug,
 		"topic_type": item_type,
 		"modified": new Date().getTime()
-	}
+	};
 
 	/* Callbacks */
 
-	var add_on_success = function ( event ) {
-
+	var add_on_success = function ( context ) {
+		console.log( 'mark_item_as_read() success', context );
 	};
 
-	var add_on_error = function ( e ) {
-
+	var add_on_error = function ( context ) {
+		console.log( 'mark_item_as_read() error', context );
 	};
 	
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_put', { 'store': 'status', 'key': item_url, 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+	InDB.trigger( 'InDB_do_row_put', { 'store': 'status', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
 
 };
 

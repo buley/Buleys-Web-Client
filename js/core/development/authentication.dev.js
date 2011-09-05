@@ -379,3 +379,43 @@ $(document).bind('dologinsubmit', function ( event ) {
         request_login($('[name="email"]').val(), $('[name="password"]').val());
     }
 });
+
+
+function oauth_preflight( type ) {
+
+	jQuery(document).trigger('oauth_preflight');
+
+	var data_to_send = {
+		"oauth_type": type,
+		"oauth_state": 0	
+	};
+
+	$.post("http://api.buleys.com/oauth", data_to_send, function ( data ) {
+		if ( true == data.success ) {
+			console.log('oAuth preflight response', data );
+		}
+	}, "json");
+
+}
+
+
+function oauth_validate( type, oauth_token, oauth_secret ) {
+
+	jQuery(document).trigger('oauth_preflight');
+
+	var data_to_send = {
+		"oauth_type": type,
+		"oauth_state": 0,
+		"oauth_token": oauth_token,
+		"oauth_secret": oauth_secret
+	};
+
+	$.post("http://api.buleys.com/oauth", data_to_send, function ( data ) {
+		if ( true == data.success ) {
+			console.log('oAuth validate response', data );
+		}
+	}, "json");
+
+}
+
+

@@ -20,7 +20,7 @@ function check_item_vote_status_for_overlay( item_url ) {
 		/* UI */
 
 		if (typeof event.target.result !== 'undefined') {
-
+			console.log("VOTE VALUE", event.target.result, event.target.result.vote_value );
 			if (event.target.result.vote_value == -1) {
 				jQuery("#overlay_left").prepend('<div class="vote_context voted"><div class="vote_up empty_thumb_up_icon" alt="' + Buleys.view.slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '"></div><div class="vote_down vote thumb_icon" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '" alt="' + Buleys.view.slug + '" ></div></div>');
 			} else if (event.target.result.vote_value == 1) {
@@ -47,7 +47,7 @@ function check_item_vote_status_for_overlay( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'votes', 'key': item_url.replace(/[^a-zA-Z0-9-_]+/g, ""), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': item_url.replace(/[^a-zA-Z0-9-_]+/g, ""), 'on_success': on_success, 'on_error': on_error } );
 	
 }
 
@@ -195,25 +195,28 @@ function add_or_update_vote( vote_key, vote_value ) {
 	if (typeof vote_value == 'undefined') {
 		vote_value = '';
 	}
+
+	/* Setup */
+
+	var data = {
+		'vote_key': vote_key,
+		'vote_value': vote_value,
+		"modified": new Date().getTime()
+	};
 	
 	/* Callbacks */
 
 	var on_success = function ( context ) {
-		var item_request = context.event;
-		if (typeof item_request.result == 'undefined') {
-			add_vote_to_votes_database(vote_key, vote_value);
-		} else {
-			update_vote_in_votes_database(vote_key, vote_value);
-		}
+		console.log('Successfully updated vote', context );	
 	};
 	
-	var on_error = function ( e ) {
-
+	var on_error = function ( context ) {
+		console.log('Failed to update vote', context );
 	};
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_put', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
 
 }
 

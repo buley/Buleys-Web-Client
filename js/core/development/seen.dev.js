@@ -51,7 +51,7 @@ function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 
 		/* Callbacks */
 
-		var seen_on_success = function ( context_2 ) {
+		var item_on_success = function ( context_2 ) {
 
 			var event_2 = context_2.event;
 			if (typeof event_2.target.result !== 'undefined' && make_inverse !== true) {
@@ -70,19 +70,23 @@ function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 
 		};
 		
-		var seen_on_error = function( context_2 ) {
+		var item_on_error = function( context_2 ) {
 			console.log( 'error in get_seen', context_2 );
 		}		
 
 		/* Request */
 
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'seen', 'key': item.link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
+		InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
 
 	};
 
+	var on_error = function( context ) {
+		console.log('Failure in get_seen()', context );
+	}
+
 	/* Request */
 
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'status', 'index': 'topic_slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': on_success, 'on_error': on_error } );
 	
 }
 

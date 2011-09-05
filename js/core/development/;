@@ -61,7 +61,7 @@ function add_item_to_results( item ) {
 	
 	/* Debug */
 
-	if( true === Buleys.debug ) {
+	if( !!Buleys.debug ) {
 		console.log("items.js > add_item_to_results()", item );
 	}
 	
@@ -88,7 +88,7 @@ function prepend_item_to_results( item ) {
 		
 	/* Debug */
 
-	if( true === Buleys.debug ) {
+	if( !!Buleys.debug ) {
 		console.log("items.js > add_item_to_results()", item );
 	}
 	
@@ -145,16 +145,20 @@ function add_item_to_items_database( item ) {
 
 					/* Debug */
 					
-					if( true === Buleys.debug ) {
+					if( !!Buleys.debug ) {
 						console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
 					}
 
 					// Qualify the view
 					// TODO: Better description
-					if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
+					if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" || ( ( cat.slug !== null && typeof cat.slug !== "null" ) ) ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
 
-						// Add the item to the results
-						prepend_item_to_results(get_data_object_for_item(item));
+						// Loop through each entity
+						$.each(item.entities, function ( cat_key, cat ) {
+
+							// Add the item to the results
+							prepend_item_to_results(get_data_object_for_item(item));
+						} );
 
 					}
 				// or (2) that there is a single entity
@@ -196,9 +200,7 @@ function check_if_item_is_read( item_url ) {
 
 	/* Callbacks */
 
-	var on_success = function ( context ) {
-
-		var item_request = context.event;
+	var on_success = function ( event ) {
 		if (typeof item_request.result !== 'undefined') {
 			jQuery( "#" + item_url.replace( /[^a-zA-Z0-9-_]+/g, "" ) ).addClass( "read" );
 		} else {
@@ -212,7 +214,7 @@ function check_if_item_is_read( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'status', 'key': item_url, 'on_success': on_success, 'on_error': on_error } ); 
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'status', 'key': item.link, 'on_success': on_success, 'on_error': on_error } ); 
 
 }
 
@@ -291,67 +293,8 @@ function get_item_raw_no_trash( item_url ) {
 
 }
 
-function get_item_wip( item_url ) {
-
-	/* Debug */
-
-	if ( true === Buleys.debug ) {
-		console.log('items.js > get_item()', item_url );
-	}
-
-	/* Action */
-
-	jQuery(document).trigger('get_item');
-
-	/* Callbacks */
-	
-	var on_error = function( context_1 ) {
-		console.log( 'Error in get_item', context_1 );
-	}
-	
-	var on_success = function( context_1 ) {
-
-		/* Setup */
-		var event_1 = context_1.event;
-		var result = event_1.target.result;
-
-		// Verify the item exists, wasn't deleted and isn't archived
-		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) {
-
-
-			/* UI */
-			console.log('l5', result,event_1);
-
-			if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-				console.log('l6');
-				add_item_to_results(result);
-
-				check_if_item_is_favorited(item_url);
-
-				check_if_item_is_read(item_url);
-
-				check_if_item_is_seen(item_url);
-
-			}
-		}
-
-	}; // End on_success
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
 function get_item( item_url ) {
 
-	/* Debug */
-
-	if ( true === Buleys.debug ) {
-		console.log('items.js > get_item()', item_url );
-	}
-
 	/* Action */
 
 	jQuery(document).trigger('get_item');
@@ -365,6 +308,7 @@ function get_item( item_url ) {
 	var on_success = function( context_1 ) {
 
 		/* Setup */
+
 		var event_1 = context_1.event;
 
 		// Verify the item wasn't deleted
@@ -385,29 +329,23 @@ function get_item( item_url ) {
 
 					// Get the item
 					InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context_3 ) {
-						/* Setup */
 
+						/* Setup */
+			
 						var event_3 = context_3.event;
-						var result = event_3.target.result
-						if( !result ) {
-							return;
-						}
 
 						// Verify the item exists		
-						if( !InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
+						if( InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
 
 							/* UI */
-console.log('l5', result,event_3);
 
 							if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-console.log('l6');
-								add_item_to_results(result);
 
-								check_if_item_is_favorited(item_url);
-
-								check_if_item_is_read(item_url);
-
-								check_if_item_is_seen(item_url);
+								console.log('adding item to result');
+								add_item_to_results(event_3.result);
+								check_if_item_is_favorited(event_3.result.link);
+								check_if_item_is_read(event_3.result.link);
+								check_if_item_is_seen(event_3.result.link);
 
 							}
 
@@ -433,12 +371,6 @@ console.log('l6');
 
 function get_item_raw( item_url ) {
 	
-	/* Debug */
-
-	if( true === Buleys.debug ) {
-		console.log('get_item_raw() > ',item_url);
-	}
-
 	/* Action */
 
 	jQuery(document).trigger('get_item_raw');
@@ -447,40 +379,38 @@ function get_item_raw( item_url ) {
 
 	var on_error = function() {
 		console.log( 'Error in get_item_raw', item_url );
-	}
+	}	
 
 	/* Request */
 
 	// Check if the item was deleted
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context ) {
+	InDB.trigger( 'InDB_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context ) {
 		
 		/* Setup */
 
 		var event_1 = context.event;
-		console.log('get_item_raw success', event_1, InDB.row.value( event_1 ) );
+
 		// Verify the item wasn't deleted
 		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) { 
 
 			/* Request */
 
-			InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context ) {
+			InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context ) {
 
 				/* Setup */
 
-				var event_2 = context.event;
-				var value =  InDB.row.value(event_2);
-				console.log('about to do UI');
-				// Verify the item wasn't archived
-				if( !InDB.isEmpty( value ) ) { 
+				var event2 = context.event;
 
-					console.log('doing UI now', value );
+				// Verify the item wasn't archived
+				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
+
 					/* UI */
 
-					if (jQuery("#" + value.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-						add_item_to_results( value );
-						check_if_item_is_favorited( value.link );
-						check_if_item_is_read( value.link );
-						check_if_item_is_seen( value.link );
+					if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+						add_item_to_results(item_request_1.result);
+						check_if_item_is_favorited(item_request_1.result.link);
+						check_if_item_is_read(item_request_1.result.link);
+						check_if_item_is_seen(item_request_1.result.link);
 					}
 
 				} //End verify the item wasn't archived	
@@ -498,7 +428,7 @@ function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
 	
 	/* Debug */
 
-	if( true === Buleys.debug ) {
+	if( !!Buleys.debug ) {
 		console.log('items.js > get_items( type_filter, slug_filter, begin_timeframe, end_timeframe )', type_filter, slug_filter, begin_timeframe, end_timeframe );
 	}
 
@@ -543,15 +473,13 @@ function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
 			item = result.value;
 		}
 
-		//console.log( 'items.js > get_items() > item.link', context, result, item.link );
-
 		/* Work */
 
 		// Verify there's an item to add
 		if( !!item ) {
 			
 			/* Debug */
-			if( true === Buleys.debug ) {
+			if( !!Buleys.debug ) {
 				console.log( 'items.js > get_items() > item.link', item.link );
 			}
 
@@ -562,16 +490,12 @@ function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
 	};
 
 	var cursor_on_error = function ( context ) {
-		console.log('Error in get_items()', context );
+
 	};
-	
-	var cursor_on_abort = function( context ) {
-		console.log('Cursor aborted in get_items()', context );
-	}
 
 	/* Request */
 	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error, 'on_abort': cursor_on_abort } );	
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );	
 
 }
 
@@ -580,7 +504,7 @@ function index_items_by_field( type_filter, slug_filter, field ) {
 	
 	/* Action */
 
-	jQuery( document ).trigger('index_items_by_field');
+	jQuery( document ).trigger('get_items');
 
 	/* Defaults */
 	
@@ -756,7 +680,7 @@ function get_data_for_items( items ) {
 
 		/* Debug */
 
-		if( true === Buleys.debug ) {
+		if( !!Buleys.debug ) {
 			console.log("getting data for item", item);
 		}
 
@@ -774,7 +698,7 @@ function add_items( items, type_to_get, company_to_get ) {
 
 	/* Debug */
 
-	if( true === Buleys.debug ) {
+	if( !!Buleys.debug ) {
 		console.log('items.js > add_items', items, type_to_get, company_to_get );
 	}
 
@@ -787,7 +711,7 @@ function add_items( items, type_to_get, company_to_get ) {
 	// Loop through each item to database
 	$.each( items, function ( i, item ) {
 
-		if( true === Buleys.debug ) {
+		if( !!Buleys.debug ) {
 			//console.log('items.js > add_items > each', item );
 		}
 
@@ -812,14 +736,6 @@ function populate_and_maybe_setup_indexeddbs( items ) {
 }
 
 function add_item_if_new( item, type_to_get, company_to_get ) {
-
-	/* Debug */
-	
-	if ( !!Buleys.debug ) {
-		console.log( 'add_item_if_new()', item, type_to_get, company_to_get );
-	}
-	add_item_to_items_database(item);
-	return;
 
 	/* Action */
 

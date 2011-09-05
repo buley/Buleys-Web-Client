@@ -39,13 +39,13 @@ function add_category_controls( event_context ) {
 			html_snippit = html_snippit + "<div class='vote_down_category empty_thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
 
 		} else {
-			if (typeof item_request.result != 'undefined') {
-				if (item_request.result.vote_value == -1) {
+			if (typeof item_request.target.result != 'undefined') {
+				if (item_request.target.result.vote_value == -1) {
 					html_snippit = "<span class='vote_up_category empty_thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
 					html_snippit = html_snippit + "" + current;
 					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
 					html_snippit = html_snippit + "<div class='remove_category_down_vote thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-				} else if (item_request.result.vote_value == 1) {
+				} else if (item_request.target.result.vote_value == 1) {
 					html_snippit = "<span class='remove_category_up_vote thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
 					html_snippit = html_snippit + "" + current;
 					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
@@ -67,10 +67,10 @@ function add_category_controls( event_context ) {
 	};
 
 	var vote_req_on_error = function ( e ) {
-		console.log( 'vote_req error', e );		
+	
 	};
 
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': vote_key, 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': vote_key, 'on_success': vote_req_on_success, 'on_error': vote_req_on_error } );
 
 }
 
@@ -148,14 +148,14 @@ function remove_item_from_categories_database( item_url, item_slug, item_type ) 
 
 	jQuery(document).trigger('remove_item_from_categories_database');
 
+	/* Callbacks */
+
 	var item_on_success = function ( context_1 ) {
-		var event_1 = context_1.event;
-		console.log( 'Category removed for item', context_1 );
+	
 	};
 
 	var item_on_error = function ( context_1 ) {
-		var event_1 = context_1.event;
-		console.log( 'Category not removed for item', context_1 );
+	
 	};
 
 	/* Request */
@@ -168,7 +168,7 @@ function add_categories_to_categories_database( item_url, categories ) {
 
 	/* Action */
 
-	jQuery(document).trigger('add_categories_to_categories_database');
+	jQuery(document).trigger( 'add_categories_to_categories_database' );
 
 	jQuery.each(categories, function ( c, the_category ) {
 
@@ -185,7 +185,7 @@ function add_categories_to_categories_database( item_url, categories ) {
 
 			/* Callbacks */
 			
-			add_on_success = function ( context ) {
+			var add_on_success = function ( context ) {
 				var event = context.event;
 				if (typeof the_category.slug !== 'undefined') {
 					var topic_key = the_category.type.toLowerCase() + "_" + the_category.slug.toLowerCase();
@@ -196,7 +196,7 @@ function add_categories_to_categories_database( item_url, categories ) {
 				}
 			};
 			
-			add_on_error = function ( context ) {
+			var add_on_error = function ( context ) {
 			
 			};
 			
@@ -216,27 +216,49 @@ function get_item_categories_for_overlay( item_url ) {
 
 	/* Callbacks */
 
-	var cursor_on_success = function ( event ) {
+	var item_on_success = function( context ) {
+		
+		var item = context.event.target.result;
+	
+		var cursor_on_success = function ( context_2 ) {
 
-		if (jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length < 1) {
-			var html_snippit = "<ul class='category_list' id='categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'></ul>";
-			jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(html_snippit);
-		}
-		var cat_snippit = "<li id='list_item_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "' class='category_list_item' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "'><a id='" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "'  class='category' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "' href='/" + item.type.toLowerCase() + "/" + item.slug + "'>" + item.value + "</a></li>";
+			var result = context_2.event.target.result;
 
-		jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(cat_snippit);
+			if( !result ) {
+				return;
+			}
 
-		get_vote_info(item_url, item.type.toLowerCase(), item.slug.toLowerCase());
+			var item = result.value;
+			
+			if (jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length < 1) {
+				var html_snippit = "<ul class='category_list' id='categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'></ul>";
+				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(html_snippit);
+			}
+
+			var cat_snippit = "<li id='list_item_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "' class='category_list_item' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "'><a id='" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "'  class='category' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "' href='/" + item.type.toLowerCase() + "/" + item.slug + "'>" + item.value + "</a></li>";
+
+			jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(cat_snippit);
+
+			get_vote_info(item_url, item.type.toLowerCase(), item.slug.toLowerCase());
+
+
+		};
+
+		var cursor_on_error = function ( event ) {
+
+		};
+
+		/* Request */
+
+		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
 
 	};
 
-	var cursor_on_error = function ( event ) {
+	var item_on_error = function( context ) {
 
 	};
 
-	/* Request */
-
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': item_on_success, 'on_error': item_on_error } );
 
 }
 

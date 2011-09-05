@@ -22,7 +22,7 @@ function add_favorite_to_results( item ) {
 }
 
 
-function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
+function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
 
 	/* Action */
 	
@@ -31,34 +31,47 @@ function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe
 	/* Setup */
 
 	var begin_date = 0;
+	var end_date = 0;
+
 	if (typeof begin_timeframe == "undefined") {
 		begin_date = 0
 	} else {
 		begin_date = parseInt(begin_timeframe);
 	}
 
-	var end_date = 0;
 	if (typeof end_timeframe == "undefined") {
 		end_date = new Date().getTime();
 	} else {
 		end_date = parseInt(end_timeframe);
 	}
 	
+	make_inverse = ( make_inverse ) ? true : false;
+
+	/* Callbacks */
+	
 	var categories_on_success = function ( context ) {
 
 		var result = context.event.target.result;
+		if( InDB.isEmpty( result ) ) {
+			return;
+		}
 		var item = result.value;
 
-		var favorite_on_success = function ( context_2 ) {
+		var favorites_on_success = function ( context_2 ) {
 
-			var event2 = context_2;
+			var event2 = context_2.event;
 
 			if (typeof event2.target.result !== 'undefined') {
 
+				console.log('FAVORITE!');
+
 				var item_on_success = function ( event3 ) {
-					if (typeof event3.target.result !== 'undefined' && typeof event3.target.result !== 'undefined' && jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0 ) {
+
+					if ( ( make_inverse !== true && typeof event2.target.result !== 'undefined' && typeof event2.target.result !== 'undefined' ) || ( true === make_inverse && typeof event2.target.result !== 'undefined' && typeof event2.target.result !== 'undefined' ) ) {
+						console.log('favorite found, getting raw item');
 						get_item_raw(item.link);
 					}
+
 				};
 				
 				var item_on_error = function ( event3 ) {
@@ -67,31 +80,27 @@ function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe
 				
 				/* Request */
 
-				InDB.trigger( 'InDB_do_get_row', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
+				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
+
 
 			}
 		};
 
-		var favorite_on_error = function ( e ) {
-			if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-				add_item_to_results(item);
-				check_if_item_is_favorited(item.link);
-				check_if_item_is_read(item.link);
-				check_if_item_is_seen(item.link);
-			}
-		};
-		
+		var favorites_on_error = function ( context ) {
+			console.log( "error in get_favorites()", context );
+		}
+
 		/* Request */
 
-		InDB.trigger( 'InDB_do_get_favorites', { 'store': 'favorites', 'key': item.link, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
+		InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item.link, 'on_success': favorites_on_success, 'on_error': favorites_on_error } );
 
 	};
 
 	var categories_on_error = function ( context ) {
-
+		console.log("Error in get favorites", context);
 	};
-
-	InDB.trigger( 'InDB_do_get_row', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'key': item.link, 'on_success': categories_on_success, 'on_error': categories_on_error } );
+	
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': categories_on_success, 'on_error': categories_on_error } );
 
 }
 
@@ -247,7 +256,6 @@ function add_item_as_favorite( item_url ) {
 
 	var data = {
 		"link": item_url,
-		"status": "favorite",
 		"modified": new Date().getTime()
 	};
 
@@ -263,7 +271,7 @@ function add_item_as_favorite( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': favorite_on_success, 'on_error': favorite_on_error  } );
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': favorites_on_success, 'on_error': favorites_on_error  } );
 
 }
 
@@ -296,7 +304,7 @@ function check_if_item_is_favorited_for_overlay( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'indb_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
 
 }
 
@@ -311,7 +319,8 @@ function check_if_item_is_favorited( item_url ) {
 
 	var favorite_on_success = function ( context ) {
 		var item_request = context.event;
-		if (typeof item_request.result != 'undefined') {
+		console.log("CHECKING",item_request);
+		if (typeof item_request.target.result != 'undefined') {
 
 			/* UI */
 
@@ -340,44 +349,68 @@ function check_if_item_is_favorited( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'indb_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
 
 }
 
-
+/* adds item to fav db
+ */
 function add_item_to_favorites_database( item_url, item_slug, item_type ) {
+
+	/* Debug */
+
+	if ( !!Buleys.debug ) {
+		console.log( 'add_item_to_favorite_database()', item_url, item_slug, item_type );
+	}
+
+	/* Action */	
+
 	jQuery(document).trigger('add_item_to_favorites_database');
 
-	new_favorite_transaction();
+	/* Setup */
+
 	var data = {
-		"item_link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
+		"link": item_url,
 		"modified": new Date().getTime()
 	};
-	var add_data_request = Buleys.objectStore.add(data);
-	add_data_request.onsuccess = function ( event ) {
 
-		Buleys.objectId = add_data_request.result;
+	/* Callbacks */
+
+	var add_on_success = function ( context ) {
+	
 	};
-	add_data_request.onerror = function ( e ) {
+
+	var add_on_error = function ( context ) {
 
 	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+
 }
 
 
 function remove_item_from_favorites_database( item_url, item_slug, item_type ) {
+
+	/* Action */
+
 	jQuery(document).trigger('remove_item_from_favorites_database');
 
-	new_favorite_transaction();
-	var request = Buleys.objectStore["delete"](item_url);
-	request.onsuccess = function ( event ) {
+	/* Callbacks */
 
-		delete Buleys.objectId;
+	var on_success = function ( context ) {
+		console.log('Item removed from favorites database', context );	
 	};
-	request.onerror = function (  ) {
 
+	var on_error = function (  ) {
+		console.log('Item was not removed from favorites database', context );	
 	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_delete', { 'store': 'favorites', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
+
 }
 
 
