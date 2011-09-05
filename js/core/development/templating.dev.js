@@ -11,6 +11,12 @@
 
 	});
 
+	function isEmpty( value ) {
+		if( null !== value && "" !== value && "undefined" !== typeof value ) {
+			return false;
+		}
+		return true;
+	}
 	
 	function load_page_title_info( page_info ) {
 		jQuery(document).trigger('load_page_title_info');
@@ -202,4 +208,15 @@
 			jQuery(this).val('');
 			jQuery(this).removeClass('defaulttext');
 		});
+
+
+
+// Cleverness via: http://papermashup.com/read-url-get-variables-withjavascript/
+function get_url_vars() {
+	var vars = {};
+	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+		vars[key] = value;
+	});
+	return vars;
+}
 

@@ -10,3 +10,15 @@
 
 	    return Buleys.store.getItem(get_key);
 	}
+
+function set_local_storage_batch( dictionary ) {
+
+	for( item in dictionary ) {
+		if( dictionary.hasOwnProperty( item ) ) {
+
+			set_local_storage( item, dictionary[ item ] );
+
+		}
+	}
+	console.log( 'set_local_storage_batch', dictionary );
+}

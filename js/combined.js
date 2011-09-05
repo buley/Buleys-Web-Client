@@ -77,11 +77,19 @@ InDB.events.onError = function ( e ) {
 		console.log ( "IndexedDB request errored", e );
 	}
 };
+
 InDB.events.onAbort = function ( e ) {
 	if ( !!InDB.debug ) {
 		console.log ( "IndexedDB request aborted", e );
 	}
 };
+
+InDB.events.onBlocked = function ( e ) {
+	if ( !!InDB.debug ) {
+		console.log ( "IndexedDB request blocked", e );
+	}
+};
+
 /* End Defaults */
 
 /* Begin Onload */
@@ -427,21 +435,17 @@ InDB.stores.create = function ( stores, on_success, on_error, on_abort ) {
 			//TODO: #Cleanup; if/else logic here is a little muddy (why the empty_key var?)
 			var key, autoinc_key, empty_key, unique;
 			if( "undefined" !== typeof options && !InDB.isEmpty( options.key ) ) {
-				console.log('f1');
 				key = options.key;
 				unique = options.unique;
 				autoinc_key = options.incrementing_key;
 				empty_key = InDB.isEmpty( key );
-				console.log('lineup',key,unique,autoinc_key,empty_key);
 			} else {
-				console.log('f2');
 				for( attrib in options ) {
 					// Don't want prototype attributes
 					if( options.hasOwnProperty( attrib ) ) {
 						key = attrib;
 						unique = options[ attrib ];
 						autoinc_key = false;
-						console.log( 'setting key autoinc_key',key,unique,autoinc_key);
 					}
 				}
 			}
@@ -457,7 +461,7 @@ InDB.stores.create = function ( stores, on_success, on_error, on_abort ) {
 			}
 
 			/* Assertions */
-			console.log('blah blah',key);
+
 			InDB.assert( ( empty_key || InDB.isString( key ) ), 'Key needs to be a string' );  
 			InDB.assert( ( InDB.isBoolean( autoinc_key ) ), 'Autoinc_key (whether the key uses a generator) needs to be a boolean' ); 
 
@@ -468,7 +472,7 @@ InDB.stores.create = function ( stores, on_success, on_error, on_abort ) {
 			}
 
 			/* Request */
-			
+				
 			InDB.store.create( store, key, autoinc_key, unique, on_success, on_error, on_abort );
 
 		}
@@ -503,6 +507,7 @@ InDB.bind( 'InDB_do_store_create', function ( event, context ) {
 	var on_success = context.on_success;
 	var on_error = context.on_error;
 	var on_abort = context.on_abort;
+	var on_blocked = context.on_blocked;
 
 	/* Assertions */
 
@@ -515,7 +520,7 @@ InDB.bind( 'InDB_do_store_create', function ( event, context ) {
 
 	/* Request */
 	
-	InDB.stores.create( name, key, autoinc_key, unique, on_success, on_error, on_abort );
+	InDB.store.create( name, key, autoinc_key, unique, on_success, on_error, on_abort, on_blocked );
 
 } );
 
@@ -523,9 +528,11 @@ InDB.bind( 'InDB_do_store_create', function ( event, context ) {
 /* return true if request is successfully requested (no bearing on result)
 /* autoinc_key defaults to false if a key is specified;
    key gets set to "key" and autoincrements when key is not specified */
-InDB.store.create = function ( name, key, autoinc_key, unique, on_success, on_error, on_abort ) {
+InDB.store.create = function ( name, key, autoinc_key, unique, on_success, on_error, on_abort, on_blocked ) {
 	
 	/* Debug */
+	
+	console.log('InDB.store.create!@', name, key, autoinc_key, unique, on_success, on_error, on_abort );
 
 	if( !!InDB.debug ) {
 		console.log ( "InDB.store.create", name, key, autoinc_key, on_success, on_error, on_abort );
@@ -546,7 +553,7 @@ InDB.store.create = function ( name, key, autoinc_key, unique, on_success, on_er
 		return false;
 	}
 
-
+	console.log('r1');
 	var keyPath = {};
 
 	if ( !key ) {
@@ -568,6 +575,9 @@ InDB.store.create = function ( name, key, autoinc_key, unique, on_success, on_er
 	if ( "undefined" === typeof on_abort ) {
 		on_abort = InDB.events.onAbort;
 	}
+	if ( "undefined" === typeof on_blocked ) {
+		on_blocked = InDB.events.onBlocked;
+	}
 	
 	var context =  { "name": name, "keyPath": keyPath, "autoinc_key": autoinc_key };
 	
@@ -578,7 +588,11 @@ InDB.store.create = function ( name, key, autoinc_key, unique, on_success, on_er
 	}
 
 	// Database changes must happen w/in a setVersion transaction
-	var setVersionRequest = InDB.db.setVersion( parseInt( InDB.db.version, 10 ) + 1 );
+	var version = parseInt( InDB.db.version, 10 );
+	version = ( isNaN( version ) ) ? 1 : version + 1;
+	
+	var setVersionRequest = InDB.db.setVersion( version );
+
 	setVersionRequest.onsuccess = function ( event ) {
 		try {
 			//missing autoinc_key as third arg
@@ -598,17 +612,25 @@ InDB.store.create = function ( name, key, autoinc_key, unique, on_success, on_er
 			}
 		}
 	};
+
+	setVersionRequest.onblocked = function ( event ) {
+		context[ 'event' ] = event;
+		on_block( context );
+		InDB.trigger( "InDB_store_created_error", context );
+	};
+
 	setVersionRequest.onerror = function ( event ) {
 		context[ 'event' ] = event;
-		on_error( contet );
+		on_error( context );
 		InDB.trigger( "InDB_store_created_error", context );
-	}
+	};
+
 	setVersionRequest.onabort = function ( event ) {
 		context[ 'event' ] = event;
 		on_abort( context );
 		InDB.trigger( "InDB_store_created_abort", context );
-	}
-	return true;
+	};
+
 }
 
 
@@ -635,8 +657,7 @@ InDB.bind( 'InDB_do_indexes_create', function ( event, context ) {
 	}
 
 	/* Request */
-	console.log('calling indexes create', indexes, on_success, on_error, on_abort );
-	console.log( InDB.indexes );
+	
 	InDB.indexes.create( indexes, on_success, on_error, on_abort );
 
 } );
@@ -733,7 +754,7 @@ InDB.index.create = function ( store, key, name, unique, on_success, on_error, o
 	/* Debug */
 
 	if( !!InDB.debug ) {
-		console.log( 'InDB.index.create', store, key, name, unique, on_complete, on_success, on_abort );
+		console.log( 'InDB.index.create', store, key, name, unique, on_success, on_error, on_abort );
 	}
 
 	/* Assertions */
@@ -774,13 +795,14 @@ InDB.index.create = function ( store, key, name, unique, on_success, on_error, o
 	// Database changes need to happen from w/in a setVersionRequest
 	var version = ( parseInt( InDB.db.version, 10 ) ) ? parseInt( InDB.db.version, 10 ) : 0;
         var setVersionRequest = InDB.db.setVersion( version );
-
+	console.log('index setVersion setup', setVersionRequest, version);
 	/* Request Responses */
 
 	setVersionRequest.onsuccess = function ( event ) {
 		var result = event.target.result;
 		var databaseTransaction = result.objectStore( store );
 		try {
+			console.log('attempting to create using db tx', databaseTransaction);
 			databaseTransaction.createIndex( name, key, { 'unique': unique } );
 			on_success( event );
 		} catch ( error ) {
@@ -832,7 +854,7 @@ InDB.index.delete = function ( store, name, on_success, on_success, on_abort ) {
 	/* Debug */
 
 	if( !!InDB.debug ) {
-		console.log( 'InDB.index.delete', store, name, on_complete, on_success, on_abort );
+		console.log( 'InDB.index.delete', store, name, on_success, on_error, on_abort );
 	}
 
 	/* Assertions */	
@@ -924,7 +946,7 @@ InDB.database.open = function ( name, description, on_success, on_error, on_abor
 
 	/* Context */
 
-	var context = { "name": name, "description": description, "on_complete": on_complete, "on_error": on_error, "on_abort": on_abort };
+	var context = { "name": name, "description": description, "on_success": on_success, "on_error": on_error, "on_abort": on_abort };
 
 	/* Action */
 
@@ -1661,7 +1683,7 @@ InDB.store.clear = function ( store, on_success, on_error, on_abort ) {
 	/* Request Responses */
 
 	request.onsuccess = function ( event ) {	
-		console.log('clearED');
+		
 		/* Context */
 
 		context[ 'event' ] = event;
@@ -1677,7 +1699,7 @@ InDB.store.clear = function ( store, on_success, on_error, on_abort ) {
 	}
 
 	request.onerror = function ( event ) {
-		console.log('erroclear');
+		
 		/* Context */
 
 		context[ 'event' ] = event;
@@ -1693,7 +1715,7 @@ InDB.store.clear = function ( store, on_success, on_error, on_abort ) {
 	}
 
 	request.onabort = function ( event ) {
-		console.log('abortclear');
+		
 		/* Context */
 
 		context[ 'event' ] = event;
@@ -1740,7 +1762,9 @@ InDB.row.put = function ( store, data, key, on_success, on_error, on_abort ) {
 
 	/* Debug */
 	
-	console.log ( 'InDB.row.put', store, data, key, on_success, on_error, on_abort );	
+	if ( !!InDB.debug ) {
+		console.log ( 'InDB.row.put', store, data, key, on_success, on_error, on_abort );	
+	}
 
         /* Assertions */
         
@@ -1854,7 +1878,6 @@ InDB.row.put = function ( store, data, key, on_success, on_error, on_abort ) {
 		/* Debug */
 
 		if ( !!InDB.debug ) {
-			console.log ( error );
 			console.log ( 'errorType', InDB.database.errorType( error.code ) );
 		}
 
@@ -1879,7 +1902,7 @@ InDB.bind( 'InDB_do_cursor_get', function( row_result, context ) {
 	/* Setup */
 
 	var store = context.store; // Required
-	var index = context.store; // Optional
+	var index = context.index; // Optional
 	var keyRange = context.keyRange; // Required
 	var on_success = context.on_success; // Optional; No default
 	var on_error = context.on_error; // Optional; No default
@@ -1910,8 +1933,9 @@ InDB.bind( 'InDB_do_cursor_get', function( row_result, context ) {
 InDB.cursor.get = function ( store, index, keyRange, on_success, on_error, on_abort ) {
 
 	/* Debug */
-	
-	console.log ( 'InDB.cursor.get', store, index, keyRange, on_success, on_error, on_abort );
+	if ( !!InDB.debug ) {	
+		console.log ( 'InDB.cursor.get', store, index, keyRange, on_success, on_error, on_abort );
+	}
 
 	/* Assertions */
 
@@ -1942,123 +1966,153 @@ InDB.cursor.get = function ( store, index, keyRange, on_success, on_error, on_ab
 	/* Context */
 
 	var context =  { "store": store, "index": index, "keyRange": keyRange, "on_success": on_success, "on_error": on_error, "on_abort": on_abort };
+
+	/* Debug */
+	
+	if( !!Buleys.debug ) {
+		console.log( 'indb.js > InDB.cursor.get() > Doing InDB_cursor_get', context );
+	}	
 	
 	/* Action */
 
 	InDB.trigger( 'InDB_cursor_get', context );
-
-	/* Transaction */
-
-	var transaction = InDB.transaction.create ( store, InDB.transaction.read_write() );
-
-	/* Debug */
-
-	if ( !!InDB.debug ) {
-		console.log ( 'InDB.cursor.get transaction', transaction, index, typeof index );
-	}
-
-	/* Request */
-
-	var request;
 	
-	/* Optional Index */
+	try {
 
-	if ( !InDB.isEmpty( index ) ) {
+		/* Transaction */
+
+		var transaction = InDB.transaction.create ( store, InDB.transaction.read_write() );
 
 		/* Debug */
 
 		if ( !!InDB.debug ) {
-			console.log ( 'transaction_index.openCursor', transaction, index, keyRange );
+			console.log ( 'InDB.cursor.get transaction', transaction, index, typeof index );
 		}
-
-		// Using index
-		var transaction_index = transaction.index( index );
 
 		/* Request */
 
-		request = transaction_index.openCursor( keyRange );
+		var request;
+		
+		/* Optional Index */
 
-	} else {
+		if ( !InDB.isEmpty( index ) ) {
 
-		/* Debug */
+			/* Debug */
 
-		if ( !!InDB.debug ) {
-			console.log ( 'transaction.openCursor', transaction, keyRange );
+			if ( !!InDB.debug ) {
+				console.log ( 'transaction_index.openCursor (index)', transaction, index, keyRange );
+			}
+
+			// Using index
+			var transaction_index = transaction.index( index );
+
+			/* Request */
+
+			request = transaction_index.openCursor( keyRange );
+
+		} else {
+
+			/* Debug */
+
+			if ( !!InDB.debug ) {
+				console.log ( 'transaction.openCursor (no index)', transaction, keyRange );
+			}
+
+			// No index
+
+			/* Request */
+
+			request = transaction.openCursor( keyRange );
+
 		}
 
-		// No index
+		/* Request Responses */
 
-		/* Request */
+		request.onsuccess = function ( event ) {	
 
-		request = transaction.openCursor( keyRange );
+			/* Debug */
 
-	}
+			if ( !!InDB.debug ) {
+				console.log ( 'cursor.get result', InDB.cursor.result( event ) );
+				console.log ( 'cursor.value value', InDB.cursor.value( event ) );
+			}
 
-	/* Request Responses */
+			/* Context */
 
-	request.onsuccess = function ( event ) {	
+			context[ 'event' ] = event;
 
-		/* Debug */
+			/* Callback */
 
-		if ( !!InDB.debug ) {
-			console.log ( 'cursor.get result', InDB.cursor.result( event ) );
-			console.log ( 'cursor.value value', InDB.cursor.value( event ) );
+			on_success( context ); 
+
+			/* Action */
+
+			InDB.trigger( 'InDB_cursor_row_get_success', context );
+
+			/* Result */
+			
+			var result = event.target.result;
+
+			if ( !InDB.isEmpty( result ) && "undefined" !== typeof result.value ) {
+				// Move cursor to next key
+				result[ 'continue' ]();
+			}
 		}
 
-		/* Context */
+		request.onerror = function ( event ) {	
 
-		context[ 'event' ] = event;
+			/* Context */
 
-		/* Callback */
+			context[ 'event' ] = event;
 
-		on_success( context ); 
+			/* Callback */
 
-		/* Action */
+			on_error( context );
 
-		InDB.trigger( 'InDB_cursor_row_get_success', context );
+			/* Debug */
 
-		/* Result */
-		console.log('InDB_cursor_row_get_success', context );
-		var result = event.target.result;
+			if ( !!InDB.debug ) {
+				console.log ( 'Doing InDB_cursor_row_get_error', context );
+			}
 
-		if ( !InDB.isEmpty( result ) && "undefined" !== typeof result.value ) {
-			// Move cursor to next key
-			result[ 'continue' ]();
+			/* Action */
+
+			InDB.trigger( 'InDB_cursor_row_get_error', context );
+
 		}
-	}
 
-	request.onerror = function ( event ) {	
+		request.onabort = function ( event ) {	
 
-		/* Context */
+			/* Context */
 
-		context[ 'event' ] = event;
+			context[ 'event' ] = event;
 
-		/* Callback */
+			/* Callback */
 
+			on_abort( event );
+			
+			/* Debug */
+
+			if ( !!InDB.debug ) {
+				console.log ( 'Doing InDB_cursor_row_get_abort', context );
+			}
+
+			/* Action */
+
+			InDB.trigger( 'InDB_cursor_row_get_abort', context );
+
+		}
+
+	} catch ( error ) {
+
+		context[ 'error' ] = error;
 		on_error( context );
 
-		/* Action */
-
-		InDB.trigger( 'InDB_cursor_row_get_error', context );
-
-	}
-
-	request.onabort = function ( event ) {	
-
-		/* Context */
-
-		context[ 'event' ] = event;
-
-		/* Callback */
-
-		on_abort( event );
-		
-		/* Action */
-
-		InDB.trigger( 'InDB_cursor_row_get_abort', context );
+		if( !!Buleys.debug ) {
+			console.log('Error in cursor get row', error );
+		}
 
 	}
-
 }
 
 //context.store, context.index, context.keyRange (e.g. InDB.range.left_open( "0" ) ), context.on_success, context.on_error, context.on_abort
@@ -2470,8 +2524,8 @@ var Buleys = {};
 /* IndexedDB */
 Buleys.db = {};
 Buleys.version = 7;
-Buleys.database_name = "Buleys-320";
-Buleys.database_description = "www.buleys.com";
+Buleys.database_name = "Buleys-324";
+Buleys.database_description = "Database for www.buleys.com";
 Buleys.on_complete = function( e ) { console.log( "indexeddb request completed" ); console.log( e ); }
 Buleys.on_error = function( e ) { console.log( "indexeddb request errored" ); console.log( e ); }
 Buleys.on_abort = function( e ) { console.log( "indexeddb request aborted" ); console.log( e ); }
@@ -2489,7 +2543,7 @@ Buleys.view.scripts = [];
 Buleys.loader = {};
 Buleys.loader.loaded_scripts = 0;
 Buleys.loader.total_scripts = 0;
-Buleys.debug = {};
+Buleys.debug = false;
 Buleys.debug.database = false;
 Buleys.debug.ajax = false;
 Buleys.debug.items = false;
@@ -2533,15 +2587,14 @@ $(document).ready(function() {
 	InDB.trigger( 'InDB_do_database_load', { 'name': Buleys.database_name, 'description': Buleys.database_description } ) ;
 });
 
-jQuery( document ).bind( 'InDB_database_load_success', function( event, parameters ) {
+jQuery( InDB ).bind( 'InDB_database_load_success', function( event, parameters ) {
 	console.log( 'InDB_database_load_success', parameters );
 	Buleys.session.database_is_open = true;
-	load_current_page();
-	reload_results();
+	//load_current_page();
 });
 
-jQuery( document ).bind( 'InDB_database_created', function( event, parameters ) {
-	install_stores();
+jQuery( InDB ).bind( 'InDB_database_created', function( event, parameters ) {
+	Buleys.install_stores();
 });
 
 Buleys.install_stores = function() {
@@ -2603,7 +2656,6 @@ Buleys.install_stores = function() {
 
 	var favorites_idxs = {
 		'favorites': {
-			'topic_slug': { 'topic_slug': false },
 			'topic_type': { 'topic_type': false },
 			'modified': { 'modified': false }
 		}
@@ -2741,7 +2793,7 @@ Buleys.install_stores = function() {
 
 	// TODO: Why is last_updated not modified like the rest?
 	var topics_idxs = {
-		'status': {
+		'topics': {
 			'slug': { 'topic_slug': false },
 			'type': { 'topic_type': false },
 			'last_updated': { 'modified': false }
@@ -2787,7 +2839,7 @@ Buleys.install_stores = function() {
 	};	
 
 	var votes_idxs = {
-		'deleted': {
+		'votes': {
 			'vote_value': { 'topic_type': false },
 			'modified': { 'modified': false }
 		}
@@ -2930,7 +2982,7 @@ Buleys.install_indexes = function() {
 
 	// TODO: Why is last_updated not modified like the rest?
 	var topics_idxs = {
-		'status': {
+		'topics': {
 			'slug': { 'topic_slug': false },
 			'type': { 'topic_type': false },
 			'last_updated': { 'modified': false }
@@ -2960,7 +3012,7 @@ Buleys.install_indexes = function() {
 	/* Votes */
 
 	var votes_idxs = {
-		'deleted': {
+		'votes': {
 			'vote_value': { 'topic_type': false },
 			'modified': { 'modified': false }
 		}
@@ -3069,69 +3121,90 @@ function get_archived( type_filter, slug_filter, begin_timeframe, end_timeframe,
 		make_inverse = false;
 	}
 
+	/* Setup */
+
 	var begin_date = 0;
+	var end_date = 0;
+
 	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
 		begin_date = 0
 	} else {
 		begin_date = parseInt(begin_timeframe);
 	}
 
-	var end_date = 0;
 	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
 		end_date = new Date().getTime();
 	} else {
 		end_date = parseInt(end_timeframe);
 	}
 
-	categories_on_success = function ( context_1 ) {
+	/* Callbacks */
 
-		var result = context_1.target.result;
-		var item = result.value;
-		if( !item ) {
+	var categories_on_success = function ( context_1 ) {
+
+		var result = context_1.event.target.result;
+		if( !result ) {
 			return;
 		}
+		var item = result.value;
+		console.log('categories_on_success link', item.link );
 
-		var categories_on_success = function ( context_2 ) {
+
+		var categories_on_success_2 = function ( context_2 ) {
 
 			var event1 = context_2.event;
-
 			if ( typeof event1.target.result !== 'undefined' && make_inverse !== true ) {
-				new_item_transaction();
+				
 				var item_link = event1.target.result.link;
-				var item_request = Buleys.objectStore.get( item_link );
-				items_on_success = function ( context_3 ) {
-					var event2 = context.event;
+				console.log('doing row get on', item_link);
+
+				var items_on_success = function ( context_3 ) {
+					var event2 = context_3.event;
 					if ( typeof event2.target.result !== 'undefined' && typeof event2.target.result.link !== 'undefined' && jQuery( "#" + event2.target.result.link.replace(/[^a-zA-Z0-9-_]+/g, "") ).length <= 0 ) {
+						console.log('getting item raw', event2.target.result.link );
 						get_item_raw( event2.target.result.link );
 					}
+				};
+				
+				var items_on_error = function( context_3 ) {
+					console.log('context3',context_3);	
 				};
 
 				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_link, 'on_success': items_on_success, 'on_error': items_on_error } );
 
 			} else if ( make_inverse == true ) {
 
-				items_on_success = function ( context_3 ) {
+				var items_on_success = function ( context_3 ) {
 					//TODO: rename item_request var
-					var item_request = context_3.event;
+					var item_request = context_3.event.target;
+
 					if (typeof item_request.result !== 'undefined' && item_request.result !== 'undefined' && jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0 ) {
 
+						console.log('getting item raw_2', item_request.result.ilnk );
 						get_item_raw(item_request.result.link);
 
 					}
 
 				};
 
-				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_link, 'on_success': items_on_success, 'on_error': items_on_error } );
-			}	
+				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': items_on_success, 'on_error': items_on_error } );
+			}
 
 		};
+
+		var categories_on_error_2 = function(event) {
+			console.log('category error 2',event );
+		};
+
+		InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item.link, 'on_success': categories_on_success_2, 'on_error': categories_on_error_2 } );
+
 	};
 	
 	var categories_on_error = function ( event ) {
 
 	};
 
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'items', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': items_on_success, 'on_error': items_on_error } );
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': categories_on_success, 'on_error': categories_on_error } );
 
 }
 
@@ -3158,7 +3231,7 @@ function archive_item( item_url ) {
 
 	/* Request */
 	
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'archive', 'data': data, 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'archive', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
 
 }
 
@@ -3251,63 +3324,64 @@ function remove_item_from_archives_database( item_url, item_slug, item_type ) {
 }
 
 function get_signin(  ) {
+
 	jQuery(document).trigger('get_signin');
 
-    var session_id = get_local_storage("session_id");
-    if (typeof session_id == "undefined" || session_id == null || session_id == "") {
-        jQuery("#main").append('<div id="login_prompt"><div id="login_form"><input id="email" type="email" placeholder="Email" name="email" class="defaulttext" required/><br/><input id="password"  type="password" name="password" placeholder="Password" /><br/><br/><a href="#" id="doregistration" class="registrationlink">Register</a> or <a href="#" id="dologinsubmit" class="submitloginform">Login</a></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a></div></div></div>');
-    } else {
-        jQuery("#main").append("<div id='login_prompt'>Already logged in with session id <code>" + session_id + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");
-    }
-    Buleys.view.loaded = "signin";
+	var session_id = get_local_storage("session_id");
+	if (typeof session_id == "undefined" || session_id == null || session_id == "") {
+		jQuery("#main").append('<div id="login_prompt"><div id="login_form"><input id="email" type="email" placeholder="Email" name="email" class="defaulttext" required/><br/><input id="password"  type="password" name="password" placeholder="Password" /><br/><br/><a href="#" id="doregistration" class="registrationlink">Register</a> or <a href="#" id="dologinsubmit" class="submitloginform">Login</a></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a></div></div></div>');
+	} else {
+		jQuery("#main").append("<div id='login_prompt'>Already logged in with session id <code>" + session_id + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");
+	}
+	Buleys.view.loaded = "signin";
 }
 
 function get_registration(  ) {
 	jQuery(document).trigger('get_registration');
 
-    console.log("get_registration(): ");
+	console.log("get_registration(): ");
 }
 
 function get_confirmation(  ) {
 	jQuery(document).trigger('get_confirmation');
 
-    console.log("get_confirmation(): ");
+	console.log("get_confirmation(): ");
 }	
 	
 function submit_registration(  ) {
 	jQuery(document).trigger('submit_registration');
 
-    if ($('#password_once').val() == $('#password_twice').val()) {
-        var password = $('#password_once').val();
-        var first_name = $('#first_name').val();
-        var display_name = $('#display_name').val();
-        var last_name = $('#last_name').val();
-        var address_1 = $('#address_1').val();
-        var address_2 = $('#address_2').val();
-        var city = $('#city').val();
-        var state = $('#state').val();
-        var zip = $('#zip').val();
-        var country = $('#country').val();
-        request_registration(password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country);
-    } else {
-        alert('Passwords don\'t match');
-    }
+	if ($('#password_once').val() == $('#password_twice').val()) {
+		var password = $('#password_once').val();
+		var first_name = $('#first_name').val();
+		var display_name = $('#display_name').val();
+		var last_name = $('#last_name').val();
+		var address_1 = $('#address_1').val();
+		var address_2 = $('#address_2').val();
+		var city = $('#city').val();
+		var state = $('#state').val();
+		var zip = $('#zip').val();
+		var country = $('#country').val();
+		request_registration(password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country);
+	} else {
+		alert('Passwords don\'t match');
+	}
 }
 
 function account_logout(  ) {
 	jQuery(document).trigger('account_logout');
 
-    data_to_send = {
-        "method": "logout"
-    };
-    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+	data_to_send = {
+		"method": "logout"
+	};
+	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
 
-        if (typeof(data.result) !== 'undefined') {
-            delete Buleys.store["session_id"];
-            jQuery("#login").fadeIn('fast');
-            jQuery("#logout").fadeOut('fast');
-        }
-    }, "json");
+		if (typeof(data.result) !== 'undefined') {
+			delete Buleys.store["session_id"];
+			jQuery("#login").fadeIn('fast');
+			jQuery("#logout").fadeOut('fast');
+		}
+	}, "json");
 }
 
 
@@ -3317,32 +3391,32 @@ function account_logout(  ) {
 function request_login( email, password ) {
 	jQuery(document).trigger('request_login');
 
-    password = md5(password);
-    var data_to_send;
-    data_to_send = {
-        "method": "request_login",
-        "secret": password,
-        "email": email,
-        "token": session_token
-    };
-    $.post("http://api.buleys.com/login", data_to_send, function ( data ) {
+	password = md5(password);
+	var data_to_send;
+	data_to_send = {
+		"method": "request_login",
+		"secret": password,
+		"email": email,
+		"token": session_token
+	};
+	$.post("http://api.buleys.com/login", data_to_send, function ( data ) {
 
-        if (data != null && typeof data.result !== 'undefined') {
-            if (data.result.toLowerCase() == "failure") {
-                console.log('fail');
-                send_to_console(data.message);
-            } else if (data.result.toLowerCase() == "success") {
-                set_local_storage("session_id", data.session_id);
-                send_to_console(data.message);
-                jQuery("#login_prompt").html('');
-                jQuery("#login_prompt").append("Just logged in with session id <code>" + get_local_storage("session_id") + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.");
+		if (data != null && typeof data.result !== 'undefined') {
+			if (data.result.toLowerCase() == "failure") {
+				console.log('fail');
+				send_to_console(data.message);
+			} else if (data.result.toLowerCase() == "success") {
+				set_local_storage("session_id", data.session_id);
+				send_to_console(data.message);
+				jQuery("#login_prompt").html('');
+				jQuery("#login_prompt").append("Just logged in with session id <code>" + get_local_storage("session_id") + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.");
 
 
-            }
-        } else {
-            console.log("request_login(): no data");
-        }
-    }, "json");
+			}
+		} else {
+			console.log("request_login(): no data");
+		}
+	}, "json");
 
 
 }
@@ -3352,42 +3426,42 @@ function request_registration( password, display_name, first_name, last_name, ad
 	jQuery(document).trigger('request_registration');
 
 
-    password = md5(password);
+	password = md5(password);
 
-    data_to_send = {
-        "method": "request_registration",
-        "secret": password,
-        "display_name": display_name,
-        "first_name": first_name,
-        "last_name": last_name,
-        "address_1": address_1,
-        "address_2": address_2,
-        "city": city,
-        "state": state,
-        "zip": zip,
-        "country": country
-    };
+	data_to_send = {
+		"method": "request_registration",
+		"secret": password,
+		"display_name": display_name,
+		"first_name": first_name,
+		"last_name": last_name,
+		"address_1": address_1,
+		"address_2": address_2,
+		"city": city,
+		"state": state,
+		"zip": zip,
+		"country": country
+	};
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
 
-        if (typeof(data.request_status) !== 'undefined') {
-            if (data.result.toLowerCase() == "failure") {
-                if (typeof(data.message) !== 'undefined') {
-                    jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
-                } else {
-                    jQuery("#login_status_pane").prepend('There was an error. Your account is not confirmed.');
-                }
-                close_button(jQuery("#login_status_pane"));
-            } else if (data.result.toLowerCase() == "success") {
-                if (typeof(data.message) !== 'undefined') {
-                    jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
-                } else {
-                    jQuery("#login_status_pane").html('Your account is confirmed.');
-                }
-                close_button(jQuery("#login_status_pane"));
-            }
-        }
-    }, "json");
+		if (typeof(data.request_status) !== 'undefined') {
+			if (data.result.toLowerCase() == "failure") {
+				if (typeof(data.message) !== 'undefined') {
+					jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
+				} else {
+					jQuery("#login_status_pane").prepend('There was an error. Your account is not confirmed.');
+				}
+				close_button(jQuery("#login_status_pane"));
+			} else if (data.result.toLowerCase() == "success") {
+				if (typeof(data.message) !== 'undefined') {
+					jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
+				} else {
+					jQuery("#login_status_pane").html('Your account is confirmed.');
+				}
+				close_button(jQuery("#login_status_pane"));
+			}
+		}
+	}, "json");
 
 
 }
@@ -3396,49 +3470,49 @@ function confirm_registration( secret ) {
 	jQuery(document).trigger('confirm_registration');
 
 
-    data_to_send = {
-        "method": "confirm_account",
-        "secret": secret
-    };
+	data_to_send = {
+		"method": "confirm_account",
+		"secret": secret
+	};
 
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
 
-        if (typeof(data.request_status) !== 'undefined') {
-            if (data.result.toLowerCase() == "failure") {
-                jQuery("#login_status_pane").html('');
+		if (typeof(data.request_status) !== 'undefined') {
+			if (data.result.toLowerCase() == "failure") {
+				jQuery("#login_status_pane").html('');
 
 
-                if (typeof(data.reason) !== 'undefined') {
-                    jQuery("#login_status_pane").prepend("<p><small>" + data.reason + "<small></p>");
-                }
+				if (typeof(data.reason) !== 'undefined') {
+					jQuery("#login_status_pane").prepend("<p><small>" + data.reason + "<small></p>");
+				}
 
-                if (typeof(data.message) !== 'undefined') {
-                    jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
-                } else {
-                    jQuery("#login_status_pane").prepend('There was an error.');
-                }
+				if (typeof(data.message) !== 'undefined') {
+					jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
+				} else {
+					jQuery("#login_status_pane").prepend('There was an error.');
+				}
 
-            } else if (data.result.toLowerCase() == "success") {
+			} else if (data.result.toLowerCase() == "success") {
 
-                if (typeof(data.message) !== 'undefined') {
-                    jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
-                } else {
-                    jQuery("#login_status_pane").html('Your account is confirmed and logged in.');
-                }
+				if (typeof(data.message) !== 'undefined') {
+					jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
+				} else {
+					jQuery("#login_status_pane").html('Your account is confirmed and logged in.');
+				}
 /*
 				
 				*/
-                jQuery("#login_status_pane").append('<p><strong>Password</strong>:<input id="password_once"type="password"name="password"/><br/><strong>Password</strong>(again):<input id="password_twice"type="password"name="password_confirm"/></p><p><strong>Public name</strong>:<input id="display_name"type="text"name="display_name"/></p><p id="registration_profile_info"><strong>First Name</strong>: <input id="first_name"type="text"name="first_name"  size="20"/><br/><strong>Last Name</strong>: <input id="last_name"type="text"name="last_name"  size="20"/><br/><strong>Address 1</strong>:<input id="address_1"type="text"name="address_1"/><br/><strong>Apt. #</strong> (optional): <input id="address_2"type="text"name="address_2"/><br/><strong>City</strong>: <input id="city"type="text" name="city" size="20"/><br/><strong>State</strong>: <select id="state" name="state"><option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option><option value="DC">DC</option><option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option><option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option><option value="WI">WI</option><option value="WY">WY</option></select>&nbsp;&nbsp;&nbsp;<strong>Zip</strong>: <input id="zip"type="text"name="zip" size="10"/><br/><strong>Country</strong>: <select id="country" name="country" size="1"><option value="AF">Afghanistan</option><option value="AX">Axland Islands</option><option value="AL">Albania</option><option value="DZ">Algeria</option><option value="AS">American Samoa</option><option value="AD">Andorra</option><option value="AO">Angola</option><option value="AI">Anguilla</option><option value="AQ">Antarctica</option><option value="AG">Antigua And Barbuda</option><option value="AR">Argentina</option><option value="AM">Armenia</option><option value="AW">Aruba</option><option value="AU">Australia</option><option value="AT">Austria</option><option value="AZ">Azerbaijan</option><option value="BS">Bahamas</option><option value="BH">Bahrain</option><option value="BD">Bangladesh</option><option value="BB">Barbados</option><option value="BY">Belarus</option><option value="BE">Belgium</option><option value="BZ">Belize</option><option value="BJ">Benin</option><option value="BM">Bermuda</option><option value="BT">Bhutan</option><option value="BO">Bolivia</option><option value="BA">Bosnia And Herzegovina</option><option value="BW">Botswana</option><option value="BV">Bouvet Island</option><option value="BR">Brazil</option><option value="IO">British Indian Ocean Territory</option><option value="BN">Brunei Darussalam</option><option value="BG">Bulgaria</option><option value="BF">Burkina Faso</option><option value="BI">Burundi</option><option value="KH">Cambodia</option><option value="CM">Cameroon</option><option value="CA">Canada</option><option value="CV">Cape Verde</option><option value="KY">Cayman Islands</option><option value="CF">Central African Republic</option><option value="TD">Chad</option><option value="CL">Chile</option><option value="CN">China</option><option value="CX">Christmas Island</option><option value="CC">Cocos (Keeling) Islands</option><option value="CO">Colombia</option><option value="KM">Comoros</option><option value="CG">Congo</option><option value="CD">Congo, The Democratic Republic Of The</option><option value="CK">Cook Islands</option><option value="CR">Costa Rica</option><option value="CI">Cote DIvoire</option><option value="HR">Croatia</option><option value="CU">Cuba</option><option value="CY">Cyprus</option><option value="CZ">Czech Republic</option><option value="DK">Denmark</option><option value="DJ">Djibouti</option><option value="DM">Dominica</option><option value="DO">Dominican Republic</option><option value="EC">Ecuador</option><option value="EG">Egypt</option><option value="SV">El Salvador</option><option value="GQ">Equatorial Guinea</option><option value="ER">Eritrea</option><option value="EE">Estonia</option><option value="ET">Ethiopia</option><option value="FK">Falkland Islands (Malvinas)</option><option value="FO">Faroe Islands</option><option value="FJ">Fiji</option><option value="FI">Finland</option><option value="FR">France</option><option value="GF">French Guiana</option><option value="PF">French Polynesia</option><option value="TF">French Southern Territories</option><option value="GA">Gabon</option><option value="GM">Gambia</option><option value="GE">Georgia</option><option value="DE">Germany</option><option value="GH">Ghana</option><option value="GI">Gibraltar</option><option value="GR">Greece</option><option value="GL">Greenland</option><option value="GD">Grenada</option><option value="GP">Guadeloupe</option><option value="GU">Guam</option><option value="GT">Guatemala</option><option value=" Gg">Guernsey</option><option value="GN">Guinea</option><option value="GW">Guinea-Bissau</option><option value="GY">Guyana</option><option value="HT">Haiti</option><option value="HM">Heard Island And Mcdonald Islands</option><option value="VA">Holy See (Vatican City State)</option><option value="HN">Honduras</option><option value="HK">Hong Kong</option><option value="HU">Hungary</option><option value="IS">Iceland</option><option value="IN">India</option><option value="ID">Indonesia</option><option value="IR">Iran, Islamic Republic Of</option><option value="IQ">Iraq</option><option value="IE">Ireland</option><option value="IM">Isle Of Man</option><option value="IL">Israel</option><option value="IT">Italy</option><option value="JM">Jamaica</option><option value="JP">Japan</option><option value="JE">Jersey</option><option value="JO">Jordan</option><option value="KZ">Kazakhstan</option><option value="KE">Kenya</option><option value="KI">Kiribati</option><option value="KP">Korea, Democratic People\'s Republic Of</option><option value="KR">Korea, Republic Of</option><option value="KW">Kuwait</option><option value="KG">Kyrgyzstan</option><option value="LA">Lao People\'s Democratic Republic</option><option value="LV">Latvia</option><option value="LB">Lebanon</option><option value="LS">Lesotho</option><option value="LR">Liberia</option><option value="LY">Libyan Arab Jamahiriya</option><option value="LI">Liechtenstein</option><option value="LT">Lithuania</option><option value="LU">Luxembourg</option><option value="MO">Macao</option><option value="MK">Macedonia, The Former Yugoslav Republic Of</option><option value="MG">Madagascar</option><option value="MW">Malawi</option><option value="MY">Malaysia</option><option value="MV">Maldives</option><option value="ML">Mali</option><option value="MT">Malta</option><option value="MH">Marshall Islands</option><option value="MQ">Martinique</option><option value="MR">Mauritania</option><option value="MU">Mauritius</option><option value="YT">Mayotte</option><option value="MX">Mexico</option><option value="FM">Micronesia, Federated States Of</option><option value="MD">Moldova, Republic Of</option><option value="MC">Monaco</option><option value="MN">Mongolia</option><option value="MS">Montserrat</option><option value="MA">Morocco</option><option value="MZ">Mozambique</option><option value="MM">Myanmar</option><option value="NA">Namibia</option><option value="NR">Nauru</option><option value="NP">Nepal</option><option value="NL">Netherlands</option><option value="AN">Netherlands Antilles</option><option value="NC">New Caledonia</option><option value="NZ">New Zealand</option><option value="NI">Nicaragua</option><option value="NE">Niger</option><option value="NG">Nigeria</option><option value="NU">Niue</option><option value="NF">Norfolk Island</option><option value="MP">Northern Mariana Islands</option><option value="NO">Norway</option><option value="OM">Oman</option><option value="PK">Pakistan</option><option value="PW">Palau</option><option value="PS">Palestinian Territory, Occupied</option><option value="PA">Panama</option><option value="PG">Papua New Guinea</option><option value="PY">Paraguay</option><option value="PE">Peru</option><option value="PH">Philippines</option><option value="PN">Pitcairn</option><option value="PL">Poland</option><option value="PT">Portugal</option><option value="PR">Puerto Rico</option><option value="QA">Qatar</option><option value="RE">Reunion</option><option value="RO">Romania</option><option value="RU">Russian Federation</option><option value="RW">Rwanda</option><option value="SH">Saint Helena</option><option value="KN">Saint Kitts And Nevis</option><option value="LC">Saint Lucia</option><option value="PM">Saint Pierre And Miquelon</option><option value="VC">Saint Vincent And The Grenadines</option><option value="WS">Samoa</option><option value="SM">San Marino</option><option value="ST">Sao Tome And Principe</option><option value="SA">Saudi Arabia</option><option value="SN">Senegal</option><option value="CS">Serbia And Montenegro</option><option value="SC">Seychelles</option><option value="SL">Sierra Leone</option><option value="SG">Singapore</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option><option value="SB">Solomon Islands</option><option value="SO">Somalia</option><option value="ZA">South Africa</option><option value="GS">South Georgia And The South Sandwich Islands</option><option value="ES">Spain</option><option value="LK">Sri Lanka</option><option value="SD">Sudan</option><option value="SR">Suriname</option><option value="SJ">Svalbard And Jan Mayen</option><option value="SZ">Swaziland</option><option value="SE">Sweden</option><option value="CH">Switzerland</option><option value="SY">Syrian Arab Republic</option><option value="TW">Taiwan, Province Of China</option><option value="TJ">Tajikistan</option><option value="TZ">Tanzania, United Republic Of</option><option value="TH">Thailand</option><option value="TL">Timor-Leste</option><option value="TG">Togo</option><option value="TK">Tokelau</option><option value="TO">Tonga</option><option value="TT">Trinidad And Tobago</option><option value="TN">Tunisia</option><option value="TR">Turkey</option><option value="TM">Turkmenistan</option><option value="TC">Turks And Caicos Islands</option><option value="TV">Tuvalu</option><option value="UG">Uganda</option><option value="UA">Ukraine</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US" selected>United States</option><option value="UM">United States Minor Outlying Islands</option><option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option><option value="VU">Vanuatu</option><option value="VE">Venezuela</option><option value="VN">Viet Nam</option><option value="VG">Virgin Islands, British</option><option value="VI">Virgin Islands, U.S.</option><option value="WF">Wallis And Futuna</option><option value="EH">Western Sahara</option><option value="YE">Yemen</option><option value="ZM">Zambia</option><option value="ZW">Zimbabwe</option></select><br/></p>');
+				jQuery("#login_status_pane").append('<p><strong>Password</strong>:<input id="password_once"type="password"name="password"/><br/><strong>Password</strong>(again):<input id="password_twice"type="password"name="password_confirm"/></p><p><strong>Public name</strong>:<input id="display_name"type="text"name="display_name"/></p><p id="registration_profile_info"><strong>First Name</strong>: <input id="first_name"type="text"name="first_name"  size="20"/><br/><strong>Last Name</strong>: <input id="last_name"type="text"name="last_name"  size="20"/><br/><strong>Address 1</strong>:<input id="address_1"type="text"name="address_1"/><br/><strong>Apt. #</strong> (optional): <input id="address_2"type="text"name="address_2"/><br/><strong>City</strong>: <input id="city"type="text" name="city" size="20"/><br/><strong>State</strong>: <select id="state" name="state"><option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option><option value="DC">DC</option><option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option><option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option><option value="WI">WI</option><option value="WY">WY</option></select>&nbsp;&nbsp;&nbsp;<strong>Zip</strong>: <input id="zip"type="text"name="zip" size="10"/><br/><strong>Country</strong>: <select id="country" name="country" size="1"><option value="AF">Afghanistan</option><option value="AX">Axland Islands</option><option value="AL">Albania</option><option value="DZ">Algeria</option><option value="AS">American Samoa</option><option value="AD">Andorra</option><option value="AO">Angola</option><option value="AI">Anguilla</option><option value="AQ">Antarctica</option><option value="AG">Antigua And Barbuda</option><option value="AR">Argentina</option><option value="AM">Armenia</option><option value="AW">Aruba</option><option value="AU">Australia</option><option value="AT">Austria</option><option value="AZ">Azerbaijan</option><option value="BS">Bahamas</option><option value="BH">Bahrain</option><option value="BD">Bangladesh</option><option value="BB">Barbados</option><option value="BY">Belarus</option><option value="BE">Belgium</option><option value="BZ">Belize</option><option value="BJ">Benin</option><option value="BM">Bermuda</option><option value="BT">Bhutan</option><option value="BO">Bolivia</option><option value="BA">Bosnia And Herzegovina</option><option value="BW">Botswana</option><option value="BV">Bouvet Island</option><option value="BR">Brazil</option><option value="IO">British Indian Ocean Territory</option><option value="BN">Brunei Darussalam</option><option value="BG">Bulgaria</option><option value="BF">Burkina Faso</option><option value="BI">Burundi</option><option value="KH">Cambodia</option><option value="CM">Cameroon</option><option value="CA">Canada</option><option value="CV">Cape Verde</option><option value="KY">Cayman Islands</option><option value="CF">Central African Republic</option><option value="TD">Chad</option><option value="CL">Chile</option><option value="CN">China</option><option value="CX">Christmas Island</option><option value="CC">Cocos (Keeling) Islands</option><option value="CO">Colombia</option><option value="KM">Comoros</option><option value="CG">Congo</option><option value="CD">Congo, The Democratic Republic Of The</option><option value="CK">Cook Islands</option><option value="CR">Costa Rica</option><option value="CI">Cote DIvoire</option><option value="HR">Croatia</option><option value="CU">Cuba</option><option value="CY">Cyprus</option><option value="CZ">Czech Republic</option><option value="DK">Denmark</option><option value="DJ">Djibouti</option><option value="DM">Dominica</option><option value="DO">Dominican Republic</option><option value="EC">Ecuador</option><option value="EG">Egypt</option><option value="SV">El Salvador</option><option value="GQ">Equatorial Guinea</option><option value="ER">Eritrea</option><option value="EE">Estonia</option><option value="ET">Ethiopia</option><option value="FK">Falkland Islands (Malvinas)</option><option value="FO">Faroe Islands</option><option value="FJ">Fiji</option><option value="FI">Finland</option><option value="FR">France</option><option value="GF">French Guiana</option><option value="PF">French Polynesia</option><option value="TF">French Southern Territories</option><option value="GA">Gabon</option><option value="GM">Gambia</option><option value="GE">Georgia</option><option value="DE">Germany</option><option value="GH">Ghana</option><option value="GI">Gibraltar</option><option value="GR">Greece</option><option value="GL">Greenland</option><option value="GD">Grenada</option><option value="GP">Guadeloupe</option><option value="GU">Guam</option><option value="GT">Guatemala</option><option value=" Gg">Guernsey</option><option value="GN">Guinea</option><option value="GW">Guinea-Bissau</option><option value="GY">Guyana</option><option value="HT">Haiti</option><option value="HM">Heard Island And Mcdonald Islands</option><option value="VA">Holy See (Vatican City State)</option><option value="HN">Honduras</option><option value="HK">Hong Kong</option><option value="HU">Hungary</option><option value="IS">Iceland</option><option value="IN">India</option><option value="ID">Indonesia</option><option value="IR">Iran, Islamic Republic Of</option><option value="IQ">Iraq</option><option value="IE">Ireland</option><option value="IM">Isle Of Man</option><option value="IL">Israel</option><option value="IT">Italy</option><option value="JM">Jamaica</option><option value="JP">Japan</option><option value="JE">Jersey</option><option value="JO">Jordan</option><option value="KZ">Kazakhstan</option><option value="KE">Kenya</option><option value="KI">Kiribati</option><option value="KP">Korea, Democratic People\'s Republic Of</option><option value="KR">Korea, Republic Of</option><option value="KW">Kuwait</option><option value="KG">Kyrgyzstan</option><option value="LA">Lao People\'s Democratic Republic</option><option value="LV">Latvia</option><option value="LB">Lebanon</option><option value="LS">Lesotho</option><option value="LR">Liberia</option><option value="LY">Libyan Arab Jamahiriya</option><option value="LI">Liechtenstein</option><option value="LT">Lithuania</option><option value="LU">Luxembourg</option><option value="MO">Macao</option><option value="MK">Macedonia, The Former Yugoslav Republic Of</option><option value="MG">Madagascar</option><option value="MW">Malawi</option><option value="MY">Malaysia</option><option value="MV">Maldives</option><option value="ML">Mali</option><option value="MT">Malta</option><option value="MH">Marshall Islands</option><option value="MQ">Martinique</option><option value="MR">Mauritania</option><option value="MU">Mauritius</option><option value="YT">Mayotte</option><option value="MX">Mexico</option><option value="FM">Micronesia, Federated States Of</option><option value="MD">Moldova, Republic Of</option><option value="MC">Monaco</option><option value="MN">Mongolia</option><option value="MS">Montserrat</option><option value="MA">Morocco</option><option value="MZ">Mozambique</option><option value="MM">Myanmar</option><option value="NA">Namibia</option><option value="NR">Nauru</option><option value="NP">Nepal</option><option value="NL">Netherlands</option><option value="AN">Netherlands Antilles</option><option value="NC">New Caledonia</option><option value="NZ">New Zealand</option><option value="NI">Nicaragua</option><option value="NE">Niger</option><option value="NG">Nigeria</option><option value="NU">Niue</option><option value="NF">Norfolk Island</option><option value="MP">Northern Mariana Islands</option><option value="NO">Norway</option><option value="OM">Oman</option><option value="PK">Pakistan</option><option value="PW">Palau</option><option value="PS">Palestinian Territory, Occupied</option><option value="PA">Panama</option><option value="PG">Papua New Guinea</option><option value="PY">Paraguay</option><option value="PE">Peru</option><option value="PH">Philippines</option><option value="PN">Pitcairn</option><option value="PL">Poland</option><option value="PT">Portugal</option><option value="PR">Puerto Rico</option><option value="QA">Qatar</option><option value="RE">Reunion</option><option value="RO">Romania</option><option value="RU">Russian Federation</option><option value="RW">Rwanda</option><option value="SH">Saint Helena</option><option value="KN">Saint Kitts And Nevis</option><option value="LC">Saint Lucia</option><option value="PM">Saint Pierre And Miquelon</option><option value="VC">Saint Vincent And The Grenadines</option><option value="WS">Samoa</option><option value="SM">San Marino</option><option value="ST">Sao Tome And Principe</option><option value="SA">Saudi Arabia</option><option value="SN">Senegal</option><option value="CS">Serbia And Montenegro</option><option value="SC">Seychelles</option><option value="SL">Sierra Leone</option><option value="SG">Singapore</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option><option value="SB">Solomon Islands</option><option value="SO">Somalia</option><option value="ZA">South Africa</option><option value="GS">South Georgia And The South Sandwich Islands</option><option value="ES">Spain</option><option value="LK">Sri Lanka</option><option value="SD">Sudan</option><option value="SR">Suriname</option><option value="SJ">Svalbard And Jan Mayen</option><option value="SZ">Swaziland</option><option value="SE">Sweden</option><option value="CH">Switzerland</option><option value="SY">Syrian Arab Republic</option><option value="TW">Taiwan, Province Of China</option><option value="TJ">Tajikistan</option><option value="TZ">Tanzania, United Republic Of</option><option value="TH">Thailand</option><option value="TL">Timor-Leste</option><option value="TG">Togo</option><option value="TK">Tokelau</option><option value="TO">Tonga</option><option value="TT">Trinidad And Tobago</option><option value="TN">Tunisia</option><option value="TR">Turkey</option><option value="TM">Turkmenistan</option><option value="TC">Turks And Caicos Islands</option><option value="TV">Tuvalu</option><option value="UG">Uganda</option><option value="UA">Ukraine</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US" selected>United States</option><option value="UM">United States Minor Outlying Islands</option><option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option><option value="VU">Vanuatu</option><option value="VE">Venezuela</option><option value="VN">Viet Nam</option><option value="VG">Virgin Islands, British</option><option value="VI">Virgin Islands, U.S.</option><option value="WF">Wallis And Futuna</option><option value="EH">Western Sahara</option><option value="YE">Yemen</option><option value="ZM">Zambia</option><option value="ZW">Zimbabwe</option></select><br/></p>');
 
 
-                request_registration_confirmation_buttons(jQuery("#login_status_pane"));
+				request_registration_confirmation_buttons(jQuery("#login_status_pane"));
 
-            } else {
-                jQuery("#login_status_pane").prepend('There was an error.');
-            }
-        }
-    }, "json");
+			} else {
+				jQuery("#login_status_pane").prepend('There was an error.');
+			}
+		}
+	}, "json");
 
 }
 
@@ -3447,104 +3521,104 @@ function send_confirmation( email, page, context, resend ) {
 	jQuery(document).trigger('send_confirmation');
 
 
-    if (typeof(page) == undefined) {
-        page = "";
-    }
-    if (typeof(context) == undefined) {
-        context = "";
-    }
-    if (typeof(resend) == undefined) {
-        resend = false;
-    }
+	if (typeof(page) == undefined) {
+		page = "";
+	}
+	if (typeof(context) == undefined) {
+		context = "";
+	}
+	if (typeof(resend) == undefined) {
+		resend = false;
+	}
 
-    jQuery("body").append("<div id='pending_email' style='display:none;'>" + email + "</div>");
+	jQuery("body").append("<div id='pending_email' style='display:none;'>" + email + "</div>");
 
-    var data_to_send;
-    data_to_send = {};
+	var data_to_send;
+	data_to_send = {};
 
-    if (resend) {
-        data_to_send = {
-            "method": "account_confirmation_resend",
-            "email": email,
-            "page": slug,
-            "context": context
-        };
-    } else {
-        data_to_send = {
-            "method": "account_confirmation",
-            "email": email,
-            "page": slug,
-            "context": context
-        };
-    }
+	if (resend) {
+		data_to_send = {
+			"method": "account_confirmation_resend",
+			"email": email,
+			"page": slug,
+			"context": context
+		};
+	} else {
+		data_to_send = {
+			"method": "account_confirmation",
+			"email": email,
+			"page": slug,
+			"context": context
+		};
+	}
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
+	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
 
-        if (typeof(data.result) !== 'undefined') {
-            if (data.result.toLowerCase() == "failure") {
-                jQuery("#login_status_pane").html('');
-                if (typeof(data.reason) !== 'undefined') {
-                    if (data.reason.toLowerCase() == "account_pending") {
-                        pending_confirmation_buttons(jQuery("#login_status_pane"));
-                    } else {
-                        ready_to_close_button(jQuery("#login_status_pane"));
-                    }
-                }
-                if (typeof(data.message) !== 'undefined') {
-                    jQuery("#login_status_pane").append("<p>" + data.message + "</p>");
-                }
+		if (typeof(data.result) !== 'undefined') {
+			if (data.result.toLowerCase() == "failure") {
+				jQuery("#login_status_pane").html('');
+				if (typeof(data.reason) !== 'undefined') {
+					if (data.reason.toLowerCase() == "account_pending") {
+						pending_confirmation_buttons(jQuery("#login_status_pane"));
+					} else {
+						ready_to_close_button(jQuery("#login_status_pane"));
+					}
+				}
+				if (typeof(data.message) !== 'undefined') {
+					jQuery("#login_status_pane").append("<p>" + data.message + "</p>");
+				}
 
-            } else {
-                pending_secret_confirmation_buttons(jQuery("#login_status_pane"));
-                jQuery("#login_status_pane").html('Thank you. Buley\'s has sent an email to ' + $('#registration_email').val() + '. Please click the verification link in that email or paste its "secret" into the box below:<br/><br/><strong>Secret</strong>: <input id="confirmation_hash" type="text" name="confirmation_hash" />');
-            }
-        }
-    }, "json");
+			} else {
+				pending_secret_confirmation_buttons(jQuery("#login_status_pane"));
+				jQuery("#login_status_pane").html('Thank you. Buley\'s has sent an email to ' + $('#registration_email').val() + '. Please click the verification link in that email or paste its "secret" into the box below:<br/><br/><strong>Secret</strong>: <input id="confirmation_hash" type="text" name="confirmation_hash" />');
+			}
+		}
+	}, "json");
 }
 
 function account_login( email, password ) {
 	jQuery(document).trigger('account_login');
 
-    var secret = md5(password);
-    data_to_send = {
-        "method": "email_login",
-        "email": email,
-        "secret": secret
-    };
+	var secret = md5(password);
+	data_to_send = {
+		"method": "email_login",
+		"email": email,
+		"secret": secret
+	};
 
-    $.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
-
-
-        if (typeof data.result !== 'undefined') {
-            if (data.result.toLowerCase() == "failure") {
-
-                if (typeof data.message !== 'undefined') {
+	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
 
 
-                    send_to_console("<p>" + data.message + "</p>");
+		if (typeof data.result !== 'undefined') {
+			if (data.result.toLowerCase() == "failure") {
 
-                } else {
-
-
-                }
+				if (typeof data.message !== 'undefined') {
 
 
-            } else if (data.result.toLowerCase() == "success") {
-                jQuery("#login_status_pane").remove();
-                if (typeof(data.message) !== 'undefined' && data.message != null && data.message != '') {
-                    send_to_console("<p>" + data.message + "</p>");
+					send_to_console("<p>" + data.message + "</p>");
 
-                } else {
-                    send_to_console("<p>Logged 	in successfully.</p>");
+				} else {
 
-                }
-                jQuery("#register").fadeOut('fast');
-                jQuery("#login").fadeOut('fast');
-                jQuery("#logout").fadeIn('fast');
-                close_button(jQuery("#login_status_pane"));
-            }
-        }
-    }, "json");
+
+				}
+
+
+			} else if (data.result.toLowerCase() == "success") {
+				jQuery("#login_status_pane").remove();
+				if (typeof(data.message) !== 'undefined' && data.message != null && data.message != '') {
+					send_to_console("<p>" + data.message + "</p>");
+
+				} else {
+					send_to_console("<p>Logged 	in successfully.</p>");
+
+				}
+				jQuery("#register").fadeOut('fast');
+				jQuery("#login").fadeOut('fast');
+				jQuery("#logout").fadeIn('fast');
+				close_button(jQuery("#login_status_pane"));
+			}
+		}
+	}, "json");
 }
 
 
@@ -3560,31 +3634,31 @@ function check_login_status(  ) {
 	jQuery(document).trigger('check_login_status');
 
 
-    var session_id = get_local_storage("session_id");
-    if (typeof session_id == "undefined" || session_id == null || session_id == "") {
-       	jQuery("#account_dropdown").append('<li><a href="#" id="get_login">Login or Signup</a></li>');
-    } else {
-       	jQuery("#account_dropdown").append('<li><a href="/settings" id="get_settings">Settings</a></li>');
-    }
+	var session_id = get_local_storage("session_id");
+	if (typeof session_id == "undefined" || session_id == null || session_id == "") {
+	   	jQuery("#account_dropdown").append('<li><a href="#" id="get_login">Login or Signup</a></li>');
+	} else {
+	   	jQuery("#account_dropdown").append('<li><a href="/settings" id="get_settings">Settings</a></li>');
+	}
 
 }
 
 $(document).bind('logout', function ( event ) {
 
-    account_logout();
+	account_logout();
 });
 
 
 jQuery(".do_logout").live("click", function ( event ) {
 
 	event.preventDefault();
-    account_logout();
+	account_logout();
 });
 
 jQuery(".do_logout").live("click", function ( event ) {
 
 event.preventDefault();
-    account_logout();
+	account_logout();
 });
 
 jQuery(".submitthelogin").live("click", function ( event ) {
@@ -3594,43 +3668,216 @@ jQuery(".submitthelogin").live("click", function ( event ) {
 
 $(document).bind('dologin', function ( event ) {
 
-    event.preventDefault();
-    $('#dologin').remove();
-    $('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" /><br/><input id="password"  type="password" xxx name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
+	event.preventDefault();
+	$('#dologin').remove();
+	$('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" /><br/><input id="password"  type="password" xxx name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
 });
 
 $(document).bind('dologinboxminimize', function ( event ) {
 
-    event.preventDefault();
+	event.preventDefault();
 
-    $('#login_status_pane').html('<a href="#" id="dologin" class="getloginform exit_door_link"></a>');
+	$('#login_status_pane').html('<a href="#" id="dologin" class="getloginform exit_door_link"></a>');
 });
 
 $(document).bind('get_login', function ( event ) {
 
-    event.preventDefault();
-    console.log(location.pathname);
-    console.log("get_login clicked");
+	event.preventDefault();
+	console.log(location.pathname);
+	console.log("get_login clicked");
 
-    var stateObj = {
-        "page": Buleys.view.page,
-        "slug": Buleys.view.slug,
-        "type": Buleys.view.type,
-        "time": new Date().getTime()
-    };
-    var urlString = "http://www.buleys.com/start";
-    history.pushState(stateObj, "login", urlString);
-    reload_results();
+	var stateObj = {
+		"page": Buleys.view.page,
+		"slug": Buleys.view.slug,
+		"type": Buleys.view.type,
+		"time": new Date().getTime()
+	};
+	var urlString = "http://www.buleys.com/start";
+	history.pushState(stateObj, "login", urlString);
+	reload_results();
 });
 
 
 $(document).bind('dologinsubmit', function ( event ) {
 
-    event.preventDefault();
-    if (typeof $('[name="password"]') !== undefined && $('[name="password"]').val() !== "") {
-        request_login($('[name="email"]').val(), $('[name="password"]').val());
-    }
+	event.preventDefault();
+	if (typeof $('[name="password"]') !== undefined && $('[name="password"]').val() !== "") {
+		request_login($('[name="email"]').val(), $('[name="password"]').val());
+	}
 });
+
+function twitter_preflight() {
+
+	var on_success = function( data ) {
+		console.log('twitter_preflight', data);
+		var oauth_authorization_url = data.response.oauth_authorization_url;
+		var oauth_request_state = data.response.oauth_request_state;
+		var oauth_token = data.response.oauth_token;
+		var oauth_token_secret = data.response.oauth_token_secret;
+
+		set_local_storage_batch( {
+			'twitter_oauth_authorization_url': oauth_authorization_url,
+			'twitter_oauth_request_state': oauth_request_state,
+			'twitter_oauth_token': oauth_token,
+			'twitter_oauth_token_secret': oauth_token_secret
+		} );	
+	};
+
+	var on_error = function( data ) {
+
+	};
+
+	oauth_preflight( 'twitter', on_success, on_error );
+
+}
+
+function twitter_validation_detect() {
+	var get_vars = get_url_vars();
+	if( !isEmpty( get_vars[ 'oauth_token' ] ) && !isEmpty( get_vars[ 'oauth_verifier' ] ) ) {
+		twitter_authentication_validate( get_vars );
+	}
+}
+
+function twitter_authentication_validate( get_vars ) {
+
+	var oauth_secret;
+	if( get_vars[ 'oauth_verifier' ] ) {
+		oauth_secret = get_vars[ 'oauth_verifier' ];
+	} else {
+		return;
+	}
+
+	var oauth_token;
+	if( get_vars[ 'oauth_token' ] ) {
+		oauth_token = get_vars[ 'oauth_token' ];
+	} else {
+		return;
+	}
+
+	var request_state = get_local_storage( 'twitter_oauth_request_state' );
+
+	if( isEmpty( request_state ) || 1 == request_state ) {
+
+		var stored_oauth_token = get_local_storage( 'twitter_oauth_token' );
+		
+		console.log('stored vs. received', stored_oauth_token, oauth_token, stored_oauth_token === oauth_token, stored_oauth_token == oauth_token );
+
+		var on_success = function( context ) {
+			console.log( 'Twitter account validated', context );
+		};
+
+		var on_error = function( context ) {
+			console.log( 'Twitter account could not be validated', context );
+		};
+
+		if( stored_oauth_token === oauth_token ) {
+
+			oauth_validate( 'twitter', request_state, oauth_token, oauth_secret, on_success, on_error );
+
+		}
+
+	} else {
+
+		return false;
+
+	}
+
+}
+
+function do_twitter_authentication() {
+	var auth_url = get_local_storage( 'twitter_oauth_authorization_url' );
+	var req_state = get_local_storage( 'twitter_oauth_request_state' );
+	if( 1 == req_state ) {
+		window.location = auth_url;
+	} else {
+		return false;
+	}
+}
+
+function oauth_preflight( type, on_success, on_error ) {
+
+	/* Actions */
+
+	jQuery(document).trigger('oauth_preflight');
+
+	/* Defaults */
+
+	if( 'function' !== typeof on_success ) {
+		on_success = function( context ) {
+
+		}
+	}
+
+	if( 'function' === typeof on_error ) {
+		on_error = function( context ) {
+
+		}
+	}
+
+	/* Setup */
+
+	var data_to_send = {
+		"oauth_type": type,
+		"oauth_state": 0	
+	};
+
+	/* Request */
+
+	jQuery.ajax( {
+		'type': 'POST',
+		'url': "http://api.buleys.com/oauth", 
+		'data': data_to_send,
+		'success': function ( data ) {
+			on_success( data );
+		},
+		'error': function( data ) {
+			on_error( data );
+		},
+		'dataType': 'json'
+	} );
+
+}
+
+
+function oauth_validate( type, request_state, oauth_token, oauth_secret, on_success, on_error ) {
+
+	jQuery(document).trigger('oauth_preflight');
+
+	if( 'function' !== typeof on_success ) {
+		on_success = function( context ) {
+
+		}
+	}
+
+	if( 'function' === typeof on_error ) {
+		on_error = function( context ) {
+
+		}
+	}
+
+	var data_to_send = {
+		"oauth_type": type,
+		"oauth_state": request_state,
+		"oauth_token": oauth_token,
+		"oauth_secret": oauth_secret
+	};
+
+	jQuery.ajax( {
+		'type': 'POST',
+		'url': "http://api.buleys.com/oauth", 
+		'data': data_to_send,
+		'success': function ( data ) {
+			on_success( data );
+		},
+		'error': function( data ) {
+			on_error( data );
+		},
+		'dataType': 'json'
+	} );
+
+}
+
+
 
 /**
  * Categories.js
@@ -3672,13 +3919,13 @@ function add_category_controls( event_context ) {
 			html_snippit = html_snippit + "<div class='vote_down_category empty_thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
 
 		} else {
-			if (typeof item_request.result != 'undefined') {
-				if (item_request.result.vote_value == -1) {
+			if (typeof item_request.target.result != 'undefined') {
+				if (item_request.target.result.vote_value == -1) {
 					html_snippit = "<span class='vote_up_category empty_thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
 					html_snippit = html_snippit + "" + current;
 					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
 					html_snippit = html_snippit + "<div class='remove_category_down_vote thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-				} else if (item_request.result.vote_value == 1) {
+				} else if (item_request.target.result.vote_value == 1) {
 					html_snippit = "<span class='remove_category_up_vote thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
 					html_snippit = html_snippit + "" + current;
 					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
@@ -3700,10 +3947,10 @@ function add_category_controls( event_context ) {
 	};
 
 	var vote_req_on_error = function ( e ) {
-		console.log( 'vote_req error', e );		
+	
 	};
 
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': vote_key, 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': vote_key, 'on_success': vote_req_on_success, 'on_error': vote_req_on_error } );
 
 }
 
@@ -3781,14 +4028,14 @@ function remove_item_from_categories_database( item_url, item_slug, item_type ) 
 
 	jQuery(document).trigger('remove_item_from_categories_database');
 
+	/* Callbacks */
+
 	var item_on_success = function ( context_1 ) {
-		var event_1 = context_1.event;
-		console.log( 'Category removed for item', context_1 );
+	
 	};
 
 	var item_on_error = function ( context_1 ) {
-		var event_1 = context_1.event;
-		console.log( 'Category not removed for item', context_1 );
+	
 	};
 
 	/* Request */
@@ -3801,7 +4048,7 @@ function add_categories_to_categories_database( item_url, categories ) {
 
 	/* Action */
 
-	jQuery(document).trigger('add_categories_to_categories_database');
+	jQuery(document).trigger( 'add_categories_to_categories_database' );
 
 	jQuery.each(categories, function ( c, the_category ) {
 
@@ -3815,8 +4062,10 @@ function add_categories_to_categories_database( item_url, categories ) {
 				"value": the_category.display,
 				"modified": new Date().getTime()
 			};
+
+			/* Callbacks */
 			
-			add_on_success = function ( context ) {
+			var add_on_success = function ( context ) {
 				var event = context.event;
 				if (typeof the_category.slug !== 'undefined') {
 					var topic_key = the_category.type.toLowerCase() + "_" + the_category.slug.toLowerCase();
@@ -3827,7 +4076,7 @@ function add_categories_to_categories_database( item_url, categories ) {
 				}
 			};
 			
-			add_on_error = function ( context ) {
+			var add_on_error = function ( context ) {
 			
 			};
 			
@@ -3845,25 +4094,51 @@ function get_item_categories_for_overlay( item_url ) {
 
 	jQuery(document).trigger('get_item_categories_for_overlay');
 
-	var cursor_on_success = function ( event ) {
+	/* Callbacks */
 
-		if (jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length < 1) {
-			var html_snippit = "<ul class='category_list' id='categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'></ul>";
-			jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(html_snippit);
-		}
-		var cat_snippit = "<li id='list_item_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "' class='category_list_item' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "'><a id='" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "'  class='category' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "' href='/" + item.type.toLowerCase() + "/" + item.slug + "'>" + item.value + "</a></li>";
+	var item_on_success = function( context ) {
+		
+		var item = context.event.target.result;
+	
+		var cursor_on_success = function ( context_2 ) {
 
-		jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(cat_snippit);
+			var result = context_2.event.target.result;
 
-		get_vote_info(item_url, item.type.toLowerCase(), item.slug.toLowerCase());
+			if( !result ) {
+				return;
+			}
+
+			var item = result.value;
+			
+			if (jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length < 1) {
+				var html_snippit = "<ul class='category_list' id='categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'></ul>";
+				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(html_snippit);
+			}
+
+			var cat_snippit = "<li id='list_item_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "' class='category_list_item' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "'><a id='" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "'  class='category' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "' href='/" + item.type.toLowerCase() + "/" + item.slug + "'>" + item.value + "</a></li>";
+
+			jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(cat_snippit);
+
+			get_vote_info(item_url, item.type.toLowerCase(), item.slug.toLowerCase());
+
+
+		};
+
+		var cursor_on_error = function ( event ) {
+
+		};
+
+		/* Request */
+
+		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
 
 	};
 
-	var cursor_on_error = function ( event ) {
+	var item_on_error = function( context ) {
 
 	};
 
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': item_on_success, 'on_error': item_on_error } );
 
 }
 
@@ -4110,7 +4385,7 @@ function add_favorite_to_results( item ) {
 }
 
 
-function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
+function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
 
 	/* Action */
 	
@@ -4119,34 +4394,47 @@ function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe
 	/* Setup */
 
 	var begin_date = 0;
+	var end_date = 0;
+
 	if (typeof begin_timeframe == "undefined") {
 		begin_date = 0
 	} else {
 		begin_date = parseInt(begin_timeframe);
 	}
 
-	var end_date = 0;
 	if (typeof end_timeframe == "undefined") {
 		end_date = new Date().getTime();
 	} else {
 		end_date = parseInt(end_timeframe);
 	}
 	
+	make_inverse = ( make_inverse ) ? true : false;
+
+	/* Callbacks */
+	
 	var categories_on_success = function ( context ) {
 
 		var result = context.event.target.result;
+		if( InDB.isEmpty( result ) ) {
+			return;
+		}
 		var item = result.value;
 
-		var favorite_on_success = function ( context_2 ) {
+		var favorites_on_success = function ( context_2 ) {
 
-			var event2 = context_2;
+			var event2 = context_2.event;
 
 			if (typeof event2.target.result !== 'undefined') {
 
+				console.log('FAVORITE!');
+
 				var item_on_success = function ( event3 ) {
-					if (typeof event3.target.result !== 'undefined' && typeof event3.target.result !== 'undefined' && jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0 ) {
+
+					if ( ( make_inverse !== true && typeof event2.target.result !== 'undefined' && typeof event2.target.result !== 'undefined' ) || ( true === make_inverse && typeof event2.target.result !== 'undefined' && typeof event2.target.result !== 'undefined' ) ) {
+						console.log('favorite found, getting raw item');
 						get_item_raw(item.link);
 					}
+
 				};
 				
 				var item_on_error = function ( event3 ) {
@@ -4155,31 +4443,27 @@ function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe
 				
 				/* Request */
 
-				InDB.trigger( 'InDB_do_get_row', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
+				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
+
 
 			}
 		};
 
-		var favorite_on_error = function ( e ) {
-			if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-				add_item_to_results(item);
-				check_if_item_is_favorited(item.link);
-				check_if_item_is_read(item.link);
-				check_if_item_is_seen(item.link);
-			}
-		};
-		
+		var favorites_on_error = function ( context ) {
+			console.log( "error in get_favorites()", context );
+		}
+
 		/* Request */
 
-		InDB.trigger( 'InDB_do_get_favorites', { 'store': 'favorites', 'key': item.link, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
+		InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item.link, 'on_success': favorites_on_success, 'on_error': favorites_on_error } );
 
 	};
 
 	var categories_on_error = function ( context ) {
-
+		console.log("Error in get favorites", context);
 	};
-
-	InDB.trigger( 'InDB_do_get_row', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'key': item.link, 'on_success': categories_on_success, 'on_error': categories_on_error } );
+	
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': categories_on_success, 'on_error': categories_on_error } );
 
 }
 
@@ -4335,7 +4619,6 @@ function add_item_as_favorite( item_url ) {
 
 	var data = {
 		"link": item_url,
-		"status": "favorite",
 		"modified": new Date().getTime()
 	};
 
@@ -4351,7 +4634,7 @@ function add_item_as_favorite( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': favorite_on_success, 'on_error': favorite_on_error  } );
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': favorites_on_success, 'on_error': favorites_on_error  } );
 
 }
 
@@ -4384,7 +4667,7 @@ function check_if_item_is_favorited_for_overlay( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'indb_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
 
 }
 
@@ -4399,7 +4682,8 @@ function check_if_item_is_favorited( item_url ) {
 
 	var favorite_on_success = function ( context ) {
 		var item_request = context.event;
-		if (typeof item_request.result != 'undefined') {
+		console.log("CHECKING",item_request);
+		if (typeof item_request.target.result != 'undefined') {
 
 			/* UI */
 
@@ -4428,44 +4712,68 @@ function check_if_item_is_favorited( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'indb_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
 
 }
 
-
+/* adds item to fav db
+ */
 function add_item_to_favorites_database( item_url, item_slug, item_type ) {
+
+	/* Debug */
+
+	if ( !!Buleys.debug ) {
+		console.log( 'add_item_to_favorite_database()', item_url, item_slug, item_type );
+	}
+
+	/* Action */	
+
 	jQuery(document).trigger('add_item_to_favorites_database');
 
-	new_favorite_transaction();
+	/* Setup */
+
 	var data = {
-		"item_link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
+		"link": item_url,
 		"modified": new Date().getTime()
 	};
-	var add_data_request = Buleys.objectStore.add(data);
-	add_data_request.onsuccess = function ( event ) {
 
-		Buleys.objectId = add_data_request.result;
+	/* Callbacks */
+
+	var add_on_success = function ( context ) {
+	
 	};
-	add_data_request.onerror = function ( e ) {
+
+	var add_on_error = function ( context ) {
 
 	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+
 }
 
 
 function remove_item_from_favorites_database( item_url, item_slug, item_type ) {
+
+	/* Action */
+
 	jQuery(document).trigger('remove_item_from_favorites_database');
 
-	new_favorite_transaction();
-	var request = Buleys.objectStore["delete"](item_url);
-	request.onsuccess = function ( event ) {
+	/* Callbacks */
 
-		delete Buleys.objectId;
+	var on_success = function ( context ) {
+		console.log('Item removed from favorites database', context );	
 	};
-	request.onerror = function (  ) {
 
+	var on_error = function (  ) {
+		console.log('Item was not removed from favorites database', context );	
 	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_delete', { 'store': 'favorites', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
+
 }
 
 
@@ -5335,7 +5643,7 @@ function add_item_to_results( item ) {
 	
 	/* Debug */
 
-	if( !!Buleys.debug ) {
+	if( true === Buleys.debug ) {
 		console.log("items.js > add_item_to_results()", item );
 	}
 	
@@ -5362,7 +5670,7 @@ function prepend_item_to_results( item ) {
 		
 	/* Debug */
 
-	if( !!Buleys.debug ) {
+	if( true === Buleys.debug ) {
 		console.log("items.js > add_item_to_results()", item );
 	}
 	
@@ -5419,20 +5727,16 @@ function add_item_to_items_database( item ) {
 
 					/* Debug */
 					
-					if( !!Buleys.debug ) {
+					if( true === Buleys.debug ) {
 						console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
 					}
 
 					// Qualify the view
 					// TODO: Better description
-					if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" || ( ( cat.slug !== null && typeof cat.slug !== "null" ) ) ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
+					if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
 
-						// Loop through each entity
-						$.each(item.entities, function ( cat_key, cat ) {
-
-							// Add the item to the results
-							prepend_item_to_results(get_data_object_for_item(item));
-						} );
+						// Add the item to the results
+						prepend_item_to_results(get_data_object_for_item(item));
 
 					}
 				// or (2) that there is a single entity
@@ -5474,7 +5778,9 @@ function check_if_item_is_read( item_url ) {
 
 	/* Callbacks */
 
-	var on_success = function ( event ) {
+	var on_success = function ( context ) {
+
+		var item_request = context.event;
 		if (typeof item_request.result !== 'undefined') {
 			jQuery( "#" + item_url.replace( /[^a-zA-Z0-9-_]+/g, "" ) ).addClass( "read" );
 		} else {
@@ -5488,7 +5794,7 @@ function check_if_item_is_read( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'status', 'key': item.link, 'on_success': on_success, 'on_error': on_error } ); 
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'status', 'key': item_url, 'on_success': on_success, 'on_error': on_error } ); 
 
 }
 
@@ -5567,7 +5873,13 @@ function get_item_raw_no_trash( item_url ) {
 
 }
 
-function get_item( item_url ) {
+function get_item_wip( item_url ) {
+
+	/* Debug */
+
+	if ( true === Buleys.debug ) {
+		console.log('items.js > get_item()', item_url );
+	}
 
 	/* Action */
 
@@ -5582,7 +5894,59 @@ function get_item( item_url ) {
 	var on_success = function( context_1 ) {
 
 		/* Setup */
+		var event_1 = context_1.event;
+		var result = event_1.target.result;
 
+		// Verify the item exists, wasn't deleted and isn't archived
+		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) {
+
+
+			/* UI */
+			console.log('l5', result,event_1);
+
+			if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+				console.log('l6');
+				add_item_to_results(result);
+
+				check_if_item_is_favorited(item_url);
+
+				check_if_item_is_read(item_url);
+
+				check_if_item_is_seen(item_url);
+
+			}
+		}
+
+	}; // End on_success
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
+
+}
+
+
+function get_item( item_url ) {
+
+	/* Debug */
+
+	if ( true === Buleys.debug ) {
+		console.log('items.js > get_item()', item_url );
+	}
+
+	/* Action */
+
+	jQuery(document).trigger('get_item');
+
+	/* Callbacks */
+	
+	var on_error = function( context_1 ) {
+		console.log( 'Error in get_item', context_1 );
+	}
+	
+	var on_success = function( context_1 ) {
+
+		/* Setup */
 		var event_1 = context_1.event;
 
 		// Verify the item wasn't deleted
@@ -5603,23 +5967,29 @@ function get_item( item_url ) {
 
 					// Get the item
 					InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context_3 ) {
-
 						/* Setup */
-			
+
 						var event_3 = context_3.event;
+						var result = event_3.target.result
+						if( !result ) {
+							return;
+						}
 
 						// Verify the item exists		
-						if( InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
+						if( !InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
 
 							/* UI */
+console.log('l5', result,event_3);
 
 							if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+console.log('l6');
+								add_item_to_results(result);
 
-								console.log('adding item to result');
-								add_item_to_results(event_3.result);
-								check_if_item_is_favorited(event_3.result.link);
-								check_if_item_is_read(event_3.result.link);
-								check_if_item_is_seen(event_3.result.link);
+								check_if_item_is_favorited(item_url);
+
+								check_if_item_is_read(item_url);
+
+								check_if_item_is_seen(item_url);
 
 							}
 
@@ -5645,6 +6015,12 @@ function get_item( item_url ) {
 
 function get_item_raw( item_url ) {
 	
+	/* Debug */
+
+	if( true === Buleys.debug ) {
+		console.log('get_item_raw() > ',item_url);
+	}
+
 	/* Action */
 
 	jQuery(document).trigger('get_item_raw');
@@ -5653,38 +6029,40 @@ function get_item_raw( item_url ) {
 
 	var on_error = function() {
 		console.log( 'Error in get_item_raw', item_url );
-	}	
+	}
 
 	/* Request */
 
 	// Check if the item was deleted
-	InDB.trigger( 'InDB_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context ) {
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context ) {
 		
 		/* Setup */
 
 		var event_1 = context.event;
-
+		console.log('get_item_raw success', event_1, InDB.row.value( event_1 ) );
 		// Verify the item wasn't deleted
 		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) { 
 
 			/* Request */
 
-			InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context ) {
+			InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context ) {
 
 				/* Setup */
 
-				var event2 = context.event;
-
+				var event_2 = context.event;
+				var value =  InDB.row.value(event_2);
+				console.log('about to do UI');
 				// Verify the item wasn't archived
-				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
+				if( !InDB.isEmpty( value ) ) { 
 
+					console.log('doing UI now', value );
 					/* UI */
 
-					if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-						add_item_to_results(item_request_1.result);
-						check_if_item_is_favorited(item_request_1.result.link);
-						check_if_item_is_read(item_request_1.result.link);
-						check_if_item_is_seen(item_request_1.result.link);
+					if (jQuery("#" + value.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+						add_item_to_results( value );
+						check_if_item_is_favorited( value.link );
+						check_if_item_is_read( value.link );
+						check_if_item_is_seen( value.link );
 					}
 
 				} //End verify the item wasn't archived	
@@ -5700,6 +6078,12 @@ function get_item_raw( item_url ) {
 
 function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
 	
+	/* Debug */
+
+	if( true === Buleys.debug ) {
+		console.log('items.js > get_items( type_filter, slug_filter, begin_timeframe, end_timeframe )', type_filter, slug_filter, begin_timeframe, end_timeframe );
+	}
+
 	/* Actions */
 
 	jQuery(document).trigger('get_items');
@@ -5741,13 +6125,15 @@ function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
 			item = result.value;
 		}
 
+		//console.log( 'items.js > get_items() > item.link', context, result, item.link );
+
 		/* Work */
 
 		// Verify there's an item to add
 		if( !!item ) {
 			
 			/* Debug */
-			if( !!Buleys.debug ) {
+			if( true === Buleys.debug ) {
 				console.log( 'items.js > get_items() > item.link', item.link );
 			}
 
@@ -5758,12 +6144,16 @@ function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
 	};
 
 	var cursor_on_error = function ( context ) {
-
+		console.log('Error in get_items()', context );
 	};
+	
+	var cursor_on_abort = function( context ) {
+		console.log('Cursor aborted in get_items()', context );
+	}
 
 	/* Request */
 	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );	
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error, 'on_abort': cursor_on_abort } );	
 
 }
 
@@ -5772,7 +6162,7 @@ function index_items_by_field( type_filter, slug_filter, field ) {
 	
 	/* Action */
 
-	jQuery( document ).trigger('get_items');
+	jQuery( document ).trigger('index_items_by_field');
 
 	/* Defaults */
 	
@@ -5948,7 +6338,7 @@ function get_data_for_items( items ) {
 
 		/* Debug */
 
-		if( !!Buleys.debug ) {
+		if( true === Buleys.debug ) {
 			console.log("getting data for item", item);
 		}
 
@@ -5966,7 +6356,7 @@ function add_items( items, type_to_get, company_to_get ) {
 
 	/* Debug */
 
-	if( !!Buleys.debug ) {
+	if( true === Buleys.debug ) {
 		console.log('items.js > add_items', items, type_to_get, company_to_get );
 	}
 
@@ -5979,7 +6369,7 @@ function add_items( items, type_to_get, company_to_get ) {
 	// Loop through each item to database
 	$.each( items, function ( i, item ) {
 
-		if( !!Buleys.debug ) {
+		if( true === Buleys.debug ) {
 			//console.log('items.js > add_items > each', item );
 		}
 
@@ -6004,6 +6394,14 @@ function populate_and_maybe_setup_indexeddbs( items ) {
 }
 
 function add_item_if_new( item, type_to_get, company_to_get ) {
+
+	/* Debug */
+	
+	if ( !!Buleys.debug ) {
+		console.log( 'add_item_if_new()', item, type_to_get, company_to_get );
+	}
+	add_item_to_items_database(item);
+	return;
 
 	/* Action */
 
@@ -7611,7 +8009,7 @@ function send_text_to_overlay( text_to_send ) {
 
 function send_to_overlay( text ) {
 	jQuery(document).trigger('send_to_overlay');
-
+	console.log('send_to_overlay()', text );
     send_text_to_overlay(text);
     jQuery("#overlay").stop(true).animate({
         opacity: 1
@@ -7629,6 +8027,7 @@ function hide_overlay(  ) {
 function load_item_to_overlay( item_key ) {
 	jQuery(document).trigger('load_item_to_overlay');
 
+	console.log('load_item_to_overlay()', item_key );
     get_item_for_overlay(item_key);
     check_if_item_is_favorited_for_overlay(item_key);
     check_item_vote_status_for_overlay(item_key);
@@ -7636,23 +8035,26 @@ function load_item_to_overlay( item_key ) {
 }
 
 function get_item_for_overlay( item_url ) {
+
 	jQuery(document).trigger('get_item_for_overlay');
 
-    new_item_transaction();
-    var item_request = Buleys.objectStore.get(item_url);
-    item_request.onsuccess = function ( event ) {
-
-        if (typeof item_request.result !== 'undefined' && typeof item_request.result.link === 'string') {
-            var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><div class="close_sidebar_link cross_icon" id="' + item_url + '"></div></div>' + "<div id='overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item_request.result.link + "' class='overlay_headline'>" + item_request.result.title + "</a></div></div><div id='overlay_left'></div>";
+	console.log('get_item_for_overlay()', item_url );
+	var on_success = function ( context ) {
+	var item_request = context.event;
+	var result = item_request.target.result;
+        if (typeof result !== 'undefined' && typeof result.link === 'string') {
+            var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><div class="close_sidebar_link cross_icon" id="' + item_url + '"></div></div>' + "<div id='overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + result.link + "' class='overlay_headline'>" + result.title + "</a></div></div><div id='overlay_left'></div>";
             send_to_overlay(html_snippit);
             /*
             <div id='overlay_controls'><a href='" + item_url + "' class='favorite_item'>Favorite</a>&nbsp;<a href='" + item_url + "' class='unfavorite_item'>Unfavorite</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_read'>Mark as read</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unread'>Mark as unread</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_seen'>Mark as seen</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + item_url + "' class='archive_item'>Archive</a>&nbsp;<a href='" + item_url + "' class='delete_item'>Delete</a>&nbsp;<a href='" + item_url + "' class='unarchive_item'>Unarchive</a>&nbsp;<a href='" + item_url + "' class='vote_item_up'>Vote up</a>&nbsp;<a href='" + item_url + "' class='vote_item_down'>Vote down</a>&nbsp;<a href='" + item_url + "' class='close_item_preview'>Close preview</a></div>
             */
         }
     };
-    item_request.onerror = function ( e ) {
-
+    var on_error = function ( context ) {
+	console.log('Error sending item to overlay', item_url );
     };
+    
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
 }
 function open_preview(  item_to_preview  ) {
 	jQuery(document).trigger('open_preview');
@@ -7954,18 +8356,45 @@ function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 	cursor_on_success = function ( context_1 ) {
 
 		var event_1 = context_1.event;
+		var item_1 = InDB.cursor.value( event_1 );
+		if ( null === item_1 ) {
+			return;
+		}
+		console.log('got from status db ',event_1,item_1);
 
-		if( !InDB.isEmpty( InDB.cursor.value( event_1 ) ) ) { 
+		if( !make_inverse ) {
+			get_item_raw( item_1.link );
+			return;
+		} else {
 
-			if ( make_inverse !== true) {
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw(item_request_2.result.link);
+			var seen_on_success = function( context_2 ) { 
+				
+				var event_2 = context_2.event;
+				var item_2 = InDB.cursor.value( event_2 );
+
+				// Proceed if:
+				// 1) Item is unseen (isEmpty) but we want to get unseen (make_inverse = true)
+				// 2) Item is seen (!isEmpty) and we want to get seen
+				console.log('seen_on_success', item_2 );
+				if( ( !InDB.isEmpty( item_2 ) && true !== make_inverse ) || ( InDB.isEmpty( item_2 ) && true === make_inverse )  ) { 
+
+					if (jQuery("#" + item_1.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
+
+						console.log('getting raw item in get_read() > ', item_1.link );
+						get_item_raw(item_1.link);
+
+					}
+
 				}
-			} else { 
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw(item.link);
-				}
-			}
+
+			};
+
+			var seen_on_error = function( context_2 ) {
+
+			};
+			
+			InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_1.link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
+
 		}
 
 	};
@@ -7975,10 +8404,19 @@ function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 	};
 
 	/* Request */
-	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+
+	if( !!make_inverse ) {	
+
+		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+
+	} else {
+
+		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'status', 'index': 'topic_slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
+
+	}
 
 }
+
 
 
 function mark_item_as_read( item_url, item_slug, item_type ) {
@@ -7994,21 +8432,21 @@ function mark_item_as_read( item_url, item_slug, item_type ) {
 		"topic_slug": item_slug,
 		"topic_type": item_type,
 		"modified": new Date().getTime()
-	}
+	};
 
 	/* Callbacks */
 
-	var add_on_success = function ( event ) {
-
+	var add_on_success = function ( context ) {
+		console.log( 'mark_item_as_read() success', context );
 	};
 
-	var add_on_error = function ( e ) {
-
+	var add_on_error = function ( context ) {
+		console.log( 'mark_item_as_read() error', context );
 	};
 	
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_put', { 'store': 'status', 'key': item_url, 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+	InDB.trigger( 'InDB_do_row_put', { 'store': 'status', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
 
 };
 
@@ -8124,7 +8562,7 @@ function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 
 		/* Callbacks */
 
-		var seen_on_success = function ( context_2 ) {
+		var item_on_success = function ( context_2 ) {
 
 			var event_2 = context_2.event;
 			if (typeof event_2.target.result !== 'undefined' && make_inverse !== true) {
@@ -8143,19 +8581,23 @@ function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, mak
 
 		};
 		
-		var seen_on_error = function( context_2 ) {
+		var item_on_error = function( context_2 ) {
 			console.log( 'error in get_seen', context_2 );
 		}		
 
 		/* Request */
 
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'seen', 'key': item.link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
+		InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
 
 	};
 
+	var on_error = function( context ) {
+		console.log('Failure in get_seen()', context );
+	}
+
 	/* Request */
 
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'status', 'index': 'topic_slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': on_success, 'on_error': on_error } );
 	
 }
 
@@ -8743,6 +9185,18 @@ function set_setting( setting_to_set, setting_value ) {
 
 	    return Buleys.store.getItem(get_key);
 	}
+
+function set_local_storage_batch( dictionary ) {
+
+	for( item in dictionary ) {
+		if( dictionary.hasOwnProperty( item ) ) {
+
+			set_local_storage( item, dictionary[ item ] );
+
+		}
+	}
+	console.log( 'set_local_storage_batch', dictionary );
+}
 	function getURLSlug( rough ) {
 	jQuery(document).trigger('getURLSlug');
 
@@ -8995,6 +9449,12 @@ function set_setting( setting_to_set, setting_value ) {
 
 	});
 
+	function isEmpty( value ) {
+		if( null !== value && "" !== value && "undefined" !== typeof value ) {
+			return false;
+		}
+		return true;
+	}
 	
 	function load_page_title_info( page_info ) {
 		jQuery(document).trigger('load_page_title_info');
@@ -9186,6 +9646,17 @@ function set_setting( setting_to_set, setting_value ) {
 			jQuery(this).val('');
 			jQuery(this).removeClass('defaulttext');
 		});
+
+
+
+// Cleverness via: http://papermashup.com/read-url-get-variables-withjavascript/
+function get_url_vars() {
+	var vars = {};
+	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+		vars[key] = value;
+	});
+	return vars;
+}
 
 	/*not mine*/
 	
@@ -9808,7 +10279,7 @@ function check_item_vote_status_for_overlay( item_url ) {
 		/* UI */
 
 		if (typeof event.target.result !== 'undefined') {
-
+			console.log("VOTE VALUE", event.target.result, event.target.result.vote_value );
 			if (event.target.result.vote_value == -1) {
 				jQuery("#overlay_left").prepend('<div class="vote_context voted"><div class="vote_up empty_thumb_up_icon" alt="' + Buleys.view.slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '"></div><div class="vote_down vote thumb_icon" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '" alt="' + Buleys.view.slug + '" ></div></div>');
 			} else if (event.target.result.vote_value == 1) {
@@ -9835,7 +10306,7 @@ function check_item_vote_status_for_overlay( item_url ) {
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'votes', 'key': item_url.replace(/[^a-zA-Z0-9-_]+/g, ""), 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': item_url.replace(/[^a-zA-Z0-9-_]+/g, ""), 'on_success': on_success, 'on_error': on_error } );
 	
 }
 
@@ -9983,25 +10454,28 @@ function add_or_update_vote( vote_key, vote_value ) {
 	if (typeof vote_value == 'undefined') {
 		vote_value = '';
 	}
+
+	/* Setup */
+
+	var data = {
+		'vote_key': vote_key,
+		'vote_value': vote_value,
+		"modified": new Date().getTime()
+	};
 	
 	/* Callbacks */
 
 	var on_success = function ( context ) {
-		var item_request = context.event;
-		if (typeof item_request.result == 'undefined') {
-			add_vote_to_votes_database(vote_key, vote_value);
-		} else {
-			update_vote_in_votes_database(vote_key, vote_value);
-		}
+		console.log('Successfully updated vote', context );	
 	};
 	
-	var on_error = function ( e ) {
-
+	var on_error = function ( context ) {
+		console.log('Failed to update vote', context );
 	};
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_put', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
 
 }
 

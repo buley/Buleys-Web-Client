@@ -2,8 +2,8 @@ var Buleys = {};
 /* IndexedDB */
 Buleys.db = {};
 Buleys.version = 7;
-Buleys.database_name = "Buleys-320";
-Buleys.database_description = "www.buleys.com";
+Buleys.database_name = "Buleys-324";
+Buleys.database_description = "Database for www.buleys.com";
 Buleys.on_complete = function( e ) { console.log( "indexeddb request completed" ); console.log( e ); }
 Buleys.on_error = function( e ) { console.log( "indexeddb request errored" ); console.log( e ); }
 Buleys.on_abort = function( e ) { console.log( "indexeddb request aborted" ); console.log( e ); }
@@ -21,7 +21,7 @@ Buleys.view.scripts = [];
 Buleys.loader = {};
 Buleys.loader.loaded_scripts = 0;
 Buleys.loader.total_scripts = 0;
-Buleys.debug = {};
+Buleys.debug = false;
 Buleys.debug.database = false;
 Buleys.debug.ajax = false;
 Buleys.debug.items = false;
@@ -65,15 +65,14 @@ $(document).ready(function() {
 	InDB.trigger( 'InDB_do_database_load', { 'name': Buleys.database_name, 'description': Buleys.database_description } ) ;
 });
 
-jQuery( document ).bind( 'InDB_database_load_success', function( event, parameters ) {
+jQuery( InDB ).bind( 'InDB_database_load_success', function( event, parameters ) {
 	console.log( 'InDB_database_load_success', parameters );
 	Buleys.session.database_is_open = true;
-	load_current_page();
-	reload_results();
+	//load_current_page();
 });
 
-jQuery( document ).bind( 'InDB_database_created', function( event, parameters ) {
-	install_stores();
+jQuery( InDB ).bind( 'InDB_database_created', function( event, parameters ) {
+	Buleys.install_stores();
 });
 
 Buleys.install_stores = function() {
@@ -135,7 +134,6 @@ Buleys.install_stores = function() {
 
 	var favorites_idxs = {
 		'favorites': {
-			'topic_slug': { 'topic_slug': false },
 			'topic_type': { 'topic_type': false },
 			'modified': { 'modified': false }
 		}
@@ -273,7 +271,7 @@ Buleys.install_stores = function() {
 
 	// TODO: Why is last_updated not modified like the rest?
 	var topics_idxs = {
-		'status': {
+		'topics': {
 			'slug': { 'topic_slug': false },
 			'type': { 'topic_type': false },
 			'last_updated': { 'modified': false }
@@ -319,7 +317,7 @@ Buleys.install_stores = function() {
 	};	
 
 	var votes_idxs = {
-		'deleted': {
+		'votes': {
 			'vote_value': { 'topic_type': false },
 			'modified': { 'modified': false }
 		}
@@ -462,7 +460,7 @@ Buleys.install_indexes = function() {
 
 	// TODO: Why is last_updated not modified like the rest?
 	var topics_idxs = {
-		'status': {
+		'topics': {
 			'slug': { 'topic_slug': false },
 			'type': { 'topic_type': false },
 			'last_updated': { 'modified': false }
@@ -492,7 +490,7 @@ Buleys.install_indexes = function() {
 	/* Votes */
 
 	var votes_idxs = {
-		'deleted': {
+		'votes': {
 			'vote_value': { 'topic_type': false },
 			'modified': { 'modified': false }
 		}
