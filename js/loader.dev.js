@@ -61,6 +61,25 @@ $(document).ready(function() {
 	check_login_status();
 
 
+	if ( isEmpty( Buleys.view ) ) {
+		twitter_authentication_detect();
+	} else {
+
+		var preflight = get_local_storage( 'twitter_oauth_authenticated' );
+		console.log('getting the preflight',preflight, "false" == preflight );
+		if( "1" !== preflight ) {
+
+			// Check if Twitter has redirected
+	
+			twitter_validation_detect();
+			if( "0" !== preflight ) {
+				// Prepare for oauth
+				twitter_preflight();
+			};
+
+		}
+	}
+
 	InDB.debug = false;
 	InDB.trigger( 'InDB_do_database_load', { 'name': Buleys.database_name, 'description': Buleys.database_description } ) ;
 });

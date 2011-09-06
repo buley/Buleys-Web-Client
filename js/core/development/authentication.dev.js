@@ -391,6 +391,7 @@ function twitter_preflight() {
 		var oauth_token_secret = data.response.oauth_token_secret;
 
 		set_local_storage_batch( {
+			'twitter_oauth_authenticated': "0",
 			'twitter_oauth_authorization_url': oauth_authorization_url,
 			'twitter_oauth_request_state': oauth_request_state,
 			'twitter_oauth_token': oauth_token,
@@ -406,50 +407,114 @@ function twitter_preflight() {
 
 }
 
+function twitter_logout() {
+	delete_local_storage_batch(
+	[
+		'twitter_oauth_authenticated',
+		'twitter_oauth_authorization_url',
+		'twitter_oauth_request_state',
+		'twitter_oauth_token',
+		'twitter_oauth_token_secret'
+	] );
+
+}
+
+
+
 function twitter_validation_detect() {
 	var get_vars = get_url_vars();
 	if( !isEmpty( get_vars[ 'oauth_token' ] ) && !isEmpty( get_vars[ 'oauth_verifier' ] ) ) {
+		console.log( 'twitter_validation_detect()', get_vars );
 		twitter_authentication_validate( get_vars );
 	}
 }
 
 function twitter_authentication_validate( get_vars ) {
 
-	var oauth_secret;
+	var oauth_token_secret;
 	if( get_vars[ 'oauth_verifier' ] ) {
-		oauth_secret = get_vars[ 'oauth_verifier' ];
+		oauth_token_secret = get_vars[ 'oauth_verifier' ];
 	} else {
-		return;
+		return false;
 	}
 
 	var oauth_token;
 	if( get_vars[ 'oauth_token' ] ) {
 		oauth_token = get_vars[ 'oauth_token' ];
 	} else {
-		return;
+		return false;
 	}
 
 	var request_state = get_local_storage( 'twitter_oauth_request_state' );
 
-	if( isEmpty( request_state ) || 1 == request_state ) {
+	if( 1 == request_state ) {
 
 		var stored_oauth_token = get_local_storage( 'twitter_oauth_token' );
 		
-		console.log('stored vs. received', stored_oauth_token, oauth_token, stored_oauth_token === oauth_token, stored_oauth_token == oauth_token );
-
 		var on_success = function( context ) {
-			console.log( 'Twitter account validated', context );
+			if( context.success == true ) {
+			
+				if ( !!Buleys.debug ) {
+					console.log( 'Twitter account validated', context.response );
+				}
+
+				var response = context.response;
+				var access_token = response.access_token;	
+				var access_token_secret = response.access_token_secret;
+				var request_state = response.oauth_request_state;	
+	
+				// Set local storage
+				var twitter_oauth = {
+					'twitter_oauth_authenticated': "1",
+					'twitter_oauth_access_token': access_token,
+					'twitter_oauth_access_token_secret': access_token_secret
+				};
+
+				console.log('batch setting', twitter_oauth );
+				set_local_storage_batch( twitter_oauth );
+
+				delete_local_storage_batch( [
+					'twitter_oauth_request_state',
+					'twitter_oauth_authorization_url',
+					'twitter_oauth_token',
+					'twitter_oauth_token_secret',
+				] );
+
+				// Redirect away from page
+
+				var stateObj = {
+				    "page": Buleys.view.page,
+				    "slug": Buleys.view.slug,
+				    "type": Buleys.view.type,
+				    "time": new Date().getTime()
+				};
+
+				var loc = window.location;
+				var url_string = loc.protocol + "//" + loc.hostname + loc.pathname;
+				//console.log('making history', url_string);
+				history.replaceState(stateObj, "homepage", url_string);
+				reload_results();
+
+
+			} else {
+				console.log( 'Twitter account could not be validated', context );
+			}
 		};
 
 		var on_error = function( context ) {
-			console.log( 'Twitter account could not be validated', context );
+			if( context.success == true ) {
+				console.log( 'Twitter account validated (but threw an error)', context.response );
+			} else {
+				console.log( 'Twitter account could not be validated (and threw an error)', context );
+			}
 		};
 
 		if( stored_oauth_token === oauth_token ) {
 
-			oauth_validate( 'twitter', request_state, oauth_token, oauth_secret, on_success, on_error );
+			return oauth_validate( 'twitter', request_state, oauth_token, oauth_token_secret, on_success, on_error );
 
-		}
+		} 
+		return false;
 
 	} else {
 
@@ -514,27 +579,35 @@ function oauth_preflight( type, on_success, on_error ) {
 }
 
 
-function oauth_validate( type, request_state, oauth_token, oauth_secret, on_success, on_error ) {
+function oauth_validate( type, request_state, oauth_token, oauth_token_secret, on_success, on_error ) {
 
 	jQuery(document).trigger('oauth_preflight');
 
 	if( 'function' !== typeof on_success ) {
 		on_success = function( context ) {
-
-		}
+			if( context.success == true ) {
+					
+			} else {
+				on_error( context );
+			}
+		};
 	}
 
 	if( 'function' === typeof on_error ) {
 		on_error = function( context ) {
+			if( context.success !== true ) {
 
-		}
+			} else {
+				on_success( context );
+			}
+		};
 	}
 
 	var data_to_send = {
 		"oauth_type": type,
 		"oauth_state": request_state,
 		"oauth_token": oauth_token,
-		"oauth_secret": oauth_secret
+		"oauth_token_secret": oauth_token_secret
 	};
 
 	jQuery.ajax( {
