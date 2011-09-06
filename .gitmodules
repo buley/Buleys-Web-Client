@@ -1,9 +1,15 @@
 [submodule "css/bootstrap"]
 	path = css/bootstrap
 	url = https://github.com/twitter/bootstrap.git
-[submodule "core/development/dependencies/indb"]
-	path = core/development/dependencies/indb
+[submodule "js/core/development/dependencies/indb"]
+	path = js/core/development/dependencies/indb
 	url = git@github.com:editor/InDB.git
 [submodule "cdn_invalidate/CloudFront-PHP-Invalidator"]
 	path = cdn_invalidate/CloudFront-PHP-Invalidator
 	url = git://github.com/subchild/CloudFront-PHP-Invalidator.git
+[submodule "js/core/development/dependencies/twitter"]
+	path = js/core/development/dependencies/twitter
+	url = https://github.com/remy/twitterlib.git
+[submodule "js/core/development/dependencies/twitterlib"]
+	path = js/core/development/dependencies/twitterlib
+	url = https://github.com/remy/twitterlib.git
