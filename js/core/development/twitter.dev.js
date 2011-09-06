@@ -122,29 +122,22 @@ function add_tweet_to_items_database( item ) {
 
 		var event2 = context_2.event;
 
-		// Verify that (1) there are entities
-		if (item.entities.length > 1 && typeof item.entities.type === "undefined" && typeof item.entities.slug === "undefined") {
 
-			/* Debug */
-			
-			if( true === Buleys.debug ) {
-				console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
-			}
+		/* Debug */
+		
+		if( true === Buleys.debug ) {
+			console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
+		}
 
-			// Qualify the view
-			// TODO: Better description
-			if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
+		// Qualify the view
+		// TODO: Better description
+		if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
 
-				// Add the item to the results
-				prepend_item_to_results(get_data_object_for_item(item));
-
-			}
-		// or (2) that there is a single entity
-		} else if ( ( item.entities.length === 1 && typeof item.entities.slug !== "undefined" ) && ( Buleys.view.type === "home" || ( item.entities[0].slug.toLowerCase() === slug && item.categories[0].type.toLowerCase() === type ) ) ) {
-
-			add_item_to_results(get_data_object_for_item(item));
+			// Add the item to the results
+			prepend_item_to_results(get_data_object_for_item(item));
 
 		}
+
 	};
 
 	var add_on_error = function ( context_2 ) {
