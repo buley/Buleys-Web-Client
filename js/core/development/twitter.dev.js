@@ -37,16 +37,16 @@ function twitter_request( type, data, on_success, on_error ) {
 	/* Request */
 
 	jQuery.ajax( {
-			'type': 'POST',
-			'url': "http://api.buleys.com/twitter",
-			'data': data_to_send,
-			'success': function ( data ) {
-					on_success( data );
-			},
-			'error': function( data ) {
-					on_error( data );
-			},
-			'dataType': 'json'
+		'type': 'POST',
+		'url': "http://api.buleys.com/twitter",
+		'data': data_to_send,
+		'success': function ( data ) {
+				on_success( data );
+		},
+		'error': function( data ) {
+				on_error( data );
+		},
+		'dataType': 'json'
 	} );
 
 }
@@ -72,11 +72,22 @@ function add_tweets( items ) {
 	$.each( items, function ( i, item ) {
 
 		if( true === Buleys.debug ) {
-			//console.log('items.js > add_items > each', item );
+			console.log('twitter.js > add_tweets > each', item );
 		}
 
 		add_tweet_to_items_database( item );
+		console.log('doing entities');
 
+		var splitted = item.topic.split('_');
+		item.entities = [{
+			'slug': splitted[1],
+			'type': splitted[0],
+			'display': null
+		}];
+		console.log('ENTITIES', item.entities );
+		add_categories_to_categories_database(item.link, item.entities );
+
+		send_to_console("<p>Added: <a href='" + item.link + "'>" + item.title + "</a></p>");
 	});
 
 }
@@ -108,12 +119,12 @@ function add_tweet_to_items_database( item ) {
 
 	/* Action */
 
-	jQuery(document).trigger('add_item_to_items_database');
+	jQuery(document).trigger('add_tweet_to_items_database');
 
 	/* Setup */
 
 	var data = get_data_object_for_tweet(item);
-
+	console.log('adding twitt',data );
 	/* Callbacks */
 
 	var add_on_success = function ( context_2 ) {
@@ -122,11 +133,10 @@ function add_tweet_to_items_database( item ) {
 
 		var event2 = context_2.event;
 
-
 		/* Debug */
 		
 		if( true === Buleys.debug ) {
-			console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
+			console.log("items.js > add_tweet_to_items_database() > item.entities > ", item.entities );
 		}
 
 		// Qualify the view
@@ -134,7 +144,7 @@ function add_tweet_to_items_database( item ) {
 		if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
 
 			// Add the item to the results
-			prepend_item_to_results(get_data_object_for_item(item));
+			prepend_item_to_results( data );
 
 		}
 
@@ -149,6 +159,4 @@ function add_tweet_to_items_database( item ) {
 	InDB.trigger( 'InDB_do_row_add', { 'store': 'items', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
 
 }
-
-
 
