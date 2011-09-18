@@ -104,9 +104,62 @@ Buleys.activity.shorthand = function ( key ) {
 	if( 'undefined' !== typeof Buleys.activity.shorthand_map[ key ] ) {
 		return Buleys.activity.shorthand_map[ key ];
 	} else {
-		false;
+		return key;
 	}
 }
+
+
+Buleys.activity.shorthand_reverse = function ( key ) {
+
+	var reversed;
+	for( item in shorthand_map ) {
+		if( shorthand_map.hasOwnProperty( item ) ) {
+			reversed[ shorthand_map[ item ] ] = item;
+		}
+	}
+
+	if( 'undefined' !== typeof reversed[ key ] ) {
+		return reversed[ key ];
+	} else {
+		return key;
+	}
+}
+
+//recursive
+Buleys.activity.shorthand_decode = function( object ) {
+	var encoded = {};
+	for( item in object ) {
+		if( object.hasOwnProperty( item ) ) {
+			//recursive case: object value
+			//base case: string value
+			if( 'object' === typeof object[ item ] ) {
+				encoded[ item ] = Buleys.activity.shorthand_decode( object[ item ] );	
+			} else { 
+				encoded[ item ] = Buleys.activity.shorthand_reverse( object[ item ] );
+			}
+		}
+	}
+	return encoded;
+}
+
+
+//recursive
+Buleys.activity.shorthand_encode = function( object ) {
+	var encoded = {};
+	for( item in object ) {
+		if( object.hasOwnProperty( item ) ) {
+			//recursive case: object value
+			//base case: string value
+			if( 'object' === typeof object[ item ] ) {
+				encoded[ item ] = Buleys.activity.shorthand_encode( object[ item ] );	
+			} else { 
+				encoded[ item ] = Buleys.activity.shorthand( object[ item ] );
+			}
+		}
+	}
+	return encoded;
+}
+
 
 Buleys.activity.install = function ( ) {
 
@@ -152,9 +205,35 @@ Buleys.activity.add = function ( activity, on_success, on_error ) {
 
 	jQuery( document ).trigger( 'Buleys_activity_add', { 'activity': activity } );
 
-	/* Shorthand Encoding */
+	/* Defaults */
 
-	activity = Buleys.activities.shorthand_encode( activity );
+	if( !activity.trashed ) {
+		activity.trashed = false;
+	}
+
+	if( !activity.seen ) {
+		activity.seen = false;
+	}
+
+	if( !activity.clicked ) {
+		activity.clicked = false;
+	}
+
+	if( !activity.archived ) {
+		activity.archived = false;
+	}
+
+	if( !activity.favorites ) {
+		activity.favorites = false;
+	}
+
+	if( !activity.published ) {
+		activity.published = true;
+	}
+
+	/* Assertions */
+
+	InDB.assert( !InDB.isEmpty( activity.id ), 'activity.id must not be empty' );
 
 	/* Callbacks */
 
@@ -169,6 +248,10 @@ Buleys.activity.add = function ( activity, on_success, on_error ) {
 			on_error( context );
 		}
 	};
+
+	/* Shorthand Encoding */
+
+	activity = Buleys.activities.shorthand_encode( activity );
 
 	/* Request */
 
@@ -444,7 +527,7 @@ Buleys.activity.is_seen = function( activity_id, on_success, on_error ) {
 
 	var on_success_wrapper = function( result ) {
 
-		if( isEmpty( result ) || true !== result.seen ) {
+		if( isEmpty( result ) ) {
 			on_success( false );
 		} else {
 			on_success( true );
@@ -456,7 +539,7 @@ Buleys.activity.is_seen = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'seen': true }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -482,7 +565,7 @@ Buleys.activity.is_clicked = function( activity_id, on_success, on_error ) {
 
 	var on_success_wrapper = function( result ) {
 
-		if( isEmpty( result ) || true !== result.clicked ) {
+		if( isEmpty( result ) ) {
 			on_success( false );
 		} else {
 			on_success( true );
@@ -494,7 +577,7 @@ Buleys.activity.is_clicked = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'clicked': true }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -520,7 +603,7 @@ Buleys.activity.is_trashed = function( activity_id, on_success, on_error ) {
 
 	var on_success_wrapper = function( result ) {
 
-		if( isEmpty( result ) || true !== result.trashed ) {
+		if( isEmpty( result ) ) {
 			on_success( false );
 		} else {
 			on_success( true );
@@ -532,7 +615,7 @@ Buleys.activity.is_trashed = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'trashed': true }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -555,7 +638,7 @@ Buleys.activity.is_archived = function( activity_id, on_success, on_error ) {
 
 	var on_success_wrapper = function( result ) {
 
-		if( isEmpty( result ) || true !== result.archived ) {
+		if( isEmpty( result ) ) {
 			on_success( false );
 		} else {
 			on_success( true );
@@ -567,7 +650,7 @@ Buleys.activity.is_archived = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'archived': true }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -586,11 +669,11 @@ Buleys.activity.unfavorite = function( activity_id, on_success, on_error ) {
 
 //determine favorite status of activity
 //returns true if activity is favorited, else false
-Buleys.activity.is_favorited = function( activity_id ) {
+Buleys.activity.is_favorited = function( activity_id, on_success, on_error ) {
 
 	var on_success_wrapper = function( result ) {
 
-		if( isEmpty( result ) || true !== result.favorited ) {
+		if( isEmpty( result ) ) {
 			on_success( false );
 		} else {
 			on_success( true );
@@ -602,7 +685,7 @@ Buleys.activity.is_favorited = function( activity_id ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'favorited': true }, on_success_wrapper, on_error_wrapper );
 
 };
 
