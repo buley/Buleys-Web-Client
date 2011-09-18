@@ -3,9 +3,16 @@
  * Activity.js
  **/
 
+
+/* Setup */
+
 Buleys.activity = Buleys.activity || {};
 Buleys.activities = Buleys.activities || {};
 
+
+/* UI */
+
+//adds a click watcher to activity items
 jQuery('.activity').live( 'click', function(){ 
 	jQuery(this).addClass('selected');
 	jQuery(this).trigger('preview_activity');
@@ -14,14 +21,158 @@ jQuery('.activity').live( 'click', function(){
 
 /* Utility functions */
 
+Buleys.activity.shorthand = {
+	'archived': 'ar',
+	'actor': 'a',
+	'actor_attachments': 'a_at',
+	'actor_content': 'a_c',
+	'actor_display_name': 'a_dn',
+	'actor_downstream_duplicates': 'a_dd',
+	'actor_id': 'a_i',
+	'actor_image_height': 'a_ih',
+	'actor_image_url': 'a_iu',
+	'actor_image_width': 'a_iw',
+	'actor_object_type': 'a_ot',
+	'actor_published': 'a_pu',
+	'actor_summary': 'a_s',
+	'actor_updated': 'a_up',
+	'actor_upstream_duplicates': 'a_ud',
+	'actor_url': 'a_u',
+	'content': 'c',
+	'favorited': 'f',
+	'icon': 'ic',
+	'icon_height': 'ic_h',
+	'icon_width': 'ic_w',
+	'icon_url': 'ic_u',
+	'id': 'i',
+	'object': 'o',
+	'object_attachments': 'o_at',
+	'object_content': 'o_c',
+	'object_display_name': 'o_dn',
+	'object_downstream_duplicates': 'o_dd',
+	'object_id': 'o_i',
+	'object_image_height': 'o_ih',
+	'object_image_url': 'o_iu',
+	'object_image_width': 'o_iw',
+	'object_object_type': 'o_ot',
+	'object_published': 'o_pu',
+	'object_summary': 'o_s',
+	'object_updated': 'o_up',
+	'object_upstream_duplicates': 'o_ud',
+	'object_url': 'o_u',
+	'provider': 'p',
+	'provider_attachments': 'p_at',
+	'provider_content': 'p_c',
+	'provider_display_name': 'p_dn',
+	'provider_downstream_duplicates': 'p_dd',
+	'provider_id': 'p_i',
+	'provider_image_height': 'p_ih',
+	'provider_image_url': 'p_iu',
+	'provider_image_width': 'p_iw',
+	'provider_object_type': 'p_ot',
+	'provider_published': 'p_pu',
+	'provider_score': 'p_sc',
+	'provider_summary': 'p_s',
+	'provider_updated': 'p_up',
+	'provider_upstream_duplicates': 'p_ud',
+	'provider_url': 'p_u',
+	'published': 'pu',
+	'seen': 's',
+	'target': 't',
+	'target_attachments': 't_at',
+	'target_content': 't_c',
+	'target_display_name': 't_dn',
+	'target_downstream_duplicates': 't_dd',
+	'target_id': 't_i',
+	'target_image_height': 't_ih',
+	'target_image_url': 't_iu',
+	'target_image_width': 't_iw',
+	'target_object_type': 't_ot',
+	'target_published': 't_pu',
+	'target_score': 't_sc',
+	'target_summary': 't_s',
+	'target_updated': 't_up',
+	'target_upstream_duplicates': 't_ud',
+	'target_url': 't_u',
+	'trashed': 'tr',
+	'updated': 'up',
+	'url': 'u',
+	'verb': 'v'
+};
+
+Buleys.activity.shorthand = function ( key ) {
+	if( 'undefined' !== typeof Buleys.activity.shorthand[ key ] ) {
+		return Buleys.shorthand[ key ];
+	} else {
+		false;
+	}
+}
+
+Buleys.activity.install = function ( ) {
+
+        var activities = {
+                'activities': { 'key': Buleys.shorthand[ 'id' ], 'incrementing_key': false, 'unique': true }
+        }
+
+        var activities_idxs = {
+                'activities': {
+                        Buleys.shorthand( 'actor_id' ).replace( '_', '.' ): { 'actor_id': true },
+                        Buleys.shorthand( 'object_id' ).replace( '_', '.' ): { 'object_id': true },
+                        Buleys.shorthand( 'object_url' ).replace( '_', '.' ): { 'object_url': false },
+                        Buleys.shorthand( 'object_published' ).replace( '_', '.' ): { 'object_published': false }
+                        Buleys.shorthand( 'verb' ): { 'verb': true },
+                        Buleys.shorthand( 'seen' ): { 'seen': true },
+                        Buleys.shorthand( 'clicked' ): { 'clicked': true },
+                        Buleys.shorthand( 'trashed' ): { 'trashed': true },
+                        Buleys.shorthand( 'archived' ): { 'archived': true },
+                        Buleys.shorthand( 'favorited' ): { 'favorited': true }
+                }
+        };
+
+        console.log( activities, activities_idxs );
+
+        InDB.trigger( 'InDB_do_stores_create', { 'stores': activities, 'on_success': function( context ) {
+                InDB.trigger( 'InDB_do_indexes_create', { 'indexes': activities_idxs, 'on_complete': function( context2 ) {
+                        console.log( 'Activities store loaded', context2 );
+                } } );
+        } } );
+
+}
+
 
 /* Single activity methods */
 
-
 //adds a new activity to the database (meaning it must not yet exist)
+//takes an activity, requires an activity_id attribute
 //on_success callback returns activity id as only argument
 //on_error returns error
-Buleys.activity.add = function ( activity ) {
+Buleys.activity.add = function ( activity, on_success, on_error ) {
+
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_add', { 'activity': activity } );
+
+	/* Shorthand Encoding */
+
+	activity = Buleys.activities.shorthand_encode( activity );
+
+	/* Callbacks */
+
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success( context );
+		}
+	};
+
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context );
+		}
+	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'activities', 'data': data, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
 
 };
 
@@ -30,21 +181,203 @@ Buleys.activity.add = function ( activity ) {
 //on_error returns error, on_success returns nothing
 Buleys.activity.remove = function ( activity_id, on_success, on_error ) {
 
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_remove', { 'activity_id': activity_id } );
+	
+	/* Callbacks */
+
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success( context );
+		}
+	};
+
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context );
+		}
+	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_delete', { 'store': 'activities', 'key': activity_id, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
+
 };
 
 
 //updates an existing activity or adds a new one
 //given an activity_id and data
-//data argument can be attributes or whole activity
-//on_success returns activity_id
+//data argument can be individual attributes or whole activities
+//activity_ids cannot be modified
+//on_success returns nothing
 //on_error returns error
 Buleys.activity.update = function ( activity_id, data, on_success, on_error ) {
+
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_update', { 'activity_id': activity_id, 'data': data } );
+	
+	/* Callbacks */
+
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success();
+		}
+		
+	};
+
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context.error );
+		}
+	};
+
+	/* Request */
+
+	// Success callback
+	var check_success = function( context ) {
+
+		// Get row value
+		var result = InDB.row.value( context.event );
+
+		// If item exists
+		if( !InDB.isEmpty( result ) ) { 	
+
+			/* Shorthand Encoding */
+
+			result = Buleys.activity.shorthand_encode( result );
+			data = Buleys.activity.shorthand_encode( data );
+
+			// Update any attributes
+			for( var x in data ) {
+				if( Buleys.shorthand[ 'id' ] !== x ) {
+					result[ x ] = data[ x ];
+				}
+			}
+
+			//Put with on_success_wrapper() and on_error_wrapper()
+			InDB.trigger( 'InDB_do_row_put', { 'store': 'activities', 'data': data, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
+
+		} // End if item exists
+
+	};
+
+	// Get error callback
+	var check_error = function( context ) {
+
+		// Call other callbacks
+		on_error_wrapper( context.error );
+
+	};
+
+	// InDB row get
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': check_success, 'on_error': check_error } );
+
+};
+
+
+//replaces an existing activity or adds a new one
+//given an activity_id and data
+//data argument cannot replace individual attributes, for that use Buleys.activity.update
+//data must be a complete activity object, including any required attributes such as id
+//activity_ids cannot be modified
+//on_success returns nothing
+//on_error returns error
+Buleys.activity.replace = function ( activity_id, data, on_success, on_error ) {
+
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_replace', { 'activity_id': activity_id, 'data': data } );
+	
+	/* Callbacks */
+
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success();
+		}		
+	};
+
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context.error );
+		}
+	};
+
+	/* Request */
+
+	// Success callback
+	var check_success = function( context ) {
+
+		// Get row value
+		var result = InDB.row.value( context.event );
+
+		/* Shorthand Encoding */
+
+		result = Buleys.activity.shorthand_encode( result );
+
+		// If item exists
+		if( !InDB.isEmpty( result ) ) { 	
+
+			//Put with on_success_wrapper() and on_error_wrapper()
+			InDB.trigger( 'InDB_do_row_put', { 'store': 'activities', 'data': data, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
+
+		} // End if item exists
+
+	};
+
+	// Error callback
+	var check_error = function( context ) {
+
+		// Error callbacks
+		on_error_wrapper( context.error );
+
+	};
+
+	// InDB row get
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': check_success, 'on_error': check_error } );
 
 };
 
 
 //gets an existing activity given an activity_id
+//on_success returns the row
 Buleys.activity.get = function ( activity_id, on_success, on_error ) {
+
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_get', { 'activity_id': activity_id } );
+	
+	/* Callbacks */
+
+	// Out callback
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+
+			var result = InDB.row.value( context.event );
+			
+			/* Shorthand Decoding */
+
+			result = Buleys.activity.shorthand_decode( result );
+
+			// Their callback
+			on_success( result );
+
+		}
+	};
+
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context );
+		}
+	};
+
+	/* Request */
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
+
 
 };
 
@@ -186,7 +519,64 @@ Buleys.activity.is_favorited = function( activity_id ) {
 //gets all activities based on an existing index and value
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, index, begin, begin_inclusive, end, end_inclusive, inverse ) {
+Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, value, left_bound, right_bound, includes_left_bound, includes_right_bound, inverse ) {
+
+	/* Actions */
+
+	jQuery(document).trigger('Buleys_activities_getAll');
+
+	/* Defaults */
+
+	if ( typeof inverse === "undefined" ) {
+		inverse = false;
+	}
+
+	var key_range = InDB.range.get( value, left_bound, right_bound, includes_left_bound, includes_right_bound );
+	
+	/* Callbacks */
+
+	var cursor_on_success = function ( context ) {
+
+		/* Setup */
+
+		var activity = InDB.row.value( context.event );
+
+		// Fire on_success() callback if items
+		// Else call on_complete() if cursor is exhausted
+		if( !!activity ) {
+			
+			var matches_filter = true;
+			for( x in filter ) {
+				if ( filter[ x ] !== activity[ Buleys.reverse_shorthand( x ) ] ) {
+					matches_filter = false;
+				}
+			} 
+
+			if( true === matches_filter ) {
+				//Fire on_callback()
+				on_success( activity );
+			}
+
+		} else {
+
+			// Fire on_complete()
+			on_complete();
+
+		}
+
+	};
+
+	var cursor_on_error = function ( context ) {
+		on_error( context.error );
+	};
+	
+	var cursor_on_abort = function( context ) {
+
+	};
+
+	/* Request */
+	
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'activities', 'index': index, 'keyRange': key_range, 'on_success': cursor_on_success, 'on_error': cursor_on_error, 'on_abort': cursor_on_abort } );	
 
 };
 
@@ -332,103 +722,7 @@ Buleys.activities.update = function( activities, on_success, on_error, on_comple
 
 
 
-/* 
-Buleys.activity.remove = ( id, on_success, on_error ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_activity_from_activities_database');
-	
-	/* Callbacks */
-
-	if( 'undefined' === typeof on_success ) {	
-		var on_success = function ( context ) {
-		};
-	}
-	
-	if( 'undefined' === typeof on_error ) {
-		var on_error = function ( context ) {
-		};
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'activities', 'key': id, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-Buleys.activity.update = function( activity ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_activity_to_activities_database');
-
-	/* Setup */
-
-	var data = get_data_object_for_activity(activity);
-
-	/* Callbacks */
-
-	var deleted_on_success = function ( context ) {
-
-		/* Setup */
-
-		var event = context.event;
-
-		// Verify activity is not deleted
-		if ( typeof event.result === 'undefined' ) {
-
-			/* Callbacks */
-
-			var add_on_success = function ( context_2 ) {
-
-				/* Setup */
-
-				var event2 = context_2.event;
-
-
-					/* Debug */
-					
-					if( true === Buleys.debug ) {
-						console.log("activities.js > add_activity_to_activity_database() > activity.entities > ", activity.entities );
-					}
-
-					// Qualify the view
-					// TODO: Better description
-					if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
-
-						// Add the activity to the results
-						Buleys.activity.publish( activity );
-
-					}
-			};
-
-			var add_on_error = function ( context_2 ) {
-			
-			};
-
-			/* Request */
-
-			InDB.trigger( 'InDB_do_row_add', { 'store': 'activities', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
-
-		}
-
-	};
-
-	deleted_on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': activity.link, 'on_success': deleted_on_success, 'on_error': deleted_on_error } ); 
-
-}
-
-
-
-Buleys.activity.publish = function( activity, prepend ) {
+Buleys.activity.add_to_result = function( activity, prepend ) {
 	
 	/* Debug */
 
@@ -458,6 +752,7 @@ Buleys.activity.publish = function( activity, prepend ) {
 	}
 
 }
+
 
 
 Buleys.activity.is_read = function( activity_url ) {
