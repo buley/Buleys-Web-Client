@@ -426,12 +426,12 @@ Buleys.activity.replace = function ( activity_id, data, on_success, on_error ) {
 
 
 //gets an existing activity given an activity_id
-//on_success returns the row
+//on_success returns the row or null if the row doesn't exists or it exists but doesn't match the filter
 Buleys.activity.get = function ( activity_id, filter, on_success, on_error ) {
 
 	/* Action */
 
-	jQuery( document ).trigger( 'Buleys_activity_get', { 'activity_id': activity_id } );
+	jQuery( document ).trigger( 'Buleys_activity_get', { 'activity_id': activity_id, 'filter': filter } );
 	
 	/* Callbacks */
 
@@ -441,12 +441,24 @@ Buleys.activity.get = function ( activity_id, filter, on_success, on_error ) {
 
 			var result = InDB.row.value( context.event );
 			
+			var matches_filter = true;
+			for( x in filter ) {
+				if ( filter[ x ] !== result[ Buleys.reverse_shorthand( x ) ] ) {
+					matches_filter = false;
+				}
+			} 
+
 			/* Shorthand Decoding */
 
 			result = Buleys.activity.shorthand_decode( result );
 
-			// Their callback
-			on_success( result );
+			//return result if it matches the filter	
+			//else return null
+			if( true === matches_filter ) {
+				on_success( result );
+			} else {
+				on_success( null );
+			}
 
 		}
 	};
@@ -460,7 +472,6 @@ Buleys.activity.get = function ( activity_id, filter, on_success, on_error ) {
 	/* Request */
 
 	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
-
 
 };
 
@@ -698,17 +709,13 @@ Buleys.activity.is_favorited = function( activity_id, on_success, on_error ) {
 //gets all activities based on an existing index and value
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, value, left_bound, right_bound, includes_left_bound, includes_right_bound, inverse ) {
+Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, index, value, left_bound, right_bound, includes_left_bound, includes_right_bound ) {
 
 	/* Actions */
 
 	jQuery(document).trigger('Buleys_activities_getAll');
 
 	/* Defaults */
-
-	if ( typeof inverse === "undefined" ) {
-		inverse = false;
-	}
 
 	var key_range = InDB.range.get( value, left_bound, right_bound, includes_left_bound, includes_right_bound );
 	
@@ -770,9 +777,11 @@ Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, 
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getArchived = function ( on_success, on_error, on_complete ) {
-
-
+Buleys.activities.getArchived = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'archived', true, null, null, null, null );
 };
 
 
@@ -780,8 +789,11 @@ Buleys.activities.getArchived = function ( on_success, on_error, on_complete ) {
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getArchived = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getUnarchived = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'archived', false, null, null, null, null );
 };
 
 
@@ -792,8 +804,11 @@ Buleys.activities.getArchived = function ( on_success, on_error, on_complete ) {
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getSeen = function ( on_success, on_erorr, on_complete ) {
-
+Buleys.activities.getSeen = function ( filter, on_success, on_erorr, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'seen', true, null, null, null, null );
 }
 
 
@@ -801,8 +816,11 @@ Buleys.activities.getSeen = function ( on_success, on_erorr, on_complete ) {
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getUnseen = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getUnseen = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'seen', false, null, null, null, null );
 }
 
 
@@ -812,8 +830,11 @@ Buleys.activities.getUnseen = function ( on_success, on_error, on_complete ) {
 //gets all trashed activities
 //depends on activities.getAll
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getTrashed = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getTrashed = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'trashed', true, null, null, null, null );
 };
 
 
@@ -821,8 +842,11 @@ Buleys.activities.getTrashed = function ( on_success, on_error, on_complete ) {
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getUntrashed = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getUntrashed = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'trashed', false, null, null, null, null );
 };
 
 
@@ -833,8 +857,11 @@ Buleys.activities.getUntrashed = function ( on_success, on_error, on_complete ) 
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getFavorited = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getFavorited = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'favorited', true, null, null, null, null );
 };
 
 
@@ -842,8 +869,11 @@ Buleys.activities.getFavorited = function ( on_success, on_error, on_complete ) 
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getUnfavorited = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getUnfavorited = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false, 'published': true };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'favorited', false, null, null, null, null );
 };
 
 /* Published */
@@ -853,9 +883,11 @@ Buleys.activities.getUnfavorited = function ( on_success, on_error, on_complete 
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getPublished = function ( on_success, on_error, on_complete ) {
-
-
+Buleys.activities.getPublished = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'published', true, null, null, null, null );
 };
 
 
@@ -863,8 +895,11 @@ Buleys.activities.getPublished = function ( on_success, on_error, on_complete ) 
 //depends on activities.getAll
 //on_success and on_error are only invoked on a per-transaction basis
 //on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.getUnpublished = function ( on_success, on_error, on_complete ) {
-
+Buleys.activities.getUnpublished = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': false };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'published', false, null, null, null, null );
 };
 
 
@@ -872,20 +907,20 @@ Buleys.activities.getUnpublished = function ( on_success, on_error, on_complete 
 
 
 //helper function for adding activities in batch
-//takes an array of objects
+//takes an Array of Objects
 //on_success and on_error are only invoked on a per-transaction basis
-//on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.add = function( activities, on_success, on_error, on_complete ) {
-
+Buleys.activities.add = function( activities, on_success, on_error ) {
+	for( var i = 0; i <= activities.length; i++ ) {
+		Buleys.activity.add( activities[ i ], on_success, on_error );
+	}
 };
 
 
 //helper function for removing activities in batch
 //takes an Array of activity_id Strings
 //on_success and on_error are only invoked on a per-transaction basis
-//on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.remove  = function( activities, on_success, on_error, on_complete ) {
-	for( var i; i <= activities.length; i++ ) {
+Buleys.activities.remove  = function( activities, on_success, on_error ) {
+	for( var i = 0; i <= activities.length; i++ ) {
 		Buleys.activity.remove( activities[ i ], on_success, on_error );
 	}
 };
@@ -894,9 +929,10 @@ Buleys.activities.remove  = function( activities, on_success, on_error, on_compl
 //helper function for updating activites in bulk
 //takes an Array of activity objects
 //on_success and on_error are only invoked on a per-transaction basis
-//on_complete is invoked after all activities have returned either an on_success or on_error
-Buleys.activities.update = function( activities, on_success, on_error, on_complete ) {
-
+Buleys.activities.update = function( activities, on_success, on_error ) {
+	for( var i = 0; i <= activities.length; i++ ) {
+		Buleys.activity.update( activities[ i ], on_success, on_error );
+	}
 };
 
 
@@ -921,13 +957,14 @@ Buleys.activity.add_to_result = function( activity, prepend ) {
 
 	if (!(jQuery("#" + id).length)) {
 
+		var content = "<li class='activity' modified= '" + activity.object.modified + "' published-date= '" + activity.published_date + "' id='" + activity.id + "'><a href='" + activity.object.url + "'>" + activity.object.summary + "</a><a class='examine_item magnify_icon' href='#'></a></li>";
+		
 		if( true === prepend ) {
-
-			jQuery("<li class='activity' modified= '" + activity.modified + "' index-date= '" + activity.index_date + "' published-date= '" + activity.published_date + "' id='" + activity.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + activity.link + "'>" + activity.title + "</a><a class='examine_item magnify_icon' href='#'></a></li>").hide().prependTo("#results").fadeIn('slow');
-
+			jQuery( content ).hide().prependTo("#results").fadeIn('slow');
 		} else {
-			jQuery("<li class='activity' modified= '" + activity.modified + "' index-date= '" + activity.index_date + "' published-date= '" + activity.published_date + "' id='" + activity.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + activity.link + "'>" + activity.title + "</a><a class='examine_item magnify_icon' href='#'></a></li>").hide().appendTo("#results").fadeIn('slow');
+			jQuery( content ).hide().appendTo("#results").fadeIn('slow');
 		}
+
 	}
 
 }
