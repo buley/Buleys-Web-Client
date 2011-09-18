@@ -1,7 +1,7 @@
 Buleys.socket = Buleys.socket || {};
 Buleys.websocket = Buleys.websocket || {};
 
-Buleys.socket = io.connecit('http://api.buleys.com');
+Buleys.socket = io.connect('http://api.buleys.com');
 
 Buleys.socket.on('connect',function() {
 	Buleys.websocket.login();
