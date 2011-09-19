@@ -13,3 +13,6 @@
 [submodule "js/core/development/dependencies/twitterlib"]
 	path = js/core/development/dependencies/twitterlib
 	url = https://github.com/remy/twitterlib.git
+[submodule "js/core/development/dependencies/web-socket-js"]
+	path = js/core/development/dependencies/web-socket-js
+	url = https://github.com/gimite/web-socket-js.git

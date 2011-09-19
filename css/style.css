@@ -28,7 +28,31 @@ ul {
 	clear:left;
 	width:50%;
 }
+#left {
+    bottom: 0;
+    top: 40px;
+	margin-top:20px;
+    left: 2%;
+    overflow: auto;
+    position: fixed;
+	width:33%;
+}
+#drawer { 
+	float:right;
+    bottom: 0;
+    top: 40px;
+	margin-top:10px;
+    right: 2%;
+    overflow: auto;
+    position: fixed;
+	width:13%;
+}
 #right {
+	width:46%;	
+	padding-left:47%;
+	padding-right:17%;
+
+float:right;
 /*
 	position:absolute;
 	top:2%;

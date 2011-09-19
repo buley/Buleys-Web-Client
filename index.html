@@ -31,7 +31,8 @@
 
  	<div class="container-fluid" style="margin-top:30px">
 		<div class='row'>
-        	<div id='left' class='span6 columns'>
+        	<div id='left' class='span4 columns'>
+
 			<h1 id='header' class='page-header'>
 
 				<div id="page_status">
@@ -42,7 +43,12 @@
 				<div id="subtitle_1"></div>
 				<div id="subtitle_2"></div>
 				<div id='service_status_pane'></div>
-			</h1>
+			</h1>		
+			<div id='overlay'></div>
+		
+                </div>
+		<div id='drawer' class='span4 columns'>
+		
 			<div id='console_wrapper'>
 				<div id='console'></div>
 				<div id='console_controls'>
@@ -51,13 +57,11 @@
 			</div>
 
 
-
-			<div id='overlay'></div>
-		
-                </div>
-		<div id='right' class='span10 columns'>
+		</div>
+		<div id='right' class='span8 columns'>
 			<ul id='results'></ul>
 		</div>
+	
 	</div>
 	</div><!--end bootstrap container-->	
 		<!--Hotkeys-->
@@ -230,6 +234,7 @@
 	</body>
 	
 	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+	<script type="text/javascript" src="http://api.buleys.com/socket.io/socket.io.js"></script>
 	<script type="text/javascript" src="/js/combined.js"></script>
 	<script type="text/javascript">
 		var _gaq = _gaq || [];
