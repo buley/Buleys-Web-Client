@@ -1179,7 +1179,7 @@ InDB.range.get = function ( value, left_bound, right_bound, includes_left_bound,
 		return IDBKeyRange.lowerBound( left_bound, includes_left_bound );
 	} else if ( !!right_bound && !!includes_right_bound ) {
 		return IDBKeyRange.upperBound( right_bound, includes_right_bound );
-	} else if ( !!value ) {
+	} else if ( false === value || !!value ) {
 		return IDBKeyRange.only( value );
 	}  else {
 		return false;
@@ -2524,12 +2524,11 @@ var Buleys = {};
 /* IndexedDB */
 Buleys.db = {};
 Buleys.version = 7;
-Buleys.database_name = "Buleys-324";
+Buleys.database_name = "Buleys-330";
 Buleys.database_description = "Database for www.buleys.com";
 Buleys.on_complete = function( e ) { console.log( "indexeddb request completed" ); console.log( e ); }
 Buleys.on_error = function( e ) { console.log( "indexeddb request errored" ); console.log( e ); }
 Buleys.on_abort = function( e ) { console.log( "indexeddb request aborted" ); console.log( e ); }
-
 
 Buleys.queues = {};
 Buleys.settings = {};
@@ -2567,6 +2566,13 @@ Buleys.mouse.mouse_x_snapshot = 0;
 Buleys.store = window.localStorage;
 Buleys.session.database_is_open = false;
 
+Buleys.activity = {};
+Buleys.activities = {};
+
+Buleys.socket = {};
+Buleys.sockets = {};
+
+
 var session_token = '';
 var debug;
 //webkitIDBCursor
@@ -2579,9 +2585,8 @@ $(document).ready(function() {
 		InDB.fixBrowser();
 	}
 
-	set_page_vars();
-	check_login_status();
-
+	//set_page_vars();
+	//check_login_status();
 
 	if ( isEmpty( Buleys.view ) ) {
 		twitter_authentication_detect();
@@ -2617,6 +2622,37 @@ jQuery( InDB ).bind( 'InDB_database_created', function( event, parameters ) {
 });
 
 Buleys.install_stores = function() {
+
+	/*  Activities */
+	/*
+	var activities = {
+		'activities': { 'key': 'id', 'incrementing_key': false, 'unique': true }	
+	}
+
+	var activities_idxs = {
+		'activities': {
+			'actor.id': { 'actor_id': true },
+			'object.id': { 'object_id': true },
+			'object.url': { 'object_url': false },
+			'object.published': { 'object_published': false }
+			'verb': { 'verb': true },
+			'seen': { 'seen': true },
+			'clicked': { 'clicked': true },
+			'trashed': { 'trashed': true },
+			'archived': { 'archived': true },
+			'favorited': { 'favorited': true }
+		}
+	};
+
+	console.log( activities, activities_idxs );
+
+	InDB.trigger( 'InDB_do_stores_create', { 'stores': activities, 'on_success': function( context ) {
+		InDB.trigger( 'InDB_do_indexes_create', { 'indexes': activities_idxs, 'on_complete': function( context2 ) { 
+			console.log( 'Activities store loaded', context2 );
+		} } );	
+	} } );
+	*/
+	
 
 	/* Archive */
 
@@ -3125,6171 +3161,1099 @@ $.each(scripts_to_load, function(script_key,script_path) {
 */
 
 /**
- * Archive.js 
- **/
-
-function get_archived( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
-
-	if( Buleys.debug ) {
-		console.log( 'archive.js > get_archived', type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse );
-	}
-
-	jQuery(document).trigger('get_archived');
-
-	if (typeof make_inverse == "undefined") {
-		make_inverse = false;
-	}
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
-		begin_date = 0
-	} else {
-		begin_date = parseInt(begin_timeframe);
-	}
-
-	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt(end_timeframe);
-	}
-
-	/* Callbacks */
-
-	var categories_on_success = function ( context_1 ) {
-
-		var result = context_1.event.target.result;
-		if( !result ) {
-			return;
-		}
-		var item = result.value;
-		console.log('categories_on_success link', item.link );
-
-
-		var categories_on_success_2 = function ( context_2 ) {
-
-			var event1 = context_2.event;
-			if ( typeof event1.target.result !== 'undefined' && make_inverse !== true ) {
-				
-				var item_link = event1.target.result.link;
-				console.log('doing row get on', item_link);
-
-				var items_on_success = function ( context_3 ) {
-					var event2 = context_3.event;
-					if ( typeof event2.target.result !== 'undefined' && typeof event2.target.result.link !== 'undefined' && jQuery( "#" + event2.target.result.link.replace(/[^a-zA-Z0-9-_]+/g, "") ).length <= 0 ) {
-						console.log('getting item raw', event2.target.result.link );
-						get_item_raw( event2.target.result.link );
-					}
-				};
-				
-				var items_on_error = function( context_3 ) {
-					console.log('context3',context_3);	
-				};
-
-				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_link, 'on_success': items_on_success, 'on_error': items_on_error } );
-
-			} else if ( make_inverse == true ) {
-
-				var items_on_success = function ( context_3 ) {
-					//TODO: rename item_request var
-					var item_request = context_3.event.target;
-
-					if (typeof item_request.result !== 'undefined' && item_request.result !== 'undefined' && jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0 ) {
-
-						console.log('getting item raw_2', item_request.result.ilnk );
-						get_item_raw(item_request.result.link);
-
-					}
-
-				};
-
-				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': items_on_success, 'on_error': items_on_error } );
-			}
-
-		};
-
-		var categories_on_error_2 = function(event) {
-			console.log('category error 2',event );
-		};
-
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item.link, 'on_success': categories_on_success_2, 'on_error': categories_on_error_2 } );
-
-	};
-	
-	var categories_on_error = function ( event ) {
-
-	};
-
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': categories_on_success, 'on_error': categories_on_error } );
-
-}
-
-
-function archive_item( item_url ) {
-	
-	/* Action */
-
-	jQuery(document).trigger('archive_item');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"modified": new Date().getTime()
-	};
-
-	var add_on_success = function ( context ) {
-		console.log( 'archived item', context );
-	};
-	var add_on_error = function ( context ) {
-		console.log( 'Error archiving item', context );	
-	};
-
-	/* Request */
-	
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'archive', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
-
-}
-
-function check_if_item_is_archived( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('check_if_item_is_archived');
-
-	var archive_on_success = function ( context) {
-
-		if (typeof item_request.result != 'undefined') {
-
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('archived');
-
-		} else {
-
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('unarchived');
-
-		}
-
-	};
-
-	var archive_on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'archive', 'key': item_url, 'on_success': items_on_success, 'on_error': items_on_error } );
-
-}
-
-function add_item_to_archives_database( item_url, item_slug, item_type ) {
-
-	jQuery(document).trigger('add_item_to_archives_database');
-
-	var data = {
-		"item_link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
-		"modified": new Date().getTime()
-	};
-
-	var archive_on_success = function ( context ) {
-
-	};
-
-	var archive_on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_cursor_add', { 'store': 'archive', 'data': data, 'on_success': archive_on_success, 'on_error': archive_on_error } );
-
-}
-
-
-//TODO: Fix gratuitous args
-function unarchive_item( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('unarchive_item');
-
-	var archive_on_success = function ( context ) {
-
-	};
-
-	var archive_on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'archive', 'key': item_url, 'on_success': archive_on_success, 'on_error': archive_on_error } );
-
-}
-
-	
-//TODO: Fix gratuitous args
-//TODO: remove this function in favor of unarchive_item
-function remove_item_from_archives_database( item_url, item_slug, item_type ) {
-
-	jQuery(document).trigger('remove_item_from_archives_database');
-	
-	unarchive_item( item_url, item_slug, item_type );
-
-}
-
-function get_signin(  ) {
-
-	jQuery(document).trigger('get_signin');
-
-	var session_id = get_local_storage("session_id");
-	if (typeof session_id == "undefined" || session_id == null || session_id == "") {
-		jQuery("#main").append('<div id="login_prompt"><div id="login_form"><input id="email" type="email" placeholder="Email" name="email" class="defaulttext" required/><br/><input id="password"  type="password" name="password" placeholder="Password" /><br/><br/><a href="#" id="doregistration" class="registrationlink">Register</a> or <a href="#" id="dologinsubmit" class="submitloginform">Login</a></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a></div></div></div>');
-	} else {
-		jQuery("#main").append("<div id='login_prompt'>Already logged in with session id <code>" + session_id + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");
-	}
-	Buleys.view.loaded = "signin";
-}
-
-function get_registration(  ) {
-	jQuery(document).trigger('get_registration');
-
-	console.log("get_registration(): ");
-}
-
-function get_confirmation(  ) {
-	jQuery(document).trigger('get_confirmation');
-
-	console.log("get_confirmation(): ");
-}	
-	
-function submit_registration(  ) {
-	jQuery(document).trigger('submit_registration');
-
-	if ($('#password_once').val() == $('#password_twice').val()) {
-		var password = $('#password_once').val();
-		var first_name = $('#first_name').val();
-		var display_name = $('#display_name').val();
-		var last_name = $('#last_name').val();
-		var address_1 = $('#address_1').val();
-		var address_2 = $('#address_2').val();
-		var city = $('#city').val();
-		var state = $('#state').val();
-		var zip = $('#zip').val();
-		var country = $('#country').val();
-		request_registration(password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country);
-	} else {
-		alert('Passwords don\'t match');
-	}
-}
-
-function account_logout(  ) {
-	jQuery(document).trigger('account_logout');
-
-	data_to_send = {
-		"method": "logout"
-	};
-	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
-
-		if (typeof(data.result) !== 'undefined') {
-			delete Buleys.store["session_id"];
-			jQuery("#login").fadeIn('fast');
-			jQuery("#logout").fadeOut('fast');
-		}
-	}, "json");
-}
-
-
-
-
-
-function request_login( email, password ) {
-	jQuery(document).trigger('request_login');
-
-	password = md5(password);
-	var data_to_send;
-	data_to_send = {
-		"method": "request_login",
-		"secret": password,
-		"email": email,
-		"token": session_token
-	};
-	$.post("http://api.buleys.com/login", data_to_send, function ( data ) {
-
-		if (data != null && typeof data.result !== 'undefined') {
-			if (data.result.toLowerCase() == "failure") {
-				console.log('fail');
-				send_to_console(data.message);
-			} else if (data.result.toLowerCase() == "success") {
-				set_local_storage("session_id", data.session_id);
-				send_to_console(data.message);
-				jQuery("#login_prompt").html('');
-				jQuery("#login_prompt").append("Just logged in with session id <code>" + get_local_storage("session_id") + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.");
-
-
-			}
-		} else {
-			console.log("request_login(): no data");
-		}
-	}, "json");
-
-
-}
-
-
-function request_registration( password, display_name, first_name, last_name, address_1, address_2, city, state, zip, country ) {
-	jQuery(document).trigger('request_registration');
-
-
-	password = md5(password);
-
-	data_to_send = {
-		"method": "request_registration",
-		"secret": password,
-		"display_name": display_name,
-		"first_name": first_name,
-		"last_name": last_name,
-		"address_1": address_1,
-		"address_2": address_2,
-		"city": city,
-		"state": state,
-		"zip": zip,
-		"country": country
-	};
-
-	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
-
-		if (typeof(data.request_status) !== 'undefined') {
-			if (data.result.toLowerCase() == "failure") {
-				if (typeof(data.message) !== 'undefined') {
-					jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
-				} else {
-					jQuery("#login_status_pane").prepend('There was an error. Your account is not confirmed.');
-				}
-				close_button(jQuery("#login_status_pane"));
-			} else if (data.result.toLowerCase() == "success") {
-				if (typeof(data.message) !== 'undefined') {
-					jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
-				} else {
-					jQuery("#login_status_pane").html('Your account is confirmed.');
-				}
-				close_button(jQuery("#login_status_pane"));
-			}
-		}
-	}, "json");
-
-
-}
-
-function confirm_registration( secret ) {
-	jQuery(document).trigger('confirm_registration');
-
-
-	data_to_send = {
-		"method": "confirm_account",
-		"secret": secret
-	};
-
-
-	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
-
-		if (typeof(data.request_status) !== 'undefined') {
-			if (data.result.toLowerCase() == "failure") {
-				jQuery("#login_status_pane").html('');
-
-
-				if (typeof(data.reason) !== 'undefined') {
-					jQuery("#login_status_pane").prepend("<p><small>" + data.reason + "<small></p>");
-				}
-
-				if (typeof(data.message) !== 'undefined') {
-					jQuery("#login_status_pane").prepend("<p>" + data.message + "</p>");
-				} else {
-					jQuery("#login_status_pane").prepend('There was an error.');
-				}
-
-			} else if (data.result.toLowerCase() == "success") {
-
-				if (typeof(data.message) !== 'undefined') {
-					jQuery("#login_status_pane").html("<p>" + data.message + "</p>");
-				} else {
-					jQuery("#login_status_pane").html('Your account is confirmed and logged in.');
-				}
-/*
-				
-				*/
-				jQuery("#login_status_pane").append('<p><strong>Password</strong>:<input id="password_once"type="password"name="password"/><br/><strong>Password</strong>(again):<input id="password_twice"type="password"name="password_confirm"/></p><p><strong>Public name</strong>:<input id="display_name"type="text"name="display_name"/></p><p id="registration_profile_info"><strong>First Name</strong>: <input id="first_name"type="text"name="first_name"  size="20"/><br/><strong>Last Name</strong>: <input id="last_name"type="text"name="last_name"  size="20"/><br/><strong>Address 1</strong>:<input id="address_1"type="text"name="address_1"/><br/><strong>Apt. #</strong> (optional): <input id="address_2"type="text"name="address_2"/><br/><strong>City</strong>: <input id="city"type="text" name="city" size="20"/><br/><strong>State</strong>: <select id="state" name="state"><option value="AL">AL</option><option value="AK">AK</option><option value="AZ">AZ</option><option value="AR">AR</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DE">DE</option><option value="DC">DC</option><option value="FL">FL</option><option value="GA">GA</option><option value="HI">HI</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="IA">IA</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="ME">ME</option><option value="MD">MD</option><option value="MA">MA</option><option value="MI">MI</option><option value="MN">MN</option><option value="MS">MS</option><option value="MO">MO</option><option value="MT">MT</option><option value="NE">NE</option><option value="NV">NV</option><option value="NH">NH</option><option value="NJ">NJ</option><option value="NM">NM</option><option value="NY">NY</option><option value="NC">NC</option><option value="ND">ND</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VT">VT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WV">WV</option><option value="WI">WI</option><option value="WY">WY</option></select>&nbsp;&nbsp;&nbsp;<strong>Zip</strong>: <input id="zip"type="text"name="zip" size="10"/><br/><strong>Country</strong>: <select id="country" name="country" size="1"><option value="AF">Afghanistan</option><option value="AX">Axland Islands</option><option value="AL">Albania</option><option value="DZ">Algeria</option><option value="AS">American Samoa</option><option value="AD">Andorra</option><option value="AO">Angola</option><option value="AI">Anguilla</option><option value="AQ">Antarctica</option><option value="AG">Antigua And Barbuda</option><option value="AR">Argentina</option><option value="AM">Armenia</option><option value="AW">Aruba</option><option value="AU">Australia</option><option value="AT">Austria</option><option value="AZ">Azerbaijan</option><option value="BS">Bahamas</option><option value="BH">Bahrain</option><option value="BD">Bangladesh</option><option value="BB">Barbados</option><option value="BY">Belarus</option><option value="BE">Belgium</option><option value="BZ">Belize</option><option value="BJ">Benin</option><option value="BM">Bermuda</option><option value="BT">Bhutan</option><option value="BO">Bolivia</option><option value="BA">Bosnia And Herzegovina</option><option value="BW">Botswana</option><option value="BV">Bouvet Island</option><option value="BR">Brazil</option><option value="IO">British Indian Ocean Territory</option><option value="BN">Brunei Darussalam</option><option value="BG">Bulgaria</option><option value="BF">Burkina Faso</option><option value="BI">Burundi</option><option value="KH">Cambodia</option><option value="CM">Cameroon</option><option value="CA">Canada</option><option value="CV">Cape Verde</option><option value="KY">Cayman Islands</option><option value="CF">Central African Republic</option><option value="TD">Chad</option><option value="CL">Chile</option><option value="CN">China</option><option value="CX">Christmas Island</option><option value="CC">Cocos (Keeling) Islands</option><option value="CO">Colombia</option><option value="KM">Comoros</option><option value="CG">Congo</option><option value="CD">Congo, The Democratic Republic Of The</option><option value="CK">Cook Islands</option><option value="CR">Costa Rica</option><option value="CI">Cote DIvoire</option><option value="HR">Croatia</option><option value="CU">Cuba</option><option value="CY">Cyprus</option><option value="CZ">Czech Republic</option><option value="DK">Denmark</option><option value="DJ">Djibouti</option><option value="DM">Dominica</option><option value="DO">Dominican Republic</option><option value="EC">Ecuador</option><option value="EG">Egypt</option><option value="SV">El Salvador</option><option value="GQ">Equatorial Guinea</option><option value="ER">Eritrea</option><option value="EE">Estonia</option><option value="ET">Ethiopia</option><option value="FK">Falkland Islands (Malvinas)</option><option value="FO">Faroe Islands</option><option value="FJ">Fiji</option><option value="FI">Finland</option><option value="FR">France</option><option value="GF">French Guiana</option><option value="PF">French Polynesia</option><option value="TF">French Southern Territories</option><option value="GA">Gabon</option><option value="GM">Gambia</option><option value="GE">Georgia</option><option value="DE">Germany</option><option value="GH">Ghana</option><option value="GI">Gibraltar</option><option value="GR">Greece</option><option value="GL">Greenland</option><option value="GD">Grenada</option><option value="GP">Guadeloupe</option><option value="GU">Guam</option><option value="GT">Guatemala</option><option value=" Gg">Guernsey</option><option value="GN">Guinea</option><option value="GW">Guinea-Bissau</option><option value="GY">Guyana</option><option value="HT">Haiti</option><option value="HM">Heard Island And Mcdonald Islands</option><option value="VA">Holy See (Vatican City State)</option><option value="HN">Honduras</option><option value="HK">Hong Kong</option><option value="HU">Hungary</option><option value="IS">Iceland</option><option value="IN">India</option><option value="ID">Indonesia</option><option value="IR">Iran, Islamic Republic Of</option><option value="IQ">Iraq</option><option value="IE">Ireland</option><option value="IM">Isle Of Man</option><option value="IL">Israel</option><option value="IT">Italy</option><option value="JM">Jamaica</option><option value="JP">Japan</option><option value="JE">Jersey</option><option value="JO">Jordan</option><option value="KZ">Kazakhstan</option><option value="KE">Kenya</option><option value="KI">Kiribati</option><option value="KP">Korea, Democratic People\'s Republic Of</option><option value="KR">Korea, Republic Of</option><option value="KW">Kuwait</option><option value="KG">Kyrgyzstan</option><option value="LA">Lao People\'s Democratic Republic</option><option value="LV">Latvia</option><option value="LB">Lebanon</option><option value="LS">Lesotho</option><option value="LR">Liberia</option><option value="LY">Libyan Arab Jamahiriya</option><option value="LI">Liechtenstein</option><option value="LT">Lithuania</option><option value="LU">Luxembourg</option><option value="MO">Macao</option><option value="MK">Macedonia, The Former Yugoslav Republic Of</option><option value="MG">Madagascar</option><option value="MW">Malawi</option><option value="MY">Malaysia</option><option value="MV">Maldives</option><option value="ML">Mali</option><option value="MT">Malta</option><option value="MH">Marshall Islands</option><option value="MQ">Martinique</option><option value="MR">Mauritania</option><option value="MU">Mauritius</option><option value="YT">Mayotte</option><option value="MX">Mexico</option><option value="FM">Micronesia, Federated States Of</option><option value="MD">Moldova, Republic Of</option><option value="MC">Monaco</option><option value="MN">Mongolia</option><option value="MS">Montserrat</option><option value="MA">Morocco</option><option value="MZ">Mozambique</option><option value="MM">Myanmar</option><option value="NA">Namibia</option><option value="NR">Nauru</option><option value="NP">Nepal</option><option value="NL">Netherlands</option><option value="AN">Netherlands Antilles</option><option value="NC">New Caledonia</option><option value="NZ">New Zealand</option><option value="NI">Nicaragua</option><option value="NE">Niger</option><option value="NG">Nigeria</option><option value="NU">Niue</option><option value="NF">Norfolk Island</option><option value="MP">Northern Mariana Islands</option><option value="NO">Norway</option><option value="OM">Oman</option><option value="PK">Pakistan</option><option value="PW">Palau</option><option value="PS">Palestinian Territory, Occupied</option><option value="PA">Panama</option><option value="PG">Papua New Guinea</option><option value="PY">Paraguay</option><option value="PE">Peru</option><option value="PH">Philippines</option><option value="PN">Pitcairn</option><option value="PL">Poland</option><option value="PT">Portugal</option><option value="PR">Puerto Rico</option><option value="QA">Qatar</option><option value="RE">Reunion</option><option value="RO">Romania</option><option value="RU">Russian Federation</option><option value="RW">Rwanda</option><option value="SH">Saint Helena</option><option value="KN">Saint Kitts And Nevis</option><option value="LC">Saint Lucia</option><option value="PM">Saint Pierre And Miquelon</option><option value="VC">Saint Vincent And The Grenadines</option><option value="WS">Samoa</option><option value="SM">San Marino</option><option value="ST">Sao Tome And Principe</option><option value="SA">Saudi Arabia</option><option value="SN">Senegal</option><option value="CS">Serbia And Montenegro</option><option value="SC">Seychelles</option><option value="SL">Sierra Leone</option><option value="SG">Singapore</option><option value="SK">Slovakia</option><option value="SI">Slovenia</option><option value="SB">Solomon Islands</option><option value="SO">Somalia</option><option value="ZA">South Africa</option><option value="GS">South Georgia And The South Sandwich Islands</option><option value="ES">Spain</option><option value="LK">Sri Lanka</option><option value="SD">Sudan</option><option value="SR">Suriname</option><option value="SJ">Svalbard And Jan Mayen</option><option value="SZ">Swaziland</option><option value="SE">Sweden</option><option value="CH">Switzerland</option><option value="SY">Syrian Arab Republic</option><option value="TW">Taiwan, Province Of China</option><option value="TJ">Tajikistan</option><option value="TZ">Tanzania, United Republic Of</option><option value="TH">Thailand</option><option value="TL">Timor-Leste</option><option value="TG">Togo</option><option value="TK">Tokelau</option><option value="TO">Tonga</option><option value="TT">Trinidad And Tobago</option><option value="TN">Tunisia</option><option value="TR">Turkey</option><option value="TM">Turkmenistan</option><option value="TC">Turks And Caicos Islands</option><option value="TV">Tuvalu</option><option value="UG">Uganda</option><option value="UA">Ukraine</option><option value="AE">United Arab Emirates</option><option value="GB">United Kingdom</option><option value="US" selected>United States</option><option value="UM">United States Minor Outlying Islands</option><option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option><option value="VU">Vanuatu</option><option value="VE">Venezuela</option><option value="VN">Viet Nam</option><option value="VG">Virgin Islands, British</option><option value="VI">Virgin Islands, U.S.</option><option value="WF">Wallis And Futuna</option><option value="EH">Western Sahara</option><option value="YE">Yemen</option><option value="ZM">Zambia</option><option value="ZW">Zimbabwe</option></select><br/></p>');
-
-
-				request_registration_confirmation_buttons(jQuery("#login_status_pane"));
-
-			} else {
-				jQuery("#login_status_pane").prepend('There was an error.');
-			}
-		}
-	}, "json");
-
-}
-
-
-function send_confirmation( email, page, context, resend ) {
-	jQuery(document).trigger('send_confirmation');
-
-
-	if (typeof(page) == undefined) {
-		page = "";
-	}
-	if (typeof(context) == undefined) {
-		context = "";
-	}
-	if (typeof(resend) == undefined) {
-		resend = false;
-	}
-
-	jQuery("body").append("<div id='pending_email' style='display:none;'>" + email + "</div>");
-
-	var data_to_send;
-	data_to_send = {};
-
-	if (resend) {
-		data_to_send = {
-			"method": "account_confirmation_resend",
-			"email": email,
-			"page": slug,
-			"context": context
-		};
-	} else {
-		data_to_send = {
-			"method": "account_confirmation",
-			"email": email,
-			"page": slug,
-			"context": context
-		};
-	}
-
-	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
-
-		if (typeof(data.result) !== 'undefined') {
-			if (data.result.toLowerCase() == "failure") {
-				jQuery("#login_status_pane").html('');
-				if (typeof(data.reason) !== 'undefined') {
-					if (data.reason.toLowerCase() == "account_pending") {
-						pending_confirmation_buttons(jQuery("#login_status_pane"));
-					} else {
-						ready_to_close_button(jQuery("#login_status_pane"));
-					}
-				}
-				if (typeof(data.message) !== 'undefined') {
-					jQuery("#login_status_pane").append("<p>" + data.message + "</p>");
-				}
-
-			} else {
-				pending_secret_confirmation_buttons(jQuery("#login_status_pane"));
-				jQuery("#login_status_pane").html('Thank you. Buley\'s has sent an email to ' + $('#registration_email').val() + '. Please click the verification link in that email or paste its "secret" into the box below:<br/><br/><strong>Secret</strong>: <input id="confirmation_hash" type="text" name="confirmation_hash" />');
-			}
-		}
-	}, "json");
-}
-
-function account_login( email, password ) {
-	jQuery(document).trigger('account_login');
-
-	var secret = md5(password);
-	data_to_send = {
-		"method": "email_login",
-		"email": email,
-		"secret": secret
-	};
-
-	$.post("http://api.buleys.com/feedback/", data_to_send, function ( data ) {
-
-
-		if (typeof data.result !== 'undefined') {
-			if (data.result.toLowerCase() == "failure") {
-
-				if (typeof data.message !== 'undefined') {
-
-
-					send_to_console("<p>" + data.message + "</p>");
-
-				} else {
-
-
-				}
-
-
-			} else if (data.result.toLowerCase() == "success") {
-				jQuery("#login_status_pane").remove();
-				if (typeof(data.message) !== 'undefined' && data.message != null && data.message != '') {
-					send_to_console("<p>" + data.message + "</p>");
-
-				} else {
-					send_to_console("<p>Logged 	in successfully.</p>");
-
-				}
-				jQuery("#register").fadeOut('fast');
-				jQuery("#login").fadeOut('fast');
-				jQuery("#logout").fadeIn('fast');
-				close_button(jQuery("#login_status_pane"));
-			}
-		}
-	}, "json");
-}
-
-
-	
-
-function cancel_confirmation( user_id ) {
-	jQuery(document).trigger('cancel_confirmation');
-
-
-}
-
-function check_login_status(  ) {
-	jQuery(document).trigger('check_login_status');
-
-
-	var session_id = get_local_storage("session_id");
-	if (typeof session_id == "undefined" || session_id == null || session_id == "") {
-	   	jQuery("#account_dropdown").append('<li><a href="#" id="get_login">Login or Signup</a></li>');
-	} else {
-	   	jQuery("#account_dropdown").append('<li><a href="/settings" id="get_settings">Settings</a></li>');
-	}
-
-}
-
-$(document).bind('logout', function ( event ) {
-
-	account_logout();
-});
-
-
-jQuery(".do_logout").live("click", function ( event ) {
-
-	event.preventDefault();
-	account_logout();
-});
-
-jQuery(".do_logout").live("click", function ( event ) {
-
-event.preventDefault();
-	account_logout();
-});
-
-jQuery(".submitthelogin").live("click", function ( event ) {
-
-	alert('submitlogin');
-});
-
-$(document).bind('dologin', function ( event ) {
-
-	event.preventDefault();
-	$('#dologin').remove();
-	$('#login_status_pane').append('<div id="minimize_login_controls"><a href="#" id="dologinboxminimize" class="loginboxminimizelink enter_door_icon"></a></div><div id="login_form"><a href="#" id="doregistration" class="registrationlink">Register</a> or Login:<br/><input id="email" type="text" value="your@email.here" name="email" /><br/><input id="password"  type="password" xxx name="password" /></div><div id="login_buttons"><a href="#" id="doresetpassword" class="resetpasswordlink">Reset Password</a><br/><a href="#" id="dologinsubmit" class="submitloginform">Login</a></div></div>');
-});
-
-$(document).bind('dologinboxminimize', function ( event ) {
-
-	event.preventDefault();
-
-	$('#login_status_pane').html('<a href="#" id="dologin" class="getloginform exit_door_link"></a>');
-});
-
-$(document).bind('get_login', function ( event ) {
-
-	event.preventDefault();
-	console.log(location.pathname);
-	console.log("get_login clicked");
-
-	var stateObj = {
-		"page": Buleys.view.page,
-		"slug": Buleys.view.slug,
-		"type": Buleys.view.type,
-		"time": new Date().getTime()
-	};
-	var urlString = "http://www.buleys.com/start";
-	history.pushState(stateObj, "login", urlString);
-	reload_results();
-});
-
-
-$(document).bind('dologinsubmit', function ( event ) {
-
-	event.preventDefault();
-	if (typeof $('[name="password"]') !== undefined && $('[name="password"]').val() !== "") {
-		request_login($('[name="email"]').val(), $('[name="password"]').val());
-	}
-});
-
-function twitter_preflight() {
-
-	var on_success = function( data ) {
-		console.log('twitter_preflight', data);
-		var oauth_authorization_url = data.response.oauth_authorization_url;
-		var oauth_request_state = data.response.oauth_request_state;
-		var oauth_token = data.response.oauth_token;
-		var oauth_token_secret = data.response.oauth_token_secret;
-
-		set_local_storage_batch( {
-			'twitter_oauth_authenticated': "0",
-			'twitter_oauth_authorization_url': oauth_authorization_url,
-			'twitter_oauth_request_state': oauth_request_state,
-			'twitter_oauth_token': oauth_token,
-			'twitter_oauth_token_secret': oauth_token_secret
-		} );	
-	};
-
-	var on_error = function( data ) {
-
-	};
-
-	oauth_preflight( 'twitter', on_success, on_error );
-
-}
-
-function twitter_logout() {
-	delete_local_storage_batch(
-	[
-		'twitter_oauth_authenticated',
-		'twitter_oauth_authorization_url',
-		'twitter_oauth_request_state',
-		'twitter_oauth_token',
-		'twitter_oauth_token_secret'
-	] );
-
-}
-
-
-
-function twitter_validation_detect() {
-	var get_vars = get_url_vars();
-	if( !isEmpty( get_vars[ 'oauth_token' ] ) && !isEmpty( get_vars[ 'oauth_verifier' ] ) ) {
-		console.log( 'twitter_validation_detect()', get_vars );
-		twitter_authentication_validate( get_vars );
-	}
-}
-
-function twitter_authentication_validate( get_vars ) {
-
-	var oauth_token_secret;
-	if( get_vars[ 'oauth_verifier' ] ) {
-		oauth_token_secret = get_vars[ 'oauth_verifier' ];
-	} else {
-		return false;
-	}
-
-	var oauth_token;
-	if( get_vars[ 'oauth_token' ] ) {
-		oauth_token = get_vars[ 'oauth_token' ];
-	} else {
-		return false;
-	}
-
-	var request_state = get_local_storage( 'twitter_oauth_request_state' );
-
-	if( 1 == request_state ) {
-
-		var stored_oauth_token = get_local_storage( 'twitter_oauth_token' );
-		
-		var on_success = function( context ) {
-			if( context.success == true ) {
-			
-				if ( !!Buleys.debug ) {
-					console.log( 'Twitter account validated', context.response );
-				}
-
-				var response = context.response;
-				var access_token = response.access_token;	
-				var access_token_secret = response.access_token_secret;
-				var request_state = response.oauth_request_state;	
-	
-				// Set local storage
-				var twitter_oauth = {
-					'twitter_oauth_authenticated': "1",
-					'twitter_oauth_access_token': access_token,
-					'twitter_oauth_access_token_secret': access_token_secret
-				};
-
-				console.log('batch setting', twitter_oauth );
-				set_local_storage_batch( twitter_oauth );
-
-				delete_local_storage_batch( [
-					'twitter_oauth_request_state',
-					'twitter_oauth_authorization_url',
-					'twitter_oauth_token',
-					'twitter_oauth_token_secret',
-				] );
-
-				// Redirect away from page
-
-				var stateObj = {
-				    "page": Buleys.view.page,
-				    "slug": Buleys.view.slug,
-				    "type": Buleys.view.type,
-				    "time": new Date().getTime()
-				};
-
-				var loc = window.location;
-				var url_string = loc.protocol + "//" + loc.hostname + loc.pathname;
-				//console.log('making history', url_string);
-				history.replaceState(stateObj, "homepage", url_string);
-				reload_results();
-
-
-			} else {
-				console.log( 'Twitter account could not be validated', context );
-			}
-		};
-
-		var on_error = function( context ) {
-			if( context.success == true ) {
-				console.log( 'Twitter account validated (but threw an error)', context.response );
-			} else {
-				console.log( 'Twitter account could not be validated (and threw an error)', context );
-			}
-		};
-
-		if( stored_oauth_token === oauth_token ) {
-
-			return oauth_validate( 'twitter', request_state, oauth_token, oauth_token_secret, on_success, on_error );
-
-		} 
-		return false;
-
-	} else {
-
-		return false;
-
-	}
-
-}
-
-function do_twitter_authentication() {
-	var auth_url = get_local_storage( 'twitter_oauth_authorization_url' );
-	var req_state = get_local_storage( 'twitter_oauth_request_state' );
-	if( 1 == req_state ) {
-		window.location = auth_url;
-	} else {
-		return false;
-	}
-}
-
-function oauth_preflight( type, on_success, on_error ) {
-
-	/* Actions */
-
-	jQuery(document).trigger('oauth_preflight');
-
-	/* Defaults */
-
-	if( 'function' !== typeof on_success ) {
-		on_success = function( context ) {
-
-		}
-	}
-
-	if( 'function' === typeof on_error ) {
-		on_error = function( context ) {
-
-		}
-	}
-
-	/* Setup */
-
-	var data_to_send = {
-		"oauth_type": type,
-		"oauth_state": 0	
-	};
-
-	/* Request */
-
-	jQuery.ajax( {
-		'type': 'POST',
-		'url': "http://api.buleys.com/oauth", 
-		'data': data_to_send,
-		'success': function ( data ) {
-			on_success( data );
-		},
-		'error': function( data ) {
-			on_error( data );
-		},
-		'dataType': 'json'
-	} );
-
-}
-
-
-function oauth_validate( type, request_state, oauth_token, oauth_token_secret, on_success, on_error ) {
-
-	jQuery(document).trigger('oauth_preflight');
-
-	if( 'function' !== typeof on_success ) {
-		on_success = function( context ) {
-			if( context.success == true ) {
-					
-			} else {
-				on_error( context );
-			}
-		};
-	}
-
-	if( 'function' === typeof on_error ) {
-		on_error = function( context ) {
-			if( context.success !== true ) {
-
-			} else {
-				on_success( context );
-			}
-		};
-	}
-
-	var data_to_send = {
-		"oauth_type": type,
-		"oauth_state": request_state,
-		"oauth_token": oauth_token,
-		"oauth_token_secret": oauth_token_secret
-	};
-
-	jQuery.ajax( {
-		'type': 'POST',
-		'url': "http://api.buleys.com/oauth", 
-		'data': data_to_send,
-		'success': function ( data ) {
-			on_success( data );
-		},
-		'error': function( data ) {
-			on_error( data );
-		},
-		'dataType': 'json'
-	} );
-
-}
-
-
-
-/**
- * Categories.js
- **/
-
-function add_category_controls( event_context ) {
-
-	/* Setup */
-
-	var html_snippit;
-	var current = jQuery(event_context).html();
-	var the_link = jQuery(event_context).attr('link');
-	var the_type = jQuery(event_context).attr('type');
-	var the_slug = jQuery(event_context).attr('slug');
-
-	/* Action */
-
-	jQuery(document).trigger('add_category_controls');
-
-	/* UI */
-
-	jQuery("#overlay .vote_up_category").remove();
-	jQuery("#overlay .vote_down_category").remove();
-	jQuery("#overlay .delete_category").remove();
-	jQuery("#overlay .selected_category").removeClass('.selected_category');
-
-	var vote_key = the_link.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-
-	var vote_req_on_success = function ( context_1 ) {
-
-		//TODO: rename item_request var to event_1
-		var item_request = context_1.event;
-
-		if (typeof item_request.result == 'undefined' || item_request.result == "") {
-
-			html_snippit = "<span class='vote_up_category empty_thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-			html_snippit = html_snippit + "" + current;
-			html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-			html_snippit = html_snippit + "<div class='vote_down_category empty_thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-
-		} else {
-			if (typeof item_request.target.result != 'undefined') {
-				if (item_request.target.result.vote_value == -1) {
-					html_snippit = "<span class='vote_up_category empty_thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-					html_snippit = html_snippit + "" + current;
-					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-					html_snippit = html_snippit + "<div class='remove_category_down_vote thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-				} else if (item_request.target.result.vote_value == 1) {
-					html_snippit = "<span class='remove_category_up_vote thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-					html_snippit = html_snippit + "" + current;
-					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-					html_snippit = html_snippit + "<div class='vote_down_category empty_thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-				} else {
-					html_snippit = "<span class='vote_up_category empty_thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-					html_snippit = html_snippit + "" + current;
-					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-					html_snippit = html_snippit + "<div class='vote_down_category empty_thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-				}
-			} else {
-					html_snippit = "<span class='vote_up_category empty_thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-					html_snippit = html_snippit + "" + current;
-					html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-					html_snippit = html_snippit + "<div class='vote_down_category empty_thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-			}
-		}
-		jQuery(event_context).html(html_snippit);
-	};
-
-	var vote_req_on_error = function ( e ) {
-	
-	};
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': vote_key, 'on_success': vote_req_on_success, 'on_error': vote_req_on_error } );
-
-}
-
-function remove_category_for_item( item_url, item_slug, item_type ) {
-
-	jQuery(document).trigger('remove_category_for_item');
-
-	var on_success = function ( event ) {
-
-	};
-
-	var on_error = function (  ) {
-
-	};
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'categories', 'key': (item_url + item_type + item_slug), 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-	
-function add_category_controls_without_vote_status( event_context ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_category_controls_without_vote_status');
-
-	/* Setup */
-	
-	var html_snippit;
-	var current = jQuery(event_context).html();
-	var the_link = jQuery(event_context).attr('link');
-	var the_type = jQuery(event_context).attr('type');
-	var the_slug = jQuery(event_context).attr('slug');
-	
-	/* UI */
-
-	jQuery("#overlay .vote_up_category").remove();
-	jQuery("#overlay .vote_down_category").remove();
-	jQuery("#overlay .delete_category").remove();
-	jQuery("#overlay .selected_category").removeClass('.selected_category');
-
-	html_snippit = "<span class='vote_up_category thumb_up_icon float_left category_hover_icon ' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></span>";
-	html_snippit = html_snippit + "" + current;
-	html_snippit = html_snippit + "<div class='delete_category float_right cross_icon category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-	html_snippit = html_snippit + "<div class='vote_down_category thumb_icon float_right category_hover_icon' link='" + the_link + "' type='" + the_type + "' slug='" + the_slug + "'></div>";
-	html_snippit = "<div class='vote_block'>" + html_snippit + "</div>";
-
-	jQuery(event_context).html(html_snippit);
-
-}
-	
-function remove_category_for_item( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_category_for_item');
-
-	var on_success = function ( context ) {
-	
-	};
-
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'categories', 'key': (item_url + item_type + item_slug), 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function remove_item_from_categories_database( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_item_from_categories_database');
-
-	/* Callbacks */
-
-	var item_on_success = function ( context_1 ) {
-	
-	};
-
-	var item_on_error = function ( context_1 ) {
-	
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_cursor_delete', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function add_categories_to_categories_database( item_url, categories ) {
-
-	/* Action */
-
-	jQuery(document).trigger( 'add_categories_to_categories_database' );
-
-	jQuery.each(categories, function ( c, the_category ) {
-
-		if (typeof the_category.slug !== 'undefined') {
-
-			var data = {
-				"id": item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_category.slug.toLowerCase() + the_category.type.toLowerCase(),
-				"link": item_url,
-				"slug": the_category.slug,
-				"type": the_category.type,
-				"value": the_category.display,
-				"modified": new Date().getTime()
-			};
-
-			/* Callbacks */
-			
-			var add_on_success = function ( context ) {
-				var event = context.event;
-				if (typeof the_category.slug !== 'undefined') {
-					var topic_key = the_category.type.toLowerCase() + "_" + the_category.slug.toLowerCase();
-					if (typeof Buleys.queues.new_items[topic_key] == "undefined") {
-						Buleys.queues.new_items[topic_key] = 0;
-					}
-					Buleys.queues.new_items[topic_key] = Buleys.queues.new_items[topic_key] + 1;
-				}
-			};
-			
-			var add_on_error = function ( context ) {
-			
-			};
-			
-			/* Request */
-
-			InDB.trigger( 'InDB_do_row_add', { 'store': 'categories', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
-
-		}
-	});
-}
-
-function get_item_categories_for_overlay( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_item_categories_for_overlay');
-
-	/* Callbacks */
-
-	var item_on_success = function( context ) {
-		
-		var item = context.event.target.result;
-	
-		var cursor_on_success = function ( context_2 ) {
-
-			var result = context_2.event.target.result;
-
-			if( !result ) {
-				return;
-			}
-
-			var item = result.value;
-			
-			if (jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length < 1) {
-				var html_snippit = "<ul class='category_list' id='categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'></ul>";
-				jQuery("#overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(html_snippit);
-			}
-
-			var cat_snippit = "<li id='list_item_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "' class='category_list_item' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "'><a id='" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + item.type.toLowerCase() + item.slug.toLowerCase() + "'  class='category' link='" + item_url + "' type='" + item.type.toLowerCase() + "' slug='" + item.slug.toLowerCase() + "' href='/" + item.type.toLowerCase() + "/" + item.slug + "'>" + item.value + "</a></li>";
-
-			jQuery("#categories_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).append(cat_snippit);
-
-			get_vote_info(item_url, item.type.toLowerCase(), item.slug.toLowerCase());
-
-
-		};
-
-		var cursor_on_error = function ( event ) {
-
-		};
-
-		/* Request */
-
-		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'link', 'keyRange': InDB.range.only( item_url ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
-
-	};
-
-	var item_on_error = function( context ) {
-
-	};
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': item_on_success, 'on_error': item_on_error } );
-
-}
-
-
-$('.delete_category').live('click', function ( event ) {
-	event.preventDefault();
-	var the_url = $(this).attr('link');
-	var the_type = $(this).attr('type');
-	var the_slug = $(this).attr('slug');
-	$(this).parent().parent().remove();
-	remove_category_for_item(the_url.replace(/[^a-zA-Z0-9-_]+/g, ""), the_type, the_slug);
-	if (!$(this).hasClass('voted')) {
-		post_feedback('delete_category', the_url, the_type, the_slug);
-	}
-});
-
-
-$('.vote_up_category').live('click', function ( event ) {
-	event.preventDefault();
-	var the_url = $(this).attr('link');
-	var the_type = $(this).attr('type');
-	var the_slug = $(this).attr('slug');
-	var vote_key = "";
-	vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-	jQuery(this).removeClass('empty_thumb_up_icon').addClass('thumb_up_icon');
-	jQuery(this).parent().children('.thumb_icon').removeClass('.thumb_icon').addClass('empty_thumb_icon');
-	add_or_update_vote(vote_key, 1);
-	if (!$(this).hasClass('voted')) {
-		post_feedback('category_upvote', the_url, the_type, the_slug);
-	}
-	$(this).addClass('voted');
-	$(this).removeClass('vote_up_category');
-	$(this).addClass('remove_category_up_vote');
-});
-
-
-$('.vote_down_category').live('click', function ( event ) {
-	event.preventDefault();
-	var the_url = $(this).attr('link');
-	var the_type = $(this).attr('type');
-	var the_slug = $(this).attr('slug');
-	var vote_key = "";
-	jQuery(this).removeClass('empty_thumb_icon').addClass('thumb_icon');
-	jQuery(this).parent().children('.thumb_up_icon').removeClass('.thumb_up_icon').addClass('empty_thumb_up_icon');
-	vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-	add_or_update_vote(vote_key, -1);
-	if (!$(this).hasClass('voted')) {
-		post_feedback('category_downvote', the_url, the_type, the_slug);
-	}
-	$(this).addClass('voted');
-	$(this).removeClass('vote_down_category');
-	$(this).addClass('remove_category_down_vote');
-});
-
-
-$('.remove_category_up_vote').live('click', function ( event ) {
-	event.preventDefault();
-	var the_url = $(this).attr('link');
-	var the_type = $(this).attr('type');
-	var the_slug = $(this).attr('slug');
-	var vote_key = "";
-	vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-	jQuery(this).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
-	remove_vote(vote_key);
-	if ($(this).hasClass('voted')) {
-		post_feedback('remove_category_upvote', the_url, the_type, the_slug);
-	}
-	$(this).removeClass('voted');
-	$(this).removeClass('remove_category_up_vote');
-	$(this).addClass('vote_up_category');
-});
-
-$('.remove_category_down_vote').live('click', function ( event ) {
-	event.preventDefault();
-	var the_url = $(this).attr('link');
-	var the_type = $(this).attr('type');
-	var the_slug = $(this).attr('slug');
-	var vote_key = "";
-	jQuery(this).removeClass('thumb_icon').addClass('empty_thumb_icon');
-	vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_slug.toLowerCase();
-	remove_vote(vote_key);
-	if ($(this).hasClass('voted')) {
-		post_feedback('remove_category_downvote', the_url, the_type, the_slug);
-	}
-	$(this).removeClass('voted');
-	$(this).removeClass('remove_category_down_vote');
-	$(this).addClass('vote_down_category');
-});
-
-
-$('#overlay .category').live('mouseenter', function ( event ) {
-	event.preventDefault();
-	add_category_controls(jQuery(this));
-});
-
-
-$('#overlay .category').live('mouseleave', function ( event ) {
-	event.preventDefault();
-	jQuery("#overlay .vote_up_category").remove();
-	jQuery("#overlay .vote_down_category").remove();
-	jQuery("#overlay .remove_category_up_vote").remove();
-	jQuery("#overlay .remove_category_down_vote").remove();
-	jQuery("#overlay .delete_category").remove();
-});
-
-function flash_console( message ) {
-	jQuery(document).trigger('flash_console');
-
-    send_to_console(message);
-    jQuery("#console_wrapper").stop(true).animate({
-        opacity: 1
-    }, 500);
-    jQuery("#console_wrapper").stop(true).animate({
-        opacity: 0
-    }, 500);
-}
-
-function send_text_to_console( text_to_send ) {
-	jQuery(document).trigger('send_text_to_console');
-
-    jQuery("#console").html('').append("<p>" + text_to_send + "</p>");
-}
-
-function send_to_console( text_to_send ) {
-	jQuery(document).trigger('send_to_console');
-
-    send_text_to_console(text_to_send);
-    jQuery("#console_wrapper").stop(true).animate({
-        opacity: 1
-    }, 500);
-}
-
-function fade_console_message(  ) {
-	jQuery(document).trigger('fade_console_message');
-
-    jQuery("#console_wrapper").stop(true).animate({
-        opacity: 0
-    }, 500);
-}
-	function do_work(  ) {
-	jQuery(document).trigger('do_work');
-
-	    if (Buleys.queues.pending_crawls.length > 0) {
-	        do_pending_crawl();
-	    } else {
-	        get_follows();
-	    }
-	
-	
-	    var length_of_new = 0;
-	    length_of_new = getKeys(Buleys.queues.new_items);
-	
-	    if (length_of_new > 0) {
-	
-	        var topic_id = type + "_" + slug;
-	
-	        if (typeof Buleys.queues.new_items[topic_id] !== "undefined") {
-	            delete Buleys.queues.new_items[topic_id];
-	        }
-	
-	        var length_post_delete = getKeys(Buleys.queues.new_items);
-	
-	        if (length_post_delete > 0) {
-	
-	
-	
-	            if (typeof jQuery("#minimize_inbox") !== "undefined" && length_of_new > 0) {
-	                jQuery("#get_inbox").removeClass('inbox_icon').addClass('empty_inbox_icon').parent().parent().removeClass('empty_inbox').addClass('waiting_inbox');
-	            }
-	
-	        } else {
-	
-	            jQuery("#get_inbox img").removeClass('empty_inbox_icon').addClass('inbox_icon').parent().parent().addClass('empty_inbox').removeClass('waiting_inbox');
-	
-	
-	        }
-	
-	        save_queues();
-	        save_settings();
-	
-	    }
-	
-	
-	
-	
-	    if (Buleys.mouse.mouse_y_snapshot === Buleys.mouse.mouse_y && Buleys.mouse.mouse_x_snapshot === Buleys.mouse.mouse_x) {
-	        if (Buleys.settings.crawl_speed >= Buleys.settings.crawl_min) {
-	            Buleys.settings.crawl_speed = Buleys.settings.crawl_speed * Buleys.settings.crawl_increment;
-	        } else {
-	            Buleys.settings.crawl_speed = Buleys.settings.crawl_min;
-	        }
-	    } else {
-	        if (Buleys.settings.crawl_speed <= Buleys.settings.crawl_max) {
-	            Buleys.settings.crawl_speed = Buleys.settings.crawl_speed * Buleys.settings.crawl_deincrement;
-	        } else {
-	            Buleys.settings.crawl_speed = Buleys.settings.crawl_max;
-	        }
-	
-	        Buleys.mouse.mouse_y_snapshot = Buleys.mouse.mouse_y;
-	        Buleys.mouse.mouse_x_snapshot = Buleys.mouse.mouse_x;
-	    }
-	    if (jQuery(".unseen").length > 0) {
-	        window.document.title = window.document.title.replace(/[|\s]*?Buley's/, "");
-	        window.document.title = window.document.title.replace(/\(.*?\)[|\s]*?/g, "") + " (" + jQuery(".unseen").length + ") | Buley's";
-	    } else {
-	        window.document.title = window.document.title.replace(/[\s]?\(.*?\)/g, "");
-	    }
-	    setTimeout('do_work()', Buleys.settings.crawl_speed);
-	
-	}
-	
-
-	function is_in_cursor_mode(  ) {
-	jQuery(document).trigger('is_in_cursor_mode');
-
-	    if (jQuery('.cursor').length > 0) {
-	        return true;
-	    } else {
-	        return false;
-	    }
-	}
-	
-
-/**
- * Favorite.js 
- **/
-
-function add_favorite_to_results( item ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_favorite_to_results');
-
-	/* UI */
-
-	var id = item.link.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-	if (!(jQuery("#" + id).length)) {
-
-		jQuery("<li class='item' modified= '" + item.modified + "'  index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item.link + "'>" + item.title + "</a><div class='magnify_icon'></div></li>").hide().prependTo("#results").fadeIn('slow');
-
-	}
-
-}
-
-
-function get_favorites( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
-
-	/* Action */
-	
-	jQuery(document).trigger( 'get_favorites' );
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if (typeof begin_timeframe == "undefined") {
-		begin_date = 0
-	} else {
-		begin_date = parseInt(begin_timeframe);
-	}
-
-	if (typeof end_timeframe == "undefined") {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt(end_timeframe);
-	}
-	
-	make_inverse = ( make_inverse ) ? true : false;
-
-	/* Callbacks */
-	
-	var categories_on_success = function ( context ) {
-
-		var result = context.event.target.result;
-		if( InDB.isEmpty( result ) ) {
-			return;
-		}
-		var item = result.value;
-
-		var favorites_on_success = function ( context_2 ) {
-
-			var event2 = context_2.event;
-
-			if (typeof event2.target.result !== 'undefined') {
-
-				console.log('FAVORITE!');
-
-				var item_on_success = function ( event3 ) {
-
-					if ( ( make_inverse !== true && typeof event2.target.result !== 'undefined' && typeof event2.target.result !== 'undefined' ) || ( true === make_inverse && typeof event2.target.result !== 'undefined' && typeof event2.target.result !== 'undefined' ) ) {
-						console.log('favorite found, getting raw item');
-						get_item_raw(item.link);
-					}
-
-				};
-				
-				var item_on_error = function ( event3 ) {
-
-				}
-				
-				/* Request */
-
-				InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
-
-
-			}
-		};
-
-		var favorites_on_error = function ( context ) {
-			console.log( "error in get_favorites()", context );
-		}
-
-		/* Request */
-
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item.link, 'on_success': favorites_on_success, 'on_error': favorites_on_error } );
-
-	};
-
-	var categories_on_error = function ( context ) {
-		console.log("Error in get favorites", context);
-	};
-	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': categories_on_success, 'on_error': categories_on_error } );
-
-}
-
-
-function get_favorite( favorite_slug ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_favorite');
-
-	if (typeof favorite_slug !== 'undefined') {
-
-		/* Callbacks */
-
-		var favorite_on_success = function ( context_1 ) {
-			var event_1 = context_1.event;
-			if (typeof event_1.result != 'undefined') {
-				
-				/* Callbacks */
-
-				var archive_on_success = function ( context_2 ) {
-					var event_2 = context_2.event;
-					if (typeof event_2.result === 'undefined') {
-
-						/* UI */
-
-						if (jQuery("#" + event_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-							add_favorite_to_results(event_1.result);
-							check_if_favorite_is_favorited(event_1.result.link);
-							check_if_favorite_is_read(event_1.result.link);
-							check_if_favorite_is_seen(event_1.result.link);
-
-						}
-
-					}
-				};
-
-				var archive_on_error = function ( context_2 ) {
-					
-					/* Setup */
-
-					var event_2 = context_2.event;
-
-					/* UI */
-
-					if ( jQuery("#" + event_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "") ).length <= 0 ) {
-						add_favorite_to_results(event_1.result);
-						check_if_favorite_is_favorited(event_1.result.link);
-						check_if_favorite_is_read(event_1.result.link);
-						check_if_favorite_is_seen(event_1.result.link);
-					}
-
-				};
-
-				/* Request */
-
-				InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': event_1.result.link, 'on_success': archive_on_success, 'on_error': archive_on_error } );
-
-			}
-		};
-		var favorite_on_error = function ( context ) {
-
-		};
-
-		/* Request */
-
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': favorite_slug, 'on_success': favorite_on_success, 'on_error': favorite_on_error  } );
-
-	}
-}
-
-
-function get_favorite_for_console( favorite_slug ) {
-	
-	/* Action */
-
-	jQuery(document).trigger('get_favorite_for_console');
-
-	/* Callbacks */
-
-	var favorite_on_success = function ( context ) {
-	
-		/* Setup */
-
-		var result = context.event.result;
-
-		if (typeof result != 'undefined' && typeof result.id == 'string') {
-
-			/* UI */
-			var html_snippit = "<div id='console_" + favorite_request.result.id.replace(/[^a-zA-Z0-9-_]+/g, "") + "'>";
-			html_snippit = html_snippit + "<h3><a href='" + favorite_request.result.id + "'>" + favorite_request.result.title + "</a></h3>";
-			html_snippit = html_snippit + "<p>" + favorite_request.result.author + "</p>";
-			html_snippit = html_snippit + "</div>";
-
-			send_to_console(html_snippit);
-
-		}
-
-	};
-
-	favorite_on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': favorite_slug, 'on_success': favorite_on_success, 'on_error': favorite_on_error  } );
-
-}
-
-
-function get_favorite_for_overlay( favorited_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_favorite_for_overlay');
-
-	/* Callbacks */
-
-	var favorite_on_success = function ( context ) {
-
-		/* Setup */
-
-		var favorite_request = context.event;
-
-		if (typeof favorite_request.result != 'undefined' && typeof favorite_request.result.link == 'string') {
-
-			/* UI */
-
-			var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><div href="#" class="close_sidebar_link close_icon" id="' + favorite_slug + '"></div></div>' + "<h3 id='overlay_" + favorite_slug.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><div href='" + favorite_request.result.link + "'>" + favorite_request.result.title + "</div></h3></div><div id='overlay_left'></div>";
-			send_to_overlay(html_snippit);
-		}
-	};
-
-	var favorite_on_error = function ( context ) {
-	
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': favorited_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error  } );
-
-}
-
-
-function add_item_as_favorite( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_item_as_favorite');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var favorites_on_success = function ( context ) {
-		console.log('add_item_as_favorite success', context );	
-	};
-
-	var favorites_on_error = function ( context ) {
-		console.log('add_item_as_favorite failed', context );	
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': favorites_on_success, 'on_error': favorites_on_error  } );
-
-}
-
-
-function check_if_item_is_favorited_for_overlay( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('check_if_item_is_favorited_for_overlay');
-
-	/* Callbacks */
-
-	var favorite_on_success = function ( context ) {
-
-		var item_request = context.event;
-
-		if (typeof item_request.result != 'undefined') {
-			jQuery("#overlay_left").prepend("<div class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><div href='" + item_url + "' class='unfav_link star_icon'></div></div>");		
-			jQuery("#overlay_left").addClass('favorited');
-		} else {
-			jQuery("#overlay_left").prepend("<div class='overlay_favorite_status' id='favorite_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><div href='" + item_url + "' class='fav_link empty_star_icon'></div></div>");
-			jQuery("#overlay_left").addClass('unfavorited');
-		}
-
-	};
-
-	var favorite_on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
-
-}
-
-
-function check_if_item_is_favorited( item_url ) {
-	
-	/* Action */
-
-	jQuery(document).trigger('check_if_item_is_favorited');
-
-	/* Callbacks */
-
-	var favorite_on_success = function ( context ) {
-		var item_request = context.event;
-		console.log("CHECKING",item_request);
-		if (typeof item_request.target.result != 'undefined') {
-
-			/* UI */
-
-			if( Buleys.settings.show_favorite_status !== false) {
-				jQuery( "#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='favorite_status'><div href='" + item_url + "' class='unfav_link star_icon'></div></span>");
-			}
-
-			jQuery( "#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('favorited');
-
-		} else {
-
-			/* UI */
-
-			if(Buleys.settings.show_favorite_status !== false) {
-				jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='favorite_status'><div href='" + item_url + "' class='fav_link empty_star_icon'></div></span>");
-			}
-
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('unfavorited');
-
-		}
-	};
-
-	var favorite_on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'favorites', 'key': item_url, 'on_success': favorite_on_success, 'on_error': favorite_on_error } );
-
-}
-
-/* adds item to fav db
- */
-function add_item_to_favorites_database( item_url, item_slug, item_type ) {
-
-	/* Debug */
-
-	if ( !!Buleys.debug ) {
-		console.log( 'add_item_to_favorite_database()', item_url, item_slug, item_type );
-	}
-
-	/* Action */	
-
-	jQuery(document).trigger('add_item_to_favorites_database');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var add_on_success = function ( context ) {
-	
-	};
-
-	var add_on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'favorites', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
-
-}
-
-
-function remove_item_from_favorites_database( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_item_from_favorites_database');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		console.log('Item removed from favorites database', context );	
-	};
-
-	var on_error = function (  ) {
-		console.log('Item was not removed from favorites database', context );	
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'favorites', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-jQuery('.unfav_link').live('click', function ( event ) {
-	
-	/* Setup */
-
-	event.preventDefault();
-
-	/* Debug */
-	
-	if( Buleys.debug ) {
-		console.log( jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('.unfav_link') );
-	}
-
-	/* UI */
-
-	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
-	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-	jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-	jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-
-	if(typeof Buleys.view.page !== "undefined" && ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs" ) ) {
-		jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).remove();
-	}
-	
-	remove_item_from_favorites_database(jQuery(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-
-	post_feedback('unstar', jQuery(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-
-	send_to_console("<p>item removed from favorites</p>");
-
-	setTimeout('fade_console_message()', 1000);
-
-});
-
-jQuery(document).bind('favorite', function ( event ) {
-
-	event.preventDefault();
-
-	if (!is_in_cursor_mode()) {
-
-		$.each( jQuery( '.selected' ), function ( i, item_to_mark ) {
-
-			/* UI */
-
-			jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('empty_star_icon').addClass('star_icon');
-			jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-			jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-			jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-			jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-
-			add_item_to_favorites_database(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-			post_feedback('star', jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-			send_to_console("<p>item favorited</p>");
-
-			setTimeout('fade_console_message()', 1000);
-
-		} );
-
-	} else {
-
-		/* UI */
-
-		jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('empty_star_icon').addClass('star_icon');
-		jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-		jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-		jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-		jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-
-		add_item_to_favorites_database(jQuery('.cursor a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-		post_feedback('star', jQuery('.cursor a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-		send_to_console("<p>item favorited</p>");
-
-		setTimeout('fade_console_message()', 1000);
-
-	}
-
-});
-
-jQuery(document).bind('unfavorite', function ( event ) {
-
-	event.preventDefault();
-
-	if (!is_in_cursor_mode()) {
-
-		/* UI */
-
-		$.each( jQuery( '.selected' ), function ( i, item_to_mark ) {
-
-			jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
-			jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-			jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-			jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-			jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-			if(typeof Buleys.view.type !== "undefined" && ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs" ) ) {
-				jQuery("#" +  jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).remove();
-			}
-			remove_item_from_favorites_database(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-			post_feedback('unstar', jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-			send_to_console("<p>item removed from favorites</p>");
-			setTimeout('fade_console_message()', 1000);
-		} );
-
-	} else {
-
-		/* UI */
-
-		jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
-		jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-		jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-		jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-		jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-
-		if(typeof Buleys.view.type !== "undefined" && ( Buleys.view.type == "favorites" || Buleys.view.page == "favorites" || Buleys.view.page == "favs" ) ) {
-			jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).remove();
-		}
-
-		remove_item_from_favorites_database(jQuery('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-		post_feedback('unstar', jQuery('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-		send_to_console("<p>item removed from favorites</p>");
-
-		setTimeout('fade_console_message()', 1000);
-
-	}
-
-});
-
-
-jQuery('.fav_link').live('click', function ( event ) {
-
-	event.preventDefault();
-
-	/* UI */
-
-	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('empty_star_icon').addClass('star_icon');
-	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-	jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('fav_link').addClass('unfav_link');;
-	jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-	jQuery("#favorite_" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-
-	add_item_to_favorites_database(jQuery(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-
-	post_feedback('star', jQuery(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-
-	send_to_console("<p>item favorited</p>");
-
-	setTimeout('fade_console_message()', 1000);
-
-} );
-
-jQuery( document ).bind( 'select_favorites', function ( event ) {
-
-	event.preventDefault();
-
-	$.each( jQuery( '.favorited' ), function ( i, item_to_mark ) {
-
-		if (jQuery(item_to_mark).hasClass('selected')) {
-
-		} else {
-
-			jQuery(item_to_mark).addClass('selected');
-
-			jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-
-		}
-
-	} );
-
-} );
-
-jQuery(document).bind('deselect_favorites', function ( event ) {
-
-	/* Setup */
-
-	event.preventDefault();
-
-	$.each( jQuery( '.favorited' ), function ( i, item_to_mark ) {
-
-		jQuery(item_to_mark).removeClass('selected');
-		jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-
-	} );
-
-} );
-
-/**
- * Follows.js
+ * Activity.js
  **/
 
 
-function get_follows(  ) {
+/* Setup */
 
-	/* Action */
+Buleys.activity = Buleys.activity || {};
+Buleys.activities = Buleys.activities || {};
 
-	jQuery( document ).trigger( 'get_follows' );
 
-	/* Callbacks */
+/* UI */
 
-	var on_success = function( context ) {
-		console.log( InDB.rows.value( context.event ) );
-	}
-
-	var on_error = function( context ) {
-		console.log( 'get_follows error', context );
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_rows_get', { 'store': 'follows', 'keyRange': InDB.transaction.left_open( '0' ), 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function getKeys( obj ) {
-	
-	/* Action */
-
-	jQuery( document ).trigger( 'getKeys' );
-
-	var keys = [];
-
-	if (typeof obj !== "undefined") {
-
-		$.each(obj, function ( key, obj ) {
-
-			keys.push(key);
-		});
-
-		return keys.length;
-
-	} else {
-
-		return 0;
-
-	}
-}
-
-
-function get_page_follow_status( the_type, the_key ) {
-
-	/* Action */
-
-	jQuery( document ).trigger( 'get_page_follow_status' );
-
-	/* Callback */
-
-	var follows_on_success = function ( context ) {
-		var event = context.event;
-		if (typeof event.result == 'undefined' || event.result == "") {
-			jQuery( "#page_follow_status").html("<div class='follow_topic empty_heart_icon'></div>");
-		} else {
-			jQuery( "#page_follow_status").html("<div class='unfollow_topic heart_icon'></div>");
-		}
-	};
-
-	var follows_on_error = function ( e ) {
-		console.log( 'Follows error getting status' );
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_row_get', { 'store': 'follows', 'key': ( the_type + "_" + the_key ), 'on_success': follows_on_success, 'on_error': follows_on_error } );
-
-}
-
-
-function remove_follow( the_type, the_key ) {
-
-	/* Action */
-
-	jQuery( document ).trigger( 'remove_follow' );
-
-	/* Callback */
-
-	var on_success = function( context ) {
-		console.log( 'Follow removed' );
-	}
-
-	var on_error = function( context ) {
-		console.log( 'remove_follow error', context );
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_row_delete', { 'store': 'follows', 'key': ( type_type + "_" + the_key ), 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function add_follow_if_doesnt_exist( the_type, the_key ) {
-
-	/* Action */
-
-	jQuery( document ).trigger( 'add_follow_if_doesnt_exist' );
-
-	/* Callback */
-
-	var on_success = function( context ) {
-		var item_request = context.event;
-		//Not yet following	
-		if (typeof item_request.result == 'undefined' ) {
-			add_follow_to_follows_database(the_type, the_key);
-		}
-
-	}
-
-	var on_error = function( context ) {
-		console.log( 'Follow already exists', context );
-	}
-
-	InDB.trigger( 'InDB_row_get', { 'store': 'follows', 'key': ( type_type + "_" + the_key ), 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function add_follow_to_follows_database( the_type, the_key ) {
-
-	/* Action */
-
-	jQuery( document ).trigger( 'add_follow_to_follows_database' );
-
-	/* Setup */
-
-	var data = {
-		"key": the_type + "_" + the_key,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var on_success = function( context ) {
-		console.log( 'Added follow to follow database', context );
-	}
-
-	var on_error = function( context ) {
-		console.log( 'Error adding follow to follow database', context );
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_row_add', { 'store': 'follows', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-jQuery(  'html' ).bind( 'mousemove', function ( e ) {
-
-	/* UI */
-
-	Buleys.mouse.mouse_x = e.pageX;
-	Buleys.mouse.mouse_y = e.pageY;
-
-});
-
-
-
-jQuery(  '.follow_topic' ).live( 'click', function ( event ) {
-
-	// Prevent clickthrough
-	event.preventDefault();
-
-	/* Setup */
-
-	var the_key = jQuery( this ).attr( 'key' );
-	var the_type = jQuery( this ).attr( 'type' );
-
-	if (typeof the_key == 'undefined' ) {
-		the_key = Buleys.view.slug;
-	} else {
-		the_key = the_key;
-	}
-
-	if (typeof the_type == 'undefined' || the_type == '' ) {
-		the_type = Buleys.view.type;
-	} else {
-		the_type = the_type;
-	}
-
-	/* Methods */
-
-	add_follow_if_doesnt_exist(the_type, the_key);
-
-	post_feedback( 'follow', '', the_key, the_type);
-
-	/* UI */
-
-	jQuery( this ).removeClass( 'empty_heart_icon' ).addClass( 'heart_icon' );
-	jQuery( this ).removeClass( 'follow_topic' );
-	jQuery( this ).addClass( 'unfollow_topic' );
-
-} );
-
-jQuery(  '.unfollow_topic' ).live( 'click', function ( event ) {
-
-	// Prevent clickthrough
-	event.preventDefault();
-
-	/* Setup */
-
-	var the_key = jQuery( this ).attr( 'key' );
-	var the_type = jQuery( this ).attr( 'type' );
-
-	if (typeof the_key == 'undefined' ) {
-		the_key = Buleys.view.slug;
-	} else {
-		the_key = the_key;
-	}
-
-	if (typeof the_type == 'undefined' || the_type == "") {
-		the_type = Buleys.view.type;
-	} else {
-		the_type = the_type;
-	}
-
-	/* Methods */
-
-	remove_follow(the_type, the_key);
-
-	post_feedback( 'unfollow', '', the_key, the_type);
-
-	/* UI */
-
-	jQuery( this ).removeClass( 'heart_icon' ).addClass( 'empty_heart_icon' );
-	jQuery( this ).removeClass( 'unfollow_topic' );
-	jQuery( this ).addClass( 'follow_topic' );
-
-} );
-	
-	//Declare a new object child of the Buleys.settings DOM
-	//this will be collected by the automatic saving cronjob
-
-	//Buleys.settings is declared in loader.js
-	
-	function temporarily_disable_hotkeys(  ) {
-	jQuery(document).trigger('temporarily_disable_hotkeys');
-
-
-	} 
-	
-	function disable_hotkeys(  ) {
-	jQuery(document).trigger('disable_hotkeys');
-
-		console.log( "Disabling hotkeys" );
-		console.log( Buleys.settings );
-		Buleys.settings.hotkeys.disabled = true;
-	}
-	
-	function enable_hotkeys(  ) {
-	jQuery(document).trigger('enable_hotkeys');
-
-		delete Buleys.settings.hotkeys.disabled;
-	}
-
-
-    $(document).bind('show_commands', function ( event ) {
-
-        event.preventDefault();
-
-        $('#result_controls').show();
-    });
-
-
-    $(document).bind('hide_commands', function ( event ) {
-
-        event.preventDefault();
-        $('#result_controls').hide();
-    });
-
-
-    $(document).bind('show_button', function ( e ) {
-
-        send_notification_to_desktop();
-    });
-
-	
-    $('html').live('keyup', function ( e ) {
-
-	console.log('disabled?');
-	console.log( Buleys.settings.hotkeys.disabled );
-		if( (  typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" && typeof Buleys.settings.hotkeys.disabled === "undefined" ) || ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" ) && ( typeof Buleys.settings.hotkeys.disabled !== "undefined" && Buleys.settings.hotkeys.disabled !== true ) ) {
-			//
-	
-	
-	        if (e.keyCode == 68) {
-	            Buleys.shortcuts.d_depressed = false;
-	
-	        } else if (e.keyCode == 83) {
-	            Buleys.shortcuts.s_depressed = false;
-	
-	        } else if (e.keyCode == 16) {
-	            Buleys.shortcuts.shift_depressed = false;
-	
-	
-	
-	
-	
-	        } else if (e.keyCode == 72) {
-	
-	            if (Buleys.shortcuts.s_depressed) {} else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_index');
-	            } else {
-	                $(document).trigger('close_item_preview');
-	            }
-	
-	
-	        } else if (e.keyCode == 76) {
-	
-	            if (Buleys.shortcuts.s_depressed) {} else if (Buleys.shortcuts.d_depressed) {} else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_home');
-	            } else {
-	                $(document).trigger('preview_item');
-	
-	                if (jQuery('.cursor').length > 0) {
-	                    //alert(jQuery('.cursor').text());
-	                }
-	
-	            }
-	
-	
-	        } else if (e.keyCode == 78) {
-	            $(document).trigger('preview_item');
-	            if (jQuery('.selected').length > 0) {
-	                jQuery('#results li.selected:first').addClass('cursor');
-	            } else {
-	                jQuery('#results li:first').addClass('cursor');
-	            }
-	
-	
-	        } else if (e.keyCode == 74) {
-	
-	            if (jQuery('.cursor').next().length > 0) {
-	                jQuery('.cursor').removeClass('cursor').next().addClass('cursor');
-	            } else {
-	                jQuery('.cursor').removeClass('cursor');
-	                jQuery('#results li:first').addClass('cursor');
-	            }
-	
-	        } else if (e.keyCode == 75) {
-	
-	            if (jQuery('.cursor').prev().length > 0) {
-	                jQuery('.cursor').removeClass('cursor').prev().addClass('cursor');
-	            } else {
-	                jQuery('.cursor').removeClass('cursor');
-	                jQuery('#results li:last').addClass('cursor');
-	            }
-	
-	
-	        } else if (e.keyCode == 27) {
-	            jQuery('.cursor').removeClass('cursor');
-	            $(document).trigger('close_all');
-	
-	
-	        } else if (e.keyCode == 77) {
-	            jQuery('.cursor').removeClass('cursor');
-	
-	
-	        } else if (e.keyCode == 219) {
-	            $(document).trigger('preview_item');
-	
-	        } else if (e.keyCode == 221) {
-	            $(document).trigger('close_item_preview');
-	
-	
-	        } else if (e.keyCode == 89) {
-	            $(document).trigger('show_commands');
-	
-	
-	        } else if (e.keyCode == 85) {
-	            $(document).trigger('hide_commands');
-	
-	
-	        } else if (e.keyCode == 65) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_all');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('select_none');
-	            } else {}
-	
-	
-	        } else if (e.keyCode == 82) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_unread');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_unread');
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_unread');
-	            } else {
-	                $(document).trigger('mark_unread');
-	            }
-	
-	
-	        } else if (e.keyCode == 13) {
-	
-	
-	
-	        } else if (e.keyCode == 73) {
-	            $(document).trigger('select');
-	
-	        } else if (e.keyCode == 79) {
-	            $(document).trigger('deselect');
-	
-	        } else if (e.keyCode == 69) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_read');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_read');
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_read');
-	            } else {
-	                $(document).trigger('mark_read');
-	            }
-	        	
-		} else if (e.keyCode == 88) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_none');
-	            } else if (Buleys.shortcuts.d_depressed) {
-		    } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_trash');
-	            } else {
-	                $(document).trigger('delete');
-	            }
-	
-	
-	        } else if (e.keyCode == 67) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_archived');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_archived');
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_archive');
-	            } else {
-	                $(document).trigger('archive');
-	            }
-	
-	        } else if (e.keyCode == 86) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_unarchived');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_unarchived');
-	            } else {
-	                $(document).trigger('unarchive');
-	            }
-	
-	        } else if (e.keyCode == 70) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_favorites');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_favorites');
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_favorites');
-	            } else {
-	                $(document).trigger('favorite');
-	            }
-	
-	        } else if (e.keyCode == 71) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_unfavorite');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_unfavorite');
-	            } else {
-	                $(document).trigger('unfavorite');
-	            }
-	
-	        } else if (e.keyCode == 81) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_seen');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_seen');
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_seen');
-	            } else {
-	                $(document).trigger('mark_seen');
-	            }
-	
-	        } else if (e.keyCode == 87) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_unseen');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	                $(document).trigger('deselect_unseen');
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_unseen');
-	            } else {
-	                $(document).trigger('mark_unseen');
-	            }
-	
-	        } else if (e.keyCode == 90) {
-	
-	            if (Buleys.shortcuts.s_depressed) {
-	                $(document).trigger('select_inverse');
-	            } else if (Buleys.shortcuts.d_depressed) {
-	            
-	            } else if (Buleys.shortcuts.shift_depressed) {
-	                $(document).trigger('view_index');
-	            } else {
-	                $(document).trigger('undelete');
-	            }
-	
-	        } else if (e.keyCode == 73) {
-	            $(document).trigger('deselect');
-	
-	        } else if (e.keyCode == 79) {
-	
-	            $(document).trigger('select');
-	        }
-			
-		}
-
-    });
-
-
-    $('html').live('keydown', function ( e ) {
-
-
-		if( ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" && typeof Buleys.settings.hotkeys.disabled === "undefined" ) || ( typeof Buleys.settings !== "undefined" &&  typeof Buleys.settings.hotkeys !== "undefined" ) && ( typeof Buleys.settings.hotkeys.disabled !== "undefined" && Buleys.settings.hotkeys.disabled !== true ) ) {
-
-	        if (e.keyCode == 68) {
-	            Buleys.shortcuts.d_depressed = true;
-	
-	        } else if (e.keyCode == 83) {
-	            Buleys.shortcuts.s_depressed = true;
-	
-	        } else if (e.keyCode == 16) {
-	            Buleys.shortcuts.shift_depressed = true;
-
-        	}
-
-		}
-
-    });
-
-function add_topics_to_mini_inbox(  ) {
-	jQuery(document).trigger('add_topics_to_mini_inbox');
-
-    jQuery("#mini_inbox_list").html('');
-    var item_count = 0;
-    if (getKeys(Buleys.queues.new_items) > 0) {
-        $.each(Buleys.queues.new_items, function ( topic_id, count ) {
-
-            if (item_count <= Buleys.settings.mini_inbox_topic_count) {
-                add_topic_to_mini_inbox(topic_id, count);
-                item_count++;
-            }
-        });
-    } else {
-        jQuery("#mini_inbox_list").html('<li>No new items</li>');
-    }
-}
-
-function add_topic_to_mini_inbox( topic_id, count ) {
-	jQuery(document).trigger('add_topic_to_mini_inbox');
-
-    new_topics_transaction();
-    var item_request = Buleys.objectStore.get(topic_id);
-    item_request.onsuccess = function ( event ) {
-
-        if (typeof item_request.result == 'undefined' || item_request.result == "") {
-            var split_string = topic_id.split("_", 1);
-            var type_to_get = split_string[0];
-            var company_to_get = topic_id.replace((split_string[0] + "_"), "");
-            jQuery("#mini_inbox_list").append("<li><a href='/" + type_to_get + "/" + company_to_get + "' class='topic_name'>" + topic_id + "</a> (" + count + ")</li>");
-        } else {
-            if (typeof item_request.result.name != 'undefined') {
-                jQuery("#mini_inbox_list").append("<li><a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a> (" + count + ")</li>");
-            }
-        }
-    };
-    item_request.onerror = function ( e ) {
-
-    };
-}
-
-$(document).bind('get_inbox', function ( event ) {
-
-    event.preventDefault();
-    $('#mini_inbox_box').html('<div id="mini_inbox_wrapper" class="service_box_wrapper"><div class="cross_icon" id="minimize_mini_inbox_controls"></div><ul id="mini_inbox_list"><li>Loading...</li></ul></div>');
-    add_topics_to_mini_inbox();
-
-});
-
-$(document).bind('minimize_mini_inbox_controls', function ( event ) {
-
-    event.preventDefault();
-    if ($('#mini_inbox_box').hasClass('waiting_inbox')) {
-        $('#mini_inbox_box').html('<div class="getinbox empty_inbox big_inbox_document_icon" id="get_inbox"></div>');
-    } else {
-        $('#mini_inbox_box').html('<div class="getinbox empty_inbox big_inbox_icon" id="get_inbox"></div>');
-    }
-});
-
-/**
- * Items.js
- **/
-
-
-jQuery('.item').live( 'click', function(){ 
+//adds a click watcher to activity items
+jQuery('.activity').live( 'click', function(){ 
 	jQuery(this).addClass('selected');
-	jQuery(this).trigger('preview_item');
+	jQuery(this).trigger('preview_activity');
 });
 
 
-// TODO: Fix gratuitous args
-function remove_item_from_items_database( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_item_from_items_database');
-	
-	/* Callbacks */
-	
-	var on_success = function ( context ) {
-	};
-	
-	var on_error = function ( context ) {
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-	
-function get_data_object_for_item( item ) {
-	
-	/* Actions */
-
-	jQuery(document).trigger('get_data_object_for_item');
-
-	/* Setup */
-
-	var data = {
-		"link": item.link,
-		"title": item.title,
-		"author": item.author,
-		"entities": item.entities,
-		"published_date": new Date(item.published_date).getTime(),
-		"index_date": new Date(item.index_date).getTime(),
-		"modified": new Date().getTime()
-	};
-
-	/* Return */
-
-	return data;
-
-}
-
-
-function add_item_to_results( item ) {
-	
-	/* Debug */
-
-	if( true === Buleys.debug ) {
-		console.log("items.js > add_item_to_results()", item );
-	}
-	
-	/* Action */
-
-	jQuery(document).trigger('add_item_to_results');
-
-	/* Setup */
-
-	var id = item.link.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-	/* UI */
-
-	if (!(jQuery("#" + id).length)) {
-
-			jQuery("<li class='item' modified= '" + item.modified + "' index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item magnify_icon' href='#'></a></li>").hide().appendTo("#results").fadeIn('slow');
-	
-	}
-
-}
-
-
-function prepend_item_to_results( item ) {
-		
-	/* Debug */
-
-	if( true === Buleys.debug ) {
-		console.log("items.js > add_item_to_results()", item );
-	}
-	
-	/* Action */
-
-	jQuery(document).trigger('prepend_item_to_results');
-
-	/* Setup */
-
-	var id = item.link.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-	/* UI */
-
-	if (!(jQuery("#" + id).length)) {
-		
-		jQuery("<li class='item' modified= '" + item.modified + "' index-date= '" + item.index_date + "' published-date= '" + item.published_date + "' id='" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + item.link + "'>" + item.title + "</a><a class='examine_item magnify_icon' href='#'></a></li>").hide().prependTo("#results").fadeIn('slow');
-
-	}
-
-}
-
-
-function add_item_to_items_database( item ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_item_to_items_database');
-
-	/* Setup */
-
-	var data = get_data_object_for_item(item);
-
-	/* Callbacks */
-
-	var deleted_on_success = function ( context ) {
-
-		/* Setup */
-
-		var event = context.event;
-
-		// Verify item is not deleted
-		if ( typeof event.result === 'undefined' ) {
-
-			/* Callbacks */
-
-			var add_on_success = function ( context_2 ) {
-
-				/* Setup */
-
-				var event2 = context_2.event;
-
-				// Verify that (1) there are entities
-				if (item.entities.length > 1 && typeof item.entities.type === "undefined" && typeof item.entities.slug === "undefined") {
-
-					/* Debug */
-					
-					if( true === Buleys.debug ) {
-						console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
-					}
-
-					// Qualify the view
-					// TODO: Better description
-					if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
-
-						// Add the item to the results
-						prepend_item_to_results(get_data_object_for_item(item));
-
-					}
-				// or (2) that there is a single entity
-				} else if ( ( item.entities.length === 1 && typeof item.entities.slug !== "undefined" ) && ( Buleys.view.type === "home" || ( item.entities[0].slug.toLowerCase() === slug && item.categories[0].type.toLowerCase() === type ) ) ) {
-
-					add_item_to_results(get_data_object_for_item(item));
-
-				}
-			};
-
-			var add_on_error = function ( context_2 ) {
-			
-			};
-
-			/* Request */
-
-			InDB.trigger( 'InDB_do_row_add', { 'store': 'items', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
-
-		}
-
-	};
-
-	deleted_on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item.link, 'on_success': deleted_on_success, 'on_error': deleted_on_error } ); 
-
-}
-
-
-function check_if_item_is_read( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('check_if_item_is_read');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-
-		var item_request = context.event;
-		if (typeof item_request.result !== 'undefined') {
-			jQuery( "#" + item_url.replace( /[^a-zA-Z0-9-_]+/g, "" ) ).addClass( "read" );
-		} else {
-			jQuery( "#" + item_url.replace( /[^a-zA-Z0-9-_]+/g, "" ) ).addClass( "unread" );
-		}
-	};
-
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'status', 'key': item_url, 'on_success': on_success, 'on_error': on_error } ); 
-
-}
-
-
-function recreate_item( item_url, slug, type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('recreate_item', { "item_url": item_url } );
-
-	// TODO: Should be assertion
-	// Verify the item curl is not blank
-	if (typeof item_url !== 'undefined') {
-
-		/* Callbacks */
-
-		var on_success = function ( event ) {
-
-			if (typeof event.target.result !== 'undefined') {
-			
-				var item = event.target.result; 
-				
-				add_categories_to_categories_database(item.link, item.entities );
-	
-				for( category in item.entities ) {
-					if( item.entities.hasOwnProperty( category ) ) {
-						console.log(category);
-						mark_item_as_seen( item.link, category.slug, category.type );
-					}
-				}
-			}
-
-		};
-
-		var on_error = function ( e ) {
-
-		};
-		
-		/* Request */
-
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-	
-	}
-
-}
-
-
-function get_item_raw_no_trash( item_url ) {
-	
-	/* Action */
-
-	jQuery(document).trigger('get_item_raw_no_trash');
-
-	/* Callbacks */
-
-	var on_success = function( context ) {
-		var event = context.event;
-		if( !InDB.isEmpty( InDB.row.value( event ) ) ) { 
-			if (jQuery("#" + item_request_1.result.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-				add_item_to_results(item_request_1.result);
-				check_if_item_is_favorited(item_request_1.result.link);
-				check_if_item_is_read(item_request_1.result.link);
-				check_if_item_is_seen(item_request_1.result.link);
-			}
-		}		
-	};
-
-	var on_error = function( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_row_get', { 'store': 'archive', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );	
-
-}
-
-function get_item_wip( item_url ) {
-
-	/* Debug */
-
-	if ( true === Buleys.debug ) {
-		console.log('items.js > get_item()', item_url );
-	}
-
-	/* Action */
-
-	jQuery(document).trigger('get_item');
-
-	/* Callbacks */
-	
-	var on_error = function( context_1 ) {
-		console.log( 'Error in get_item', context_1 );
-	}
-	
-	var on_success = function( context_1 ) {
-
-		/* Setup */
-		var event_1 = context_1.event;
-		var result = event_1.target.result;
-
-		// Verify the item exists, wasn't deleted and isn't archived
-		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) {
-
-
-			/* UI */
-			console.log('l5', result,event_1);
-
-			if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-				console.log('l6');
-				add_item_to_results(result);
-
-				check_if_item_is_favorited(item_url);
-
-				check_if_item_is_read(item_url);
-
-				check_if_item_is_seen(item_url);
-
-			}
-		}
-
-	}; // End on_success
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function get_item( item_url ) {
-
-	/* Debug */
-
-	if ( true === Buleys.debug ) {
-		console.log('items.js > get_item()', item_url );
-	}
-
-	/* Action */
-
-	jQuery(document).trigger('get_item');
-
-	/* Callbacks */
-	
-	var on_error = function( context_1 ) {
-		console.log( 'Error in get_item', context_1 );
-	}
-	
-	var on_success = function( context_1 ) {
-
-		/* Setup */
-		var event_1 = context_1.event;
-
-		// Verify the item wasn't deleted
-		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) {
-
-			/* Request */
-
-			// Check if the item was archived
-			InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item_url, 'on_success': function( context_2 ) {
-
-				/* Setup */
-				var event_2 = context_2.event;
-
-				// Verify that the item wasn't archived
-				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
-
-					/* Request */
-
-					// Get the item
-					InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context_3 ) {
-						/* Setup */
-
-						var event_3 = context_3.event;
-						var result = event_3.target.result
-						if( !result ) {
-							return;
-						}
-
-						// Verify the item exists		
-						if( !InDB.isEmpty( InDB.row.value( event_3 ) ) ) { 
-
-							/* UI */
-console.log('l5', result,event_3);
-
-							if (jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-console.log('l6');
-								add_item_to_results(result);
-
-								check_if_item_is_favorited(item_url);
-
-								check_if_item_is_read(item_url);
-
-								check_if_item_is_seen(item_url);
-
-							}
-
-						} // End verify the item exists
-
-					}, 'on_error': on_error } ); // End get the item
-
-				} // End verify that the item wasn't archived
-
-			}, 'on_error': on_error } ); // End check if the item was archived
-
-		} // End verify the item wasn't deleted
-
-	}; // End on_success
-
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function get_item_raw( item_url ) {
-	
-	/* Debug */
-
-	if( true === Buleys.debug ) {
-		console.log('get_item_raw() > ',item_url);
-	}
-
-	/* Action */
-
-	jQuery(document).trigger('get_item_raw');
-
-	/* Callbacks */
-
-	var on_error = function() {
-		console.log( 'Error in get_item_raw', item_url );
-	}
-
-	/* Request */
-
-	// Check if the item was deleted
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item_url, 'on_success': function( context ) {
-		
-		/* Setup */
-
-		var event_1 = context.event;
-		console.log('get_item_raw success', event_1, InDB.row.value( event_1 ) );
-		// Verify the item wasn't deleted
-		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) { 
-
-			/* Request */
-
-			InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': function( context ) {
-
-				/* Setup */
-
-				var event_2 = context.event;
-				var value =  InDB.row.value(event_2);
-				console.log('about to do UI');
-				// Verify the item wasn't archived
-				if( !InDB.isEmpty( value ) ) { 
-
-					console.log('doing UI now', value );
-					/* UI */
-
-					if (jQuery("#" + value.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-						add_item_to_results( value );
-						check_if_item_is_favorited( value.link );
-						check_if_item_is_read( value.link );
-						check_if_item_is_seen( value.link );
-					}
-
-				} //End verify the item wasn't archived	
-
-			}, 'on_error': on_error } ); // End check if the item was deleted
-
-		} // End verify the item wasn't deleted
-
-	}, 'on_error': on_error } ); // End check if the item was deleted
-
-}
-
-
-function get_items( type_filter, slug_filter, begin_timeframe, end_timeframe ) {
-	
-	/* Debug */
-
-	if( true === Buleys.debug ) {
-		console.log('items.js > get_items( type_filter, slug_filter, begin_timeframe, end_timeframe )', type_filter, slug_filter, begin_timeframe, end_timeframe );
-	}
-
-	/* Actions */
-
-	jQuery(document).trigger('get_items');
-
-	/* Defaults*/
-
-	if (typeof make_inverse == "undefined") {
-		make_inverse = false;
-	}
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if ( typeof begin_timeframe == "undefined" || begin_timeframe == null ) {
-		begin_date = 0;
+/* Utility functions */
+
+Buleys.activity.shorthand_map = {
+	'archived': 'ar',
+	'actor': 'a',
+	'actor_attachments': 'a_at',
+	'actor_content': 'a_c',
+	'actor_display_name': 'a_dn',
+	'actor_downstream_duplicates': 'a_dd',
+	'actor_id': 'a_i',
+	'actor_image_height': 'a_ih',
+	'actor_image_url': 'a_iu',
+	'actor_image_width': 'a_iw',
+	'actor_object_type': 'a_ot',
+	'actor_published': 'a_pu',
+	'actor_summary': 'a_s',
+	'actor_updated': 'a_up',
+	'actor_upstream_duplicates': 'a_ud',
+	'actor_url': 'a_u',
+	'clicked': 'cl',
+	'content': 'c',
+	'entities': 'e', //extension
+	'favorited': 'f',
+        'generator': 'g',
+        'generator_attachments': 'g_at',
+        'generator_content': 'g_c',
+        'generator_display_name': 'g_dn',
+        'generator_downstream_duplicates': 'g_dd',
+        'generator_id': 'g_i',
+        'generator_image_height': 'g_ih',
+        'generator_image_url': 'g_iu',
+        'generator_image_width': 'g_iw',
+        'generator_object_type': 'g_ot',
+        'generator_published': 'g_pu',
+        'generator_score': 'g_sc',
+        'generator_summary': 'g_s',
+        'generator_updated': 'g_up',
+        'generator_upstream_duplicates': 'g_ud',
+        'generator_url': 'g_u',
+	'icon': 'ic',
+	'icon_height': 'ic_h',
+	'icon_width': 'ic_w',
+	'icon_url': 'ic_u',
+	'id': 'i',
+	'image': 'im',
+	'image_height': 'ih',
+	'image_url': 'iu',
+	'image_width': 'iw',
+	'object': 'o',
+	'object_attachments': 'o_at',
+	'object_content': 'o_c',
+	'object_display_name': 'o_dn',
+	'object_downstream_duplicates': 'o_dd',
+	'object_id': 'o_i',
+	'object_image_height': 'o_ih',
+	'object_image_url': 'o_iu',
+	'object_image_width': 'o_iw',
+	'object_object_type': 'o_ot',
+	'object_published': 'o_pu',
+	'object_summary': 'o_s',
+	'object_updated': 'o_up',
+	'object_upstream_duplicates': 'o_ud',
+	'object_url': 'o_u',
+	'provider': 'p',
+	'provider_attachments': 'p_at',
+	'provider_content': 'p_c',
+	'provider_display_name': 'p_dn',
+	'provider_downstream_duplicates': 'p_dd',
+	'provider_id': 'p_i',
+	'provider_image_height': 'p_ih',
+	'provider_image_url': 'p_iu',
+	'provider_image_width': 'p_iw',
+	'provider_object_type': 'p_ot',
+	'provider_published': 'p_pu',
+	'provider_score': 'p_sc',
+	'provider_summary': 'p_s',
+	'provider_updated': 'p_up',
+	'provider_upstream_duplicates': 'p_ud',
+	'provider_url': 'p_u',
+	'published': 'pu',
+	'score': 'sc', //extension
+	'seen': 's',
+	'target': 't',
+	'target_attachments': 't_at',
+	'target_content': 't_c',
+	'target_display_name': 't_dn',
+	'target_downstream_duplicates': 't_dd',
+	'target_id': 't_i',
+	'target_image_height': 't_ih',
+	'target_image_url': 't_iu',
+	'target_image_width': 't_iw',
+	'target_object_type': 't_ot',
+	'target_published': 't_pu',
+	'target_score': 't_sc',
+	'target_summary': 't_s',
+	'target_updated': 't_up',
+	'target_upstream_duplicates': 't_ud',
+	'target_url': 't_u',
+	'topic': 'to', //extension
+	'title': 'ti',
+	'trashed': 'tr',
+	'updated': 'up',
+	'url': 'u',
+	'verb': 'v'
+};
+
+Buleys.activity.shorthand = function ( key ) {
+	if( 'undefined' !== typeof Buleys.activity.shorthand_map[ key ] ) {
+		return Buleys.activity.shorthand_map[ key ];
 	} else {
-		begin_date = parseInt(begin_timeframe);
+		return key;
 	}
+}
 
-	if ( typeof end_timeframe == "undefined" || end_timeframe == null ) {
-		end_date = new Date().getTime();
+
+Buleys.activity.shorthand_reverse = function ( key ) {
+	var k = key;
+	var reversed = {};
+	for( var item in Buleys.activity.shorthand_map ) {
+		if( Buleys.activity.shorthand_map.hasOwnProperty( item ) ) {
+			reversed[ Buleys.activity.shorthand_map[ item ] ] = item;
+		}
+	}
+	if( 'undefined' !== typeof reversed[ k ] ) {
+		return reversed[ k ];
 	} else {
-		end_date = parseInt( end_timeframe );
+		return k;
 	}
+}
 
-	/* Callbacks */
-
-	var cursor_on_success = function ( context ) {
-
-		/* Setup */
-
-		var event1 = context.event;
-		var result = event1.target.result;
-		var item;
-	
-		if( "undefined" !== typeof result && null !== result ) {
-			item = result.value;
-		}
-
-		//console.log( 'items.js > get_items() > item.link', context, result, item.link );
-
-		/* Work */
-
-		// Verify there's an item to add
-		if( !!item ) {
-			
-			/* Debug */
-			if( true === Buleys.debug ) {
-				console.log( 'items.js > get_items() > item.link', item.link );
+//recursive
+Buleys.activity.shorthand_decode = function( object ) {
+	var encoded = {};
+	var total = 0;
+	for( var itemobj in object ) {
+		if( 'undefined' !== typeof itemobj && object.hasOwnProperty( itemobj ) ) {
+			//recursive case: object value
+			//base case: string value
+			var value = object[ itemobj ];
+			if( 'object' === typeof value ) {
+				encoded[ Buleys.activity.shorthand_reverse( itemobj ) ] = Buleys.activity.shorthand_decode( value );
+				delete value;
+			} else { 
+				encoded[ Buleys.activity.shorthand_reverse( itemobj ) ] = value;
+				delete value;
 			}
-
-			// Get the item
-			get_item( item.link );
-
 		}
-	};
+		total++;
+	}
+	if( total > 0 ) {
+		return encoded;
+	} else {
+		return {};
+	}
+}
 
-	var cursor_on_error = function ( context ) {
-		console.log('Error in get_items()', context );
-	};
-	
-	var cursor_on_abort = function( context ) {
-		console.log('Cursor aborted in get_items()', context );
+
+//recursive
+Buleys.activity.shorthand_encode = function( object ) {
+	var encoded = {};
+	for( var item in object ) {
+		if( object.hasOwnProperty( item ) ) {
+			//recursive case: object value
+			//base case: string value
+
+			if( 'object' === typeof object[ item ] ) {
+				encoded[ Buleys.activity.shorthand( item ) ] = Buleys.activity.shorthand_encode( object[ item ] );	
+			} else { 
+				encoded[ Buleys.activity.shorthand( item ) ] = object[ item ];
+			}
+		}
+	}
+	return encoded;
+}
+
+
+Buleys.activity.install = function ( ) {
+
+        var activities = {
+                'activities': { 'key': Buleys.activity.shorthand( 'id' ), 'incrementing_key': false, 'unique': true }
+        }
+
+        var activities_idxs = {
+                'activities': {
+			'actor_id': {},
+			'object_id': {},
+			'object_url': {},
+			'object_published': {},
+			'verb': {},
+			'seen': {},
+			'clicked': {},
+			'trashed': {},
+			'archived': {},
+			'favorited': {}
+		}
 	}
 
-	/* Request */
-	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error, 'on_abort': cursor_on_abort } );	
+
+	activities_idxs.activities[ 'actor_id' ][ Buleys.activity.shorthand( 'object_id' ).replace( '_', '.' ) ] =  'true';
+	activities_idxs.activities[ 'object_id' ][ Buleys.activity.shorthand( 'object_id' ).replace( '_', '.' ) ] = 'true';
+	activities_idxs.activities[ 'object_url' ][ Buleys.activity.shorthand( 'object_url' ).replace( '_', '.' ) ] = 'false';
+	activities_idxs.activities[ 'object_published' ][ Buleys.activity.shorthand( 'object_published' ).replace( '_', '.' ) ] = 'false';
+	activities_idxs.activities[ 'verb' ][ Buleys.activity.shorthand( 'verb' ) ] = 'true';
+	activities_idxs.activities[ 'seen' ][ Buleys.activity.shorthand( 'seen' ) ] = 'true';
+	activities_idxs.activities[ 'clicked' ][ Buleys.activity.shorthand( 'clicked' ) ] = 'true';
+	activities_idxs.activities[ 'trashed' ][ Buleys.activity.shorthand( 'trashed' ) ] = 'true';
+	activities_idxs.activities[ 'archived' ][ Buleys.activity.shorthand( 'archived' ) ] = 'true';
+	activities_idxs.activities[ 'favorited' ][ Buleys.activity.shorthand( 'favorited' ) ] = 'true';
+
+	console.log( 'Buleys_activity_install', activities, activities_idxs );
+
+        InDB.trigger( 'InDB_do_stores_create', { 'stores': activities, 'on_success': function( context ) {
+                InDB.trigger( 'InDB_do_indexes_create', { 'indexes': activities_idxs, 'on_complete': function( context2 ) {
+                        console.log( 'Activities store loaded', context2 );
+                } } );
+        } } );
 
 }
 
 
-function index_items_by_field( type_filter, slug_filter, field ) {
-	
+/* Single activity methods */
+
+//adds a new activity to the database (meaning it must not yet exist)
+//takes an activity, requires an activity_id attribute
+//on_success callback returns activity id as only argument
+//on_error returns error
+Buleys.activity.add = function ( activity, on_success, on_error ) {
+
 	/* Action */
 
-	jQuery( document ).trigger('index_items_by_field');
+	jQuery( document ).trigger( 'Buleys_activity_add', { 'activity': activity } );
 
 	/* Defaults */
-	
-	if ( typeof make_inverse == "undefined" ) {
-		make_inverse = false;
+
+	if( !activity.trashed ) {
+		activity.trashed = "false";
 	}
 
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if( typeof Buleys.index_view == "undefined" ) {
-		Buleys.index_view = {};
+	if( !activity.seen ) {
+		activity.seen = "false";
 	}
 
-	if( typeof Buleys.index_view[field] === "undefined" ) {
-		Buleys.index_view[field] = {};
+	if( !activity.clicked ) {
+		activity.clicked = "false";
 	}
 
-	if ( typeof begin_timeframe == "undefined" || begin_timeframe == null ) {
-		begin_date = 0;
-	} else {
-		begin_date = parseInt(begin_timeframe);
+	if( !activity.archived ) {
+		activity.archived = "false";
 	}
 
-	if ( typeof end_timeframe == "undefined" || end_timeframe == null ) {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt( end_timeframe );
+	if( !activity.favorited ) {
+		activity.favorited = "false";
 	}
 
-	if( undefined == typeof field ) {
-		field = "modified";
+	if( !activity.published ) {
+		activity.published = "true";
 	}
-
-	/* Callbacks */
-	
-	var cursor_on_success = function ( context ) {
-
-		/* Setup */
-		
-		var event_1 = context.event;
-	
-		var result = event_1.target.result;
-		var item = event_1.target.result.value;
-
-		//TODO: What is this?
-		if( item ) {
-			index_view[ field ][ item[field] ] = item.link;	
-		}
-
-	};
-
-	var cursor_on_error = function( context ) {
-
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'cateogries', 'index': 'slug', 'keyRange': InDB.transaction.only( slug_filter ), 'on_success': oncusor_on_success, 'on_error': cursor_on_error } );
-	
-}
-
-
-function get_item_for_console( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_item_for_console');
-
-	/* Callbacks */
-
-	item_on_success = function ( context ) {
-		var item_request = context.event;
-		if (typeof item_request.result !== 'undefined' && typeof item_request.result.id === 'string') {
-			var html_snippit = "<div id='console_" + item_request.result.id.replace(/[^a-zA-Z0-9-_]+/g, "") + "'>";
-			html_snippit = html_snippit + "<h3><a href='" + item_request.result.id + "'>" + item_request.result.title + "</a></h3>";
-			html_snippit = html_snippit + "<p>" + item_request.result.author + "</p>";
-			html_snippit = html_snippit + "</div>";
-			send_to_console(html_snippit);
-		}
-	};
-
-	item_on_error = function ( e ) {
-		console.log('Error gettng item', e );
-	};
-	
-	/* Request */
-
-	InDB.trigger( 'InDB_row_get', { 'store': 'items', 'key': item_url, 'on_success': item_on_success, 'on_error': item_on_error } );
-
-}
-
-function fire_off_request( ) {
-
-	/* Action */
-
-	jQuery(document).trigger('fire_off_request');
-
-	/* Setup */
-
-	var data_to_send;
-
-	data_to_send = {
-		"method": "get_users_personal_collection"
-	};
-
-	var the_url;
-
-	if (typeof Buleys.view.type === "undefined" || Buleys.view.type === "") {
-		the_url = "http://api.buleys.com/feedback/";
-	} else {
-		the_url = "http://cdn.buleys.com/js/collections/" + Buleys.view.type + "/" + Buleys.view.slug + ".js";
-	}
-
-	/* Work */
-
-	// Call the remote feed
-	$.ajax( {
-		url: the_url,
-		dataType: 'jsonp',
-		/*data: data_to_send,*/
-		jsonpCallback: 'load_collection',
-		error: function (	) {
-
-			/* UI */
-
-			$("#index").html("<li class='item'>No results.</li>");
-
-		},
-		success: function ( data ) {
-
-			/* Setup */
-
-			Buleys.view.slug = data.info.key;
-			Buleys.view.type = data.info.type;
-
-			if( "undefined" !== typeof data.info && "undefined" === typeof data.info.topic_key ) {
-				data.info.topic_key = data.info.type + "_" + data.info.key;
-			}
-
-			/* Work */
-
-			//populate_and_maybe_setup_indexeddbs(data.items);
-
-			//get_data_for_items(data.items);
-
-			add_items(data.items, data.info.type, data.info.key);
-
-			load_page_title_info(data.info);
-
-			add_or_update_topic( data.info);
-
-		}
-
-	} );
-}
-
-
-/* Method for batch processing of items for type and topic */
-function get_data_for_items( items ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_data_for_items');
-
-	/* Work */
-
-	// Loop through each item
-	$.each(items, function ( i, item ) {
-
-
-		/* Debug */
-
-		if( true === Buleys.debug ) {
-			console.log("getting data for item", item);
-		}
-
-		/* Work */
-
-		// Calls get_item() using the item.link
-		get_item(item.link);
-
-	} );
-
-}
-
-
-function add_items( items, type_to_get, company_to_get ) {
-
-	/* Debug */
-
-	if( true === Buleys.debug ) {
-		console.log('items.js > add_items', items, type_to_get, company_to_get );
-	}
-
-	/* Action */
-
-	jQuery(document).trigger('add_items');
-
-	/* Work */
-
-	// Loop through each item to database
-	$.each( items, function ( i, item ) {
-
-		if( true === Buleys.debug ) {
-			//console.log('items.js > add_items > each', item );
-		}
-
-		add_item_if_new( item, type_to_get, company_to_get );
-
-	});
-
-}
-
-
-function populate_and_maybe_setup_indexeddbs( items ) {
-
-	/* Action */
-
-	jQuery(document).trigger('populate_and_maybe_setup_indexeddbs');
-
-	// Loop through each item to database
-	jQuery.each( items, function ( i, item ) {
-		add_item_if_doesnt_exist( item );
-	});
-
-}
-
-function add_item_if_new( item, type_to_get, company_to_get ) {
-
-	/* Debug */
-	
-	if ( !!Buleys.debug ) {
-		console.log( 'add_item_if_new()', item, type_to_get, company_to_get );
-	}
-	add_item_to_items_database(item);
-	return;
-
-	/* Action */
-
-	jQuery(document).trigger('add_item_if_new');
 
 	/* Assertions */
 
-	if( !item.link ) {
-		return;
-	}
+	InDB.assert( !InDB.isEmpty( activity.id ), 'activity.id must not be empty' );
 
 	/* Callbacks */
-	
-	var on_error = function() {
-		console.log( 'Error in get_item', item.link );
-	}	
 
-	var on_abort = function() {
-		console.log( 'Abort in get_item', item.link );
-	}	
-
-	/* Request */
-
-	// Check if the item was deleted
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'deleted', 'key': item.link, 'on_success': function( context_1 ) {
-
-		/* Setup */
-
-		var event_1 = context_1.event;
-		
-		// Verify item was not deleted
-		if( InDB.isEmpty( InDB.row.value( event_1 ) ) ) { 
-
-			/* Request */
-
-			// Check if the item was archived
-			InDB.trigger( 'InDB_do_row_get', { 'store': 'archive', 'key': item.link, 'on_success': function( context_2 ) {
-
-				/* Setup */
-
-				var event_2 = context_2.event;
-				
-				// Verify the item wasn't archived
-				if( InDB.isEmpty( InDB.row.value( event_2 ) ) ) { 
-
-					/* UI */
-
-					add_item_to_items_database(item);
-
-					send_to_console("<p>Added: <a href='" + item.link + "'>" + item.title + "</a></p>");
-
-					add_categories_to_categories_database(item.link, item.entities );
-
-					/* Setup */
-
-					var item_key = type_to_get.toLowerCase() + "_" + company_to_get.toLowerCase();
-
-					/* Work */
-
-					// Empty the current view's new item inbox
-					if (typeof Buleys.queues.new_items[item_key] === "undefined") {
-
-						Buleys.queues.new_items[item_key] = 0;
-
-					}
-
-					// Queue up another crawl
-					Buleys.queues.new_items[item_key] = Buleys.queues.new_items[item_key] + 1;
-
-				} // End verify that the item was not archivedc
-
-			}, 'on_error': on_error } ); // End check if the item was archived
-
-		} // End verify that the item was not deleted
-
-	}, 'on_error': on_error } ); // End check if the item was deleted
-
-}
-
-function md5 ( str ) {
-	jQuery(document).trigger('md5 ');
-
-    // http://kevin.vanzonneveld.net
-    // +   original by: Webtoolkit.info (http://www.webtoolkit.info/)
-    // + namespaced by: Michael White (http://getsprink.com)
-    // +    tweaked by: Jack
-    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-    // +      input by: Brett Zamir (http://brett-zamir.me)
-    // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-    // -    depends on: utf8_encode
-    // *     example 1: md5('Kevin van Zonneveld');
-    // *     returns 1: '6e658d4bfcb59cc13f96c14450ac40b9'
-
-    var xl;
-
-    var rotateLeft = function ( lValue, iShiftBits ) {
-
-        return (lValue<<iShiftBits) | (lValue>>>(32-iShiftBits));
-    };
-
-    var addUnsigned = function ( lX,lY ) {
-
-        var lX4,lY4,lX8,lY8,lResult;
-        lX8 = (lX & 0x80000000);
-        lY8 = (lY & 0x80000000);
-        lX4 = (lX & 0x40000000);
-        lY4 = (lY & 0x40000000);
-        lResult = (lX & 0x3FFFFFFF)+(lY & 0x3FFFFFFF);
-        if (lX4 & lY4) {
-            return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
-        }
-        if (lX4 | lY4) {
-            if (lResult & 0x40000000) {
-                return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
-            } else {
-                return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
-            }
-        } else {
-            return (lResult ^ lX8 ^ lY8);
-        }
-    };
-
-    var _F = function ( x,y,z ) {
- return (x & y) | ((~x) & z); };
-    var _G = function ( x,y,z ) {
- return (x & z) | (y & (~z)); };
-    var _H = function ( x,y,z ) {
- return (x ^ y ^ z); };
-    var _I = function ( x,y,z ) {
- return (y ^ (x | (~z))); };
-
-    var _FF = function ( a,b,c,d,x,s,ac ) {
-
-        a = addUnsigned(a, addUnsigned(addUnsigned(_F(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    };
-
-    var _GG = function ( a,b,c,d,x,s,ac ) {
-
-        a = addUnsigned(a, addUnsigned(addUnsigned(_G(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    };
-
-    var _HH = function ( a,b,c,d,x,s,ac ) {
-
-        a = addUnsigned(a, addUnsigned(addUnsigned(_H(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    };
-
-    var _II = function ( a,b,c,d,x,s,ac ) {
-
-        a = addUnsigned(a, addUnsigned(addUnsigned(_I(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    };
-
-    var convertToWordArray = function ( str ) {
-
-        var lWordCount;
-        var lMessageLength = str.length;
-        var lNumberOfWords_temp1=lMessageLength + 8;
-        var lNumberOfWords_temp2=(lNumberOfWords_temp1-(lNumberOfWords_temp1 % 64))/64;
-        var lNumberOfWords = (lNumberOfWords_temp2+1)*16;
-        var lWordArray=new Array(lNumberOfWords-1);
-        var lBytePosition = 0;
-        var lByteCount = 0;
-        while ( lByteCount < lMessageLength ) {
-            lWordCount = (lByteCount-(lByteCount % 4))/4;
-            lBytePosition = (lByteCount % 4)*8;
-            lWordArray[lWordCount] = (lWordArray[lWordCount] | (str.charCodeAt(lByteCount)<<lBytePosition));
-            lByteCount++;
-        }
-        lWordCount = (lByteCount-(lByteCount % 4))/4;
-        lBytePosition = (lByteCount % 4)*8;
-        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80<<lBytePosition);
-        lWordArray[lNumberOfWords-2] = lMessageLength<<3;
-        lWordArray[lNumberOfWords-1] = lMessageLength>>>29;
-        return lWordArray;
-    };
-
-    var wordToHex = function ( lValue ) {
-
-        var wordToHexValue="",wordToHexValue_temp="",lByte,lCount;
-        for (lCount = 0;lCount<=3;lCount++) {
-            lByte = (lValue>>>(lCount*8)) & 255;
-            wordToHexValue_temp = "0" + lByte.toString(16);
-            wordToHexValue = wordToHexValue + wordToHexValue_temp.substr(wordToHexValue_temp.length-2,2);
-        }
-        return wordToHexValue;
-    };
-
-    var x=[],
-        k,AA,BB,CC,DD,a,b,c,d,
-        S11=7, S12=12, S13=17, S14=22,
-        S21=5, S22=9 , S23=14, S24=20,
-        S31=4, S32=11, S33=16, S34=23,
-        S41=6, S42=10, S43=15, S44=21;
-
-    str = this.utf8_encode(str);
-    x = convertToWordArray(str);
-    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
-    
-    xl = x.length;
-    for (k=0;k<xl;k+=16) {
-        AA=a; BB=b; CC=c; DD=d;
-        a=_FF(a,b,c,d,x[k+0], S11,0xD76AA478);
-        d=_FF(d,a,b,c,x[k+1], S12,0xE8C7B756);
-        c=_FF(c,d,a,b,x[k+2], S13,0x242070DB);
-        b=_FF(b,c,d,a,x[k+3], S14,0xC1BDCEEE);
-        a=_FF(a,b,c,d,x[k+4], S11,0xF57C0FAF);
-        d=_FF(d,a,b,c,x[k+5], S12,0x4787C62A);
-        c=_FF(c,d,a,b,x[k+6], S13,0xA8304613);
-        b=_FF(b,c,d,a,x[k+7], S14,0xFD469501);
-        a=_FF(a,b,c,d,x[k+8], S11,0x698098D8);
-        d=_FF(d,a,b,c,x[k+9], S12,0x8B44F7AF);
-        c=_FF(c,d,a,b,x[k+10],S13,0xFFFF5BB1);
-        b=_FF(b,c,d,a,x[k+11],S14,0x895CD7BE);
-        a=_FF(a,b,c,d,x[k+12],S11,0x6B901122);
-        d=_FF(d,a,b,c,x[k+13],S12,0xFD987193);
-        c=_FF(c,d,a,b,x[k+14],S13,0xA679438E);
-        b=_FF(b,c,d,a,x[k+15],S14,0x49B40821);
-        a=_GG(a,b,c,d,x[k+1], S21,0xF61E2562);
-        d=_GG(d,a,b,c,x[k+6], S22,0xC040B340);
-        c=_GG(c,d,a,b,x[k+11],S23,0x265E5A51);
-        b=_GG(b,c,d,a,x[k+0], S24,0xE9B6C7AA);
-        a=_GG(a,b,c,d,x[k+5], S21,0xD62F105D);
-        d=_GG(d,a,b,c,x[k+10],S22,0x2441453);
-        c=_GG(c,d,a,b,x[k+15],S23,0xD8A1E681);
-        b=_GG(b,c,d,a,x[k+4], S24,0xE7D3FBC8);
-        a=_GG(a,b,c,d,x[k+9], S21,0x21E1CDE6);
-        d=_GG(d,a,b,c,x[k+14],S22,0xC33707D6);
-        c=_GG(c,d,a,b,x[k+3], S23,0xF4D50D87);
-        b=_GG(b,c,d,a,x[k+8], S24,0x455A14ED);
-        a=_GG(a,b,c,d,x[k+13],S21,0xA9E3E905);
-        d=_GG(d,a,b,c,x[k+2], S22,0xFCEFA3F8);
-        c=_GG(c,d,a,b,x[k+7], S23,0x676F02D9);
-        b=_GG(b,c,d,a,x[k+12],S24,0x8D2A4C8A);
-        a=_HH(a,b,c,d,x[k+5], S31,0xFFFA3942);
-        d=_HH(d,a,b,c,x[k+8], S32,0x8771F681);
-        c=_HH(c,d,a,b,x[k+11],S33,0x6D9D6122);
-        b=_HH(b,c,d,a,x[k+14],S34,0xFDE5380C);
-        a=_HH(a,b,c,d,x[k+1], S31,0xA4BEEA44);
-        d=_HH(d,a,b,c,x[k+4], S32,0x4BDECFA9);
-        c=_HH(c,d,a,b,x[k+7], S33,0xF6BB4B60);
-        b=_HH(b,c,d,a,x[k+10],S34,0xBEBFBC70);
-        a=_HH(a,b,c,d,x[k+13],S31,0x289B7EC6);
-        d=_HH(d,a,b,c,x[k+0], S32,0xEAA127FA);
-        c=_HH(c,d,a,b,x[k+3], S33,0xD4EF3085);
-        b=_HH(b,c,d,a,x[k+6], S34,0x4881D05);
-        a=_HH(a,b,c,d,x[k+9], S31,0xD9D4D039);
-        d=_HH(d,a,b,c,x[k+12],S32,0xE6DB99E5);
-        c=_HH(c,d,a,b,x[k+15],S33,0x1FA27CF8);
-        b=_HH(b,c,d,a,x[k+2], S34,0xC4AC5665);
-        a=_II(a,b,c,d,x[k+0], S41,0xF4292244);
-        d=_II(d,a,b,c,x[k+7], S42,0x432AFF97);
-        c=_II(c,d,a,b,x[k+14],S43,0xAB9423A7);
-        b=_II(b,c,d,a,x[k+5], S44,0xFC93A039);
-        a=_II(a,b,c,d,x[k+12],S41,0x655B59C3);
-        d=_II(d,a,b,c,x[k+3], S42,0x8F0CCC92);
-        c=_II(c,d,a,b,x[k+10],S43,0xFFEFF47D);
-        b=_II(b,c,d,a,x[k+1], S44,0x85845DD1);
-        a=_II(a,b,c,d,x[k+8], S41,0x6FA87E4F);
-        d=_II(d,a,b,c,x[k+15],S42,0xFE2CE6E0);
-        c=_II(c,d,a,b,x[k+6], S43,0xA3014314);
-        b=_II(b,c,d,a,x[k+13],S44,0x4E0811A1);
-        a=_II(a,b,c,d,x[k+4], S41,0xF7537E82);
-        d=_II(d,a,b,c,x[k+11],S42,0xBD3AF235);
-        c=_II(c,d,a,b,x[k+2], S43,0x2AD7D2BB);
-        b=_II(b,c,d,a,x[k+9], S44,0xEB86D391);
-        a=addUnsigned(a,AA);
-        b=addUnsigned(b,BB);
-        c=addUnsigned(c,CC);
-        d=addUnsigned(d,DD);
-    }
-
-    var temp = wordToHex(a)+wordToHex(b)+wordToHex(c)+wordToHex(d);
-
-    return temp.toLowerCase();
-}
-
-function utf8_encode (  argString  ) {
-	jQuery(document).trigger('utf8_encode ');
-
-    // http://kevin.vanzonneveld.net
-    // +   original by: Webtoolkit.info (http://www.webtoolkit.info/)
-    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-    // +   improved by: sowberry
-    // +    tweaked by: Jack
-    // +   bugfixed by: Onno Marsman
-    // +   improved by: Yves Sucaet
-    // +   bugfixed by: Onno Marsman
-    // +   bugfixed by: Ulrich
-    // *     example 1: utf8_encode('Kevin van Zonneveld');
-    // *     returns 1: 'Kevin van Zonneveld'
-
-    var string = (argString+''); // .replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-
-    var utftext = "";
-    var start, end;
-    var stringl = 0;
-
-    start = end = 0;
-    stringl = string.length;
-    for (var n = 0; n < stringl; n++) {
-        var c1 = string.charCodeAt(n);
-        var enc = null;
-
-        if (c1 < 128) {
-            end++;
-        } else if (c1 > 127 && c1 < 2048) {
-            enc = String.fromCharCode((c1 >> 6) | 192) + String.fromCharCode((c1 & 63) | 128);
-        } else {
-            enc = String.fromCharCode((c1 >> 12) | 224) + String.fromCharCode(((c1 >> 6) & 63) | 128) + String.fromCharCode((c1 & 63) | 128);
-        }
-        if (enc !== null) {
-            if (end > start) {
-                utftext += string.substring(start, end);
-            }
-            utftext += enc;
-            start = end = n+1;
-        }
-    }
-
-    if (end > start) {
-        utftext += string.substring(start, string.length);
-    }
-
-    return utftext;
-}
-
-	function post_feedback( event_type, item_url, context_string, context_type_string ) {
-	jQuery(document).trigger('post_feedback');
-
-	    var data_to_send;
-	    data_to_send = {
-	        "event": event_type,
-	        "item": item_url,
-	        "context": context_string,
-	        "type": context_type_string
-	    };
-	    $.post("http://api.buleys.com/feedback/", data_to_send, function (  ) {
-
-	
-	    }, dataType = "json");
-	}
-
-
-    $(document).bind('view_seen', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_seen clicked");
-
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
-        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/seen";
-        } else {
-            urlString = "http://www.buleys.com/seen";
-        }
-        history.pushState(stateObj, "view_seen", urlString);
-        reload_results();
-    });
-
-    $(document).bind('view_unseen', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_unseen clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
-        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unseen";
-        } else {
-            urlString = "http://www.buleys.com/unseen";
-        }
-        history.pushState(stateObj, "view_unseen", urlString);
-        reload_results();
-    });
-
-    $(document).bind('view_read', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_read clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
-        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/read";
-        } else {
-            urlString = "http://www.buleys.com/read";
-        }
-        history.pushState(stateObj, "view_read", urlString);
-        reload_results();
-    });
-
-    $(document).bind('view_unread', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_unread clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
-        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/unread";
-        } else {
-            urlString = "http://www.buleys.com/unread";
-        }
-        history.pushState(stateObj, "view_unread", urlString);
-        reload_results();
-    });
-
-    $(document).bind('view_trash', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_trash clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
-        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/trash";
-        } else {
-            urlString = "http://www.buleys.com/trash";
-        }
-        history.pushState(stateObj, "view_trash", urlString);
-        reload_results();
-    });
-
-    $(document).bind('view_archive', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_archive clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
-        } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/archive";
-        } else {
-            urlString = "http://www.buleys.com/archive";
-        }
-        history.pushState(stateObj, "view_archive", urlString);
-        reload_results();
-    });
-
-
-    $(document).bind('view_index', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_index clicked");
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/";
-        } else if (typeof Buleys.view.type != 'undefined' && Buleys.view.type != "") {
-            urlString = "http://www.buleys.com/" + Buleys.view.type + "/";
-        }
-        history.pushState(stateObj, "view_index", urlString);
-        reload_results();
-    });
-    $(document).bind('view_home', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_home clicked");
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = '';
-        urlString = "http://www.buleys.com/" + Buleys.view.type + "/";
-        history.pushState(stateObj, "view_home", urlString);
-        reload_results();
-    });
-
-    $(document).bind('view_settings', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_home clicked");
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        history.pushState(stateObj, "view_settings", "http://www.buleys.com/settings/");
-        reload_results();
-    });
-    
-
-    $('.close_item_preview').live('click', function ( event ) {
-
-        event.preventDefault();
-        jQuery("#overlay").stop(true).animate({
-            opacity: 0
-        }, 500, function (  ) {
-
-            jQuery("#overlay").html('');
-        });
-    });
-
-
-    $('.sidebar_close_link').live('click', function ( event ) {
-
-        event.preventDefault();
-        jQuery("#overlay").stop(true).animate({
-            opacity: 0
-        }, 500, function (  ) {
-
-            jQuery("#overlay").html('');
-        });
-    });
-
-    $(document).bind('close_all', function ( event ) {
-
-        event.preventDefault();
-        jQuery("#overlay").stop(true).animate({
-            opacity: 0
-        }, 500, function (  ) {
-
-            jQuery("#overlay").html('');
-        });
-    });
-
-    $('.mark_item_as_unread').live('click', function ( event ) {
-
-        event.preventDefault();
-        $(this).removeClass('empty_star_icon').addClass('star_icon');
-        $(this).removeClass('unfav_link');
-        $(this).addClass('fav_link');
-
-
-        var item_to_work_from = jQuery("#" + jQuery(this).attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
-
-
-        if (item_to_work_from.hasClass('read')) {
-            item_to_work_from.removeClass('read');
-            item_to_work_from.addClass('unread');
-        }
-
-        remove_item_from_read_database($(this).attr('href'), Buleys.view.slug, Buleys.view.type);
-        send_to_console("<p>marked as unread</p>");
-        setTimeout('fade_console_message()', 1000);
-    });
-
-    $(document).bind('mark_all_items_as_read', function ( event ) {
-
-        event.preventDefault();
-
-        jQuery.each(jQuery(".unread"), function ( k, item_to_mark ) {
-
-
-
-            var item_to_work_from = jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
-            if (item_to_work_from.hasClass('unread')) {
-                item_to_work_from.removeClass('unread');
-                item_to_work_from.addClass('read');
-            }
-
-            mark_item_as_read(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-        });
-
-    });
-
-    $(document).bind('mark_seen', function ( event ) {
-
-        event.preventDefault();
-
-        if (!is_in_cursor_mode()) {
-
-
-            jQuery.each(jQuery(".selected"), function ( k, item_to_mark ) {
-
-
-
-                jQuery(item_to_mark).removeClass('unseen');
-                jQuery(item_to_mark).addClass('seen');
-                if (typeof jQuery(item_to_mark).attr('status') !== 'undefined') {
-                    jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unseen', '')));
-                }
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' seen'));
-
-
-
-                mark_item_as_seen(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            });
-
-        } else {
-            jQuery('.cursor').removeClass('seen');
-            jQuery('.cursor').addClass('unseen');
-
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' unseen'));
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' seen', '')));
-
-
-            mark_item_as_unseen(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-        }
-
-    });
-
-    $(document).bind('mark_unseen', function ( event ) {
-
-        event.preventDefault();
-
-        if (!is_in_cursor_mode()) {
-
-
-            jQuery.each(jQuery(".selected"), function ( k, item_to_mark ) {
-
-
-                jQuery(item_to_mark).removeClass('seen');
-                jQuery(item_to_mark).addClass('unseen');
-                var pre_val = jQuery(item_to_mark).attr('status');
-                if (typeof pre_val !== "undefined") {
-                    jQuery(item_to_mark).attr('status', pre_val.replace(' seen', ''));
-                }
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' unseen'));
-
-                mark_item_as_unseen(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            });
-
-        } else {
-            jQuery('.cursor').removeClass('seen');
-            jQuery('.cursor').addClass('unseen');
-
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' seen'));
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unseen', '')));
-
-            mark_item_as_unseen(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-        }
-
-    });
-
-    $(document).bind('select_all', function ( event ) {
-
-        event.preventDefault();
-        $.each($('#results > li'), function ( i, item_to_mark ) {
-
-            if (jQuery(item_to_mark).hasClass('selected')) {} else {
-                jQuery(item_to_mark).addClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-            }
-        });
-    });
-    $(document).bind('select_none', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                jQuery(item_to_mark).removeClass('selected');
-                jQuery(item_to_mark).attr('status', jQuery(item_to_mark).attr('status').replace(' selected', ''));
-            });
-
-        } else {
-            jQuery('.cursor').removeClass('selected');
-            jQuery('.cursor').attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        }
-    });
-    $(document).bind('select_inverse', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('#results li'), function ( i, item_to_mark ) {
-
-                if (jQuery(item_to_mark).hasClass('selected')) {
-                    jQuery(item_to_mark).removeClass('selected');
-
-                    jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-
-                } else {
-                    jQuery(item_to_mark).addClass('selected');
-
-                    jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-
-                }
-            });
-
-        } else {
-
-            if (jQuery('.cursor').hasClass('selected')) {
-
-                jQuery('.cursor').removeClass('selected');
-
-                jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status').replace(' selected', '')));
-
-
-            } else {
-                jQuery('.cursor').addClass('selected');
-
-                jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status') + ' selected'));
-
-            }
-
-        }
-    });
-
-
-	$(document).bind('view_favorites', function ( event ) {
-
-	    event.preventDefault();
-	    console.log(location.pathname);
-	    console.log("view_favorites clicked")
-	    var stateObj = {
-	        "page": Buleys.view.page,
-	        "slug": Buleys.view.slug,
-	        "type": Buleys.view.type,
-	        "time": new Date().getTime()
-	    };
-	    var urlString = '';
-	    if (typeof Buleys.view.page != 'undefined' && Buleys.view.page != "") {
-	        urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
-	    } else if (typeof Buleys.view.slug != 'undefined' && Buleys.view.slug != "") {
-	        urlString = "http://www.buleys.com/" + Buleys.view.type + "/" + Buleys.view.slug + "/favorites";
-	    } else {
-	        urlString = "http://www.buleys.com/favorites";
-	    }
-	    history.pushState(stateObj, "view_favorites", urlString);
-	    reload_results();
-	});
-
-
-    $(document).bind('deselect_seen', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.seen'), function ( i, item_to_mark ) {
-
-
-
-            jQuery(item_to_mark).removeClass('selected');
-
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-
-        });
-    });
-    $(document).bind('deselect_unseen', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unseen'), function ( i, item_to_mark ) {
-
-
-
-            jQuery(item_to_mark).removeClass('selected');
-
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-
-        });
-    });
-
-    $(document).bind('deselect_read', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.read'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-    $(document).bind('deselect_unread', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unread'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-    $(document).bind('deselect_archived', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.archived'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-    $(document).bind('deselect_unarchived', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unarchived'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-    $(document).bind('deselect_unseen', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unseen'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-    $(document).bind('deselect_unread', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unread'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-    $(document).bind('deselect_unarchived', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unarchived'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).removeClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-        });
-    });
-
-
-    $(document).bind('select_seen', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.seen'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).addClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-        });
-    });
-    $(document).bind('select_unseen', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unseen'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).addClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-        });
-    });
-    $(document).bind('select_read', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.read'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).addClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-        });
-    });
-    $(document).bind('select_unread', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unread'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).addClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-        });
-    });
-    $(document).bind('select_archived', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.archived'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).addClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-        });
-    });
-    $(document).bind('select_unarchived', function ( event ) {
-
-        event.preventDefault();
-        $.each($('.unarchived'), function ( i, item_to_mark ) {
-
-
-            jQuery(item_to_mark).addClass('selected');
-            jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-        });
-    });
-
-     $(document).bind('delete', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                delete_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                jQuery(item_to_mark).remove();
-            });
-        } else {
-
-            delete_item(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-            if (jQuery('.cursor').next().length > 0) {
-                jQuery('.cursor').next().addClass('cursor').prev().remove();
-            } else {
-                jQuery('.cursor').remove();
-                jQuery('#results li:first').addClass('cursor');
-            }
-
-        }
-    });
-
-    $(document).bind('undelete', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-		console.log("undeleting");
-		console.log(jQuery(item_to_mark).children('a').attr('href'));
-                undelete_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                jQuery(item_to_mark).remove();
-            });
-        } else {
-
-            undelete_item(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-            if (jQuery('.cursor').next().length > 0) {
-                jQuery('.cursor').next().addClass('cursor').prev().remove();
-            } else {
-                jQuery('.cursor').remove();
-                jQuery('#results li:first').addClass('cursor');
-            }
-
-        }
-    });
-
-    $(document).bind('select', function ( event ) {
-
-        event.preventDefault();
-        if (is_in_cursor_mode()) {
-
-            $.each($('.cursor'), function ( i, item_to_mark ) {
-
-
-                jQuery(item_to_mark).addClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-            });
-        } else {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                jQuery(item_to_mark).addClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' selected'));
-            });
-
-
-        }
-    });
-
-    $(document).bind('deselect', function ( event ) {
-
-        event.preventDefault();
-        if (is_in_cursor_mode()) {
-
-            $.each($('.cursor'), function ( i, item_to_mark ) {
-
-
-                jQuery(item_to_mark).removeClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-            });
-        } else {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                jQuery(item_to_mark).removeClass('selected');
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' selected', '')));
-            });
-
-        }
-    });
-
-    $(document).bind('archive', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                archive_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                if (Buleys.view.page !== "favorites" && Buleys.view.page !== "archive") {
-                    jQuery(item_to_mark).remove();
-                }
-            });
-
-        } else {
-
-            archive_item(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-
-            if (jQuery('.cursor').next().length > 0) {
-                jQuery('.cursor').next().addClass('cursor').prev().remove();
-                jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status').replace(' cursor', '')));
-            } else {
-                jQuery('.cursor').remove();
-                jQuery('#results li:first').addClass('cursor');
-                jQuery('#results li:first').attr('status', (jQuery(item_to_mark).attr('status').replace(' cursor', '')));
-
-            }
-
-        }
-    });
-
-
-    $(document).bind('read', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                var new_window = window.open(jQuery(item_to_mark).children('a').attr('href'), jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
-                mark_item_as_read(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                jQuery(item_to_mark).addClass('read');
-                jQuery(item_to_mark).removeClass('unread');
-
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' read'));
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unread', '')));
-
-            });
-
-        } else {
-
-            var new_window = window.open(jQuery('.cursor > a').attr('href'), jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
-            mark_item_as_read(jQuery('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            jQuery('.cursor').addClass('read');
-            jQuery('.cursor').removeClass('unread');
-
-            jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status') + ' read'));
-            jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status').replace(' unread', '')));
-
-        }
-    });
-
-
-
-    $(document).bind('unarchive', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                unarchive_item(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                if (Buleys.view.page == "archive") {
-                    jQuery(item_to_mark).remove();
-                }
-            });
-        } else {
-
-            unarchive_item(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            jQuery('.cursor').removeClass('archived').addClass('.unarchived');
-            if (Buleys.view.page == "archive") {
-                jQuery('.cursor').remove();
-            }
-
-        }
-    });
-
-
-
-    $(document).bind('mark_read', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                mark_item_as_read(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                jQuery(item_to_mark).addClass('read');
-                jQuery(item_to_mark).removeClass('unread');
-
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' read'));
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unread', '')));
-
-            });
-        } else {
-
-            mark_item_as_read(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            jQuery('.cursor').addClass('read');
-            jQuery('.cursor').removeClass('unread');
-
-            jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status') + ' read'));
-            jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status').replace(' unread', '')));
-
-        }
-    });
-
-    $(document).bind('mark_unread', function ( event ) {
-
-        event.preventDefault();
-        if (!is_in_cursor_mode()) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-
-                remove_item_from_read_database(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-                jQuery(item_to_mark).addClass('unread');
-                jQuery(item_to_mark).removeClass('read');
-
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status') + ' read'));
-                jQuery(item_to_mark).attr('status', (jQuery(item_to_mark).attr('status').replace(' unread', '')));
-
-            });
-
-        } else {
-            remove_item_from_read_database(jQuery('.cursor').children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            jQuery('.cursor').addClass('unread');
-            jQuery('.cursor').removeClass('read');
-
-            jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status') + ' unread'));
-            jQuery('.cursor').attr('status', (jQuery('.cursor').attr('status').replace(' read', '')));
-
-        }
-    });
-
-
-    $(document).bind('mark_all_items_as_unread', function ( event ) {
-
-        event.preventDefault();
-
-        jQuery.each(jQuery(".read"), function ( k, item_to_mark ) {
-
-
-            var item_to_work_from = jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, ""));
-            if (item_to_work_from.hasClass('read')) {
-                item_to_work_from.removeClass('read');
-                item_to_work_from.addClass('unread');
-                jQuery(item_to_work_from).attr('status', (jQuery(item_to_mark).attr('status') + ' unread'));
-                jQuery(item_to_work_from).attr('status', (jQuery(item_to_mark).attr('status').replace(' read', '')));
-
-            }
-
-            remove_item_from_read_database(jQuery(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-        });
-
-    });
-
-
-
-    jQuery("#console_wrapper").stop(true).animate({
-        opacity: 0
-    }, 0, function (  ) {
-});
-
-    jQuery("#overlay").stop(true).animate({
-        opacity: 0
-    }, 0, function (  ) {
-}).html('');
-
-
-
-    $('.headline a').live('click', function ( event ) {
-
-        var related_cats = new Array();
-        var related_tags = new Array();
-        var uri_string = $(this).attr('href');
-
-        data_to_send = {
-            "event": "click",
-            "item": $(this).attr('href'),
-            "page": slug
-        };
-
-        var data_to_send;
-
-        data_to_send = {
-            "event": "clickthrough",
-            "item": $(this).attr('href'),
-            "context": Buleys.view.slug,
-            "type": Buleys.view.type
-        };
-
-        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function ( data ) {
-
-            new_window = window.open(uri_string, click_window);
-        });
-    });
-
-    $('.sidebar_headline a').live('click', function ( event ) {
-
-        var related_cats = new Array();
-        var related_tags = new Array();
-        var uri_string = $(this).attr('href');
-
-
-
-        var data_to_send;
-        data_to_send = {
-            "event": "click",
-            "item": $(this).attr('href'),
-            "context": Buleys.view.slug,
-            "type": Buleys.view.type
-        };
-
-        $.post("http://api.buleys.com/feedback/", data_to_send, dataType = "json", function ( data ) {
-
-            new_window = window.open(uri_string, click_window);
-
-        });
-
-    });
-
-
-    jQuery("#results li").live('mouseenter', function ( event ) {
-
-
-        var item_to_work_from = jQuery(this);
-
-        if (item_to_work_from.hasClass('unseen')) {
-            item_to_work_from.removeClass('unseen');
-            item_to_work_from.addClass('seen');
-
-        }
-        url_to_preview = item_to_work_from.children('a').attr('href');
-
-
-
-        mark_item_as_seen(url_to_preview, Buleys.view.slug, Buleys.view.type);
-
-
-    });
-
-    $(document).bind('preview_item', function ( event ) {
-
-        event.preventDefault();
-	if( 0 === $('.selected').length ) {
-		console.log(jQuery(event.target).attr('id') );
-		open_preview( jQuery(event.target).attr('id') );
-        } else if (!is_in_cursor_mode() && $('.selected').length > 0) {
-
-            $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-
-
-                var item_to_work_from = jQuery(item_to_mark);
-
-                if (item_to_work_from.hasClass('unseen')) {
-                    item_to_work_from.removeClass('unseen');
-                    item_to_work_from.addClass('seen');
-                }
-                url_to_preview = item_to_work_from.children('a').attr('href');
-
-
-
-                mark_item_as_seen(url_to_preview, Buleys.view.slug, Buleys.view.type);
-                load_item_to_overlay(url_to_preview);
-
-                jQuery("#overlay").stop(true).animate({
-                    opacity: 1
-                }, 100, function (  ) {
-});
-
-
-
-            });
-
-        } else if ($('.selected').length > 0) {
-
-            var item_to_work_from = jQuery('.cursor');
-
-            if (item_to_work_from.hasClass('unseen')) {
-                item_to_work_from.removeClass('unseen');
-                item_to_work_from.addClass('seen');
-            }
-            url_to_preview = item_to_work_from.children('a').attr('href');
-
-
-
-            mark_item_as_seen(url_to_preview, Buleys.view.slug, Buleys.view.type);
-            load_item_to_overlay(url_to_preview);
-
-
-            jQuery("#overlay").stop(true).animate({
-                opacity: 1
-            }, 100, function (  ) {
-});
-
-
-        }
-
-    });
-
-
-    $(document).bind('close_item_preview', function ( event ) {
-
-        event.preventDefault();
-
-        if (!is_in_cursor_mode()) {
-
-            if ($('.selected').length > 0) {
-                $.each($('.selected'), function ( i, item_to_mark ) {
-
-
-                    var item_to_work_from = jQuery(item_to_mark);
-                    var url_to_preview = item_to_work_from.children('a').attr('href');
-
-                    if (item_to_work_from.hasClass('unread')) {
-                        item_to_work_from.removeClass('unread');
-                        item_to_work_from.addClass('read');
-						/*
-						jQuery("#overlay").stop(true).animate({
-							opacity: 0,
-						}, 500, function() {
-					        jQuery("#overlay").html('');
-						});
-						*/
-                    }
-                    var thekey = "#overlay_" + url_to_preview.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-                    if (jQuery(thekey).length > 0) {
-
-                        var item_to_work_from = jQuery(item_to_mark);
-
-                        if (item_to_work_from.hasClass('unseen')) {
-                            item_to_work_from.removeClass('unseen');
-                            item_to_work_from.addClass('seen');
-                        }
-                        url_to_preview = item_to_work_from.children('a').attr('href');
-
-                        jQuery("#overlay").stop(true).animate({
-                            opacity: 0
-                        }, 500, function (  ) {
-
-                            jQuery("#overlay").html('');
-                        });
-
-                    }
-
-                });
-
-            } else {
-
-                jQuery("#overlay").stop(true).animate({
-                    opacity: 0
-                }, 500, function (  ) {
-
-                    jQuery("#overlay").html('');
-                });
-
-            }
-
-        } else {
-
-            var item_to_work_from = jQuery('.cursor');
-
-            if (item_to_work_from.hasClass('unseen')) {
-                item_to_work_from.removeClass('unseen');
-                item_to_work_from.addClass('seen');
-            }
-            
-            url_to_preview = item_to_work_from.children('a').attr('href');
-
-            var thekey = "#overlay_" + url_to_preview.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-            if (jQuery(thekey).length > 0) {
-
-                jQuery("#overlay").stop(true).animate({
-                    opacity: 0
-                }, 500, function (  ) {
-
-                    jQuery("#overlay").html('');
-                });
-
-            }
-
-        }
-
-    });
-
-
-    $(document).bind('results li:not(.favorite_status)', function ( event ) {
-
-        var item_to_work_from = jQuery(this);
-        var url_to_preview = item_to_work_from.children('a').attr('href');
-
-        if (item_to_work_from.hasClass('unread')) {
-            item_to_work_from.removeClass('unread');
-            item_to_work_from.addClass('read');
-			/*
-			jQuery("#overlay").stop(true).animate({
-				opacity: 0,
-			}, 500, function() {
-		        jQuery("#overlay").html('');
-			});
-			*/
-        }
-        
-        if( jQuery(this).hasClass("star_icon") === false && jQuery(this).hasClass("empty_star_icon") === false) {
-	        
-	        var thekey = "#overlay_" + url_to_preview.replace(/[^a-zA-Z0-9-_]+/g, "");
-	
-	        if (jQuery(thekey).length > 0 && jQuery(item_to_work_from).hasClass('selected')) {
-	            jQuery("#overlay").stop(true).animate({
-	                opacity: 0
-	            }, 500, function (  ) {
-
-	                jQuery("#overlay").html('');
-	            });
-	        } else if (!jQuery(item_to_work_from).hasClass('selected')) {
-	
-	            jQuery("#overlay").stop(true).animate({
-	                opacity: 1
-	            }, 100, function (  ) {
-});
-	
-	            load_item_to_overlay(url_to_preview);
-	
-	        }
-	
-	        item_to_work_from.addClass('selected');
-
+	var on_success_wrapper = function ( context ) {
+		if( !!Buleys.debug ) {
+			console.log( 'Activity added successfully', context );
 		}
-		
-    });
-
-    $(".selected").live('click', function ( event ) {
-
-        $(this).removeClass('selected');
-    });
-
-    $("#results li").live('mouseleave', function ( event ) {
-
-		/*
-		jQuery("#overlay").stop(true).animate({
-			opacity: 0,
-						
-		
-		}, 500, function() {
-		} ).html('');
-		*/
-    });
-		if (window.webkitNotifications) {
-	
-	} else {
-	
-	}
-	
-	
-	function createNotificationInstance( options ) {
-	jQuery(document).trigger('createNotificationInstance');
-
-	    if (options.notificationType == 'simple') {
-	        return window.webkitNotifications.createNotification('fire.png', 'Notification Title', 'Notification content...');
-	    } else if (options.notificationType == 'html') {
-	        return window.webkitNotifications.createHTMLNotification('http://someurl.com');
-	    }
-	}
-	
-	function send_notification_to_desktop(  ) {
-	jQuery(document).trigger('send_notification_to_desktop');
-
-	
-	    if (window.webkitNotifications.checkPermission() == 0) {
-	
-	        notification_test = createNotificationInstance({
-	            notificationType: 'html'
-	        });
-	        notification_test.ondisplay = function (  ) {
-};
-	        notification_test.onclose = function (  ) {
-};
-	        notification_test.show();
-	    } else {
-	        window.webkitNotifications.requestPermission();
-	    }
-	
-	
-	}
-	
-	function notify_user_of_new_items( number, thetype, thecompany ) {
-	jQuery(document).trigger('notify_user_of_new_items');
-
-	
-	    if ((Buleys.view.type === thetype && thecompany === Buleys.view.slug) || Buleys.view.type == "home" || typeof Buleys.view.type === "undefined") {
-	        flash_console("<p>" + number + " new items added to " + thetype + " " + thecompany + " </p>");
-	    }
-	
-	}
-	
-
-		function do_pending_crawl(  ) {
-	jQuery(document).trigger('do_pending_crawl');
-
-	
-	    var topic_slug = Buleys.queues.pending_crawls.splice(0, 1);
-	
-	    var split_string = topic_slug[0].split("_", 1);
-	
-	    var type_to_get = split_string[0];
-	    var company_to_get = topic_slug[0].replace((split_string[0] + "_"), "");
-	
-	
-	
-	
-	    var the_url;
-	    the_url = "http://static.buleys.com/js/collections/" + type_to_get + "/" + company_to_get + ".js";
-	
-	    $.ajax({
-	
-	        url: the_url,
-	        dataType: 'jsonp',
-	        jsonpCallback: 'load_collection',
-	        error: function (  ) {
-
-	            $("#index").html("<li class='item'>No results.</li>");
-	        },
-	        success: function ( data ) {
-
-	
-	
-	            add_items(data.items, type_to_get, company_to_get);
-	
-	
-	
-	        }
-	    });
-	
-	
-	}
-	
-	
-		
-	function check_for_waiting_items(  ) {
-	jQuery(document).trigger('check_for_waiting_items');
-
-	
-	
-	
-	    notify_user_of_new_items(Buleys.queues.new_items, type_to_get, company_to_get);
-	
-	}
-
-
-function send_text_to_overlay( text_to_send ) {
-	jQuery(document).trigger('send_text_to_overlay');
-
-    jQuery("#overlay").html('').append(text_to_send);
-}
-
-function send_to_overlay( text ) {
-	jQuery(document).trigger('send_to_overlay');
-	console.log('send_to_overlay()', text );
-    send_text_to_overlay(text);
-    jQuery("#overlay").stop(true).animate({
-        opacity: 1
-    }, 500);
-}
-function hide_overlay(  ) {
-	jQuery(document).trigger('hide_overlay');
-
-    jQuery("#overlay").stop(true).animate({
-        opacity: 0
-    }, 500);
-    jQuery("#overlay").html('').removeClass();
-}
-	
-function load_item_to_overlay( item_key ) {
-	jQuery(document).trigger('load_item_to_overlay');
-
-	console.log('load_item_to_overlay()', item_key );
-    get_item_for_overlay(item_key);
-    check_if_item_is_favorited_for_overlay(item_key);
-    check_item_vote_status_for_overlay(item_key);
-    get_item_categories_for_overlay(item_key);
-}
-
-function get_item_for_overlay( item_url ) {
-
-	jQuery(document).trigger('get_item_for_overlay');
-
-	console.log('get_item_for_overlay()', item_url );
-	var on_success = function ( context ) {
-	var item_request = context.event;
-	var result = item_request.target.result;
-        if (typeof result !== 'undefined' && typeof result.link === 'string') {
-            var html_snippit = '<div id="overlay_right"><div class="sidebar_close_link"><div class="close_sidebar_link cross_icon" id="' + item_url + '"></div></div>' + "<div id='overlay_" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + "'><a href='" + result.link + "' class='overlay_headline'>" + result.title + "</a></div></div><div id='overlay_left'></div>";
-            send_to_overlay(html_snippit);
-            /*
-            <div id='overlay_controls'><a href='" + item_url + "' class='favorite_item'>Favorite</a>&nbsp;<a href='" + item_url + "' class='unfavorite_item'>Unfavorite</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_read'>Mark as read</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unread'>Mark as unread</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_seen'>Mark as seen</a>&nbsp;<a href='" + item_url + "' class='mark_item_as_unseen'>Mark as unseen</a>&nbsp;<a href='" + item_url + "' class='archive_item'>Archive</a>&nbsp;<a href='" + item_url + "' class='delete_item'>Delete</a>&nbsp;<a href='" + item_url + "' class='unarchive_item'>Unarchive</a>&nbsp;<a href='" + item_url + "' class='vote_item_up'>Vote up</a>&nbsp;<a href='" + item_url + "' class='vote_item_down'>Vote down</a>&nbsp;<a href='" + item_url + "' class='close_item_preview'>Close preview</a></div>
-            */
-        }
-    };
-    var on_error = function ( context ) {
-	console.log('Error sending item to overlay', item_url );
-    };
-    
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-}
-function open_preview(  item_to_preview  ) {
-	jQuery(document).trigger('open_preview');
-
-		var item_to_work_from = jQuery("#" + item_to_preview);
-		console.log(item_to_work_from);
-                if (item_to_work_from.hasClass('unseen')) {
-                    item_to_work_from.removeClass('unseen');
-                    item_to_work_from.addClass('seen');
-                }
-                url_to_preview = item_to_work_from.children('a').attr('href');
-		console.log(url_to_preview);
-		console.log(Buleys.view.slug);
-		console.log(Buleys.view.type);
-                mark_item_as_seen(url_to_preview, Buleys.view.slug, Buleys.view.type);
-                load_item_to_overlay(url_to_preview);
-
-                jQuery("#overlay").stop(true).animate({
-                    opacity: 1
-                }, 100, function (    ) {
-
-		});
-}
-	
-	function save_queues(  ) {
-	jQuery(document).trigger('save_queues');
-
-	
-	    add_or_update_queue("new_items", Buleys.queues.new_items);
-	    add_or_update_queue("pending_crawls", Buleys.queues.pending_crawls);
-	
-	}
-
-	
-	
-	function get_queues(  ) {
-	jQuery(document).trigger('get_queues');
-
-	
-	    try {
-	
-	        new_queue_transaction();
-	        Buleys.index = Buleys.objectStore.index("queue_name");
-	
-	        var cursorRequest = Buleys.index.openCursor();
-	        cursorRequest.onsuccess = function ( event ) {
-
-	            var objectCursor = cursorRequest.result;
-	            if (!objectCursor) {
-	                return;
-	            }
-	
-	
-	
-	
-	            if (objectCursor.length >= 0) {
-	                jQuery.each(objectCursor, function ( k, item ) {
-
-	
-	                });
-	            }
-	
-	        };
-	        request.onerror = function ( event ) {
-
-	
-	        };
-	
-	    } catch (e) {
-	
-	
-	    }
-	
-	
-	}
-	
-	function remove_queue( queue_name ) {
-	jQuery(document).trigger('remove_queue');
-
-	
-	    new_queue_transaction();
-	
-	    var request = Buleys.objectStore["delete"](queue_name);
-	    request.onsuccess = function ( event ) {
-
-	
-	        delete Buleys.objectId;
-	    };
-	    request.onerror = function (  ) {
-
-	
-	    };
-	}
-	
-	function load_all_queues_into_dom(  ) {
-	jQuery(document).trigger('load_all_queues_into_dom');
-
-	
-	    new_queue_transaction();
-	
-	
-	    var item_request = Buleys.objectStore.openCursor();
-	
-	    item_request.onsuccess = function ( event ) {
-
-	        if (typeof item_request.result !== 'undefined') {
-	
-	
-	            if (item_request.result.length >= 0) {
-	                jQuery.each(item_request.result, function ( k, item ) {
-
-	
-	                    Buleys.queues[item.queue_name] = item.queue_value;
-	
-	                });
-	            }
-	
-	        } else {
-	
-	        }
-	    };
-	
-	    item_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	function add_or_update_queue( queue_name, queue_value ) {
-	jQuery(document).trigger('add_or_update_queue');
-
-	
-	    new_queue_transaction();
-	    if (typeof queue_value == 'undefined') {
-	        queue_value = '';
-	    }
-	
-	    var item_request = Buleys.objectStore.get(queue_name);
-	
-	    item_request.onsuccess = function ( event ) {
-
-	
-	
-	
-	        if (typeof item_request.result == 'undefined') {
-	
-	            add_queue_to_queues_database(queue_name, queue_value);
-	        } else {
-	
-	            update_queue_in_queues_database(queue_name, queue_value);
-	        }
-	    };
-	
-	    item_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	function add_queue_to_queues_database( queue_name, queue_value ) {
-	jQuery(document).trigger('add_queue_to_queues_database');
-
-	
-	
-	    new_queue_transaction();
-	
-	    var data = {
-	        "queue_name": queue_name,
-	        "queue_value": queue_value,
-	        "modified": new Date().getTime()
-	    };
-	
-	
-	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function ( event ) {
-
-	
-	        Buleys.objectId = add_data_request.result;
-	    };
-	    add_data_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	function update_queue_in_queues_database( queue_name, queue_value ) {
-	jQuery(document).trigger('update_queue_in_queues_database');
-
-	
-	
-	    new_queue_transaction();
-	
-	    var data = {
-	        "queue_name": queue_name,
-	        "queue_value": queue_value,
-	        "modified": new Date().getTime()
-	    };
-	
-	
-	    var add_data_request = Buleys.objectStore.put(data);
-	    add_data_request.onsuccess = function ( event ) {
-
-	
-	        Buleys.objectId = add_data_request.result;
-	    };
-	    add_data_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	
-	function new_queue_transaction(  ) {
-	jQuery(document).trigger('new_queue_transaction');
-
-	    try {
-	        var transaction = Buleys.db.transaction(["queue"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function ( e ) {
-
-	
-	            delete Buleys.objectStore;
-	        };
-	        transaction.onabort = function ( e ) {
-
-	
-	        };
-	        Buleys.objectStore = transaction.objectStore("queue");
-	
-	    } catch (e) {
-	
-	
-	
-	
-	
-	        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10 ) );
-	        request.onsuccess = function ( e ) {
-
-	
-	            Buleys.objectStore = Buleys.db.createObjectStore("queue", {
-	                "keyPath": "queue_name"
-	            }, true);
-	
-	            Buleys.objectStore.createIndex("queue_value", "queue_value", {
-	                unique: false
-	            });
-	
-	
-	        };
-	        request.onerror = function ( e ) {
-
-	
-	        };
-	
-	
-	    };
-	}
-	
-	
-
-function get_read( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_read');
-
-	/* Defaults */
-
-	if (typeof make_inverse == "undefined") {
-		make_inverse = false;
-	}
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
-		begin_date = 0
-	} else {
-		begin_date = parseInt(begin_timeframe);
-	}
-
-	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt(end_timeframe);
-	}
-
-	/* Callbacks */
-
-	cursor_on_success = function ( context_1 ) {
-
-		var event_1 = context_1.event;
-		var item_1 = InDB.cursor.value( event_1 );
-		if ( null === item_1 ) {
-			return;
+		if( 'undefined' !== typeof on_success ) {
+			on_success( context );
 		}
-		console.log('got from status db ',event_1,item_1);
+	};
 
-		if( !make_inverse ) {
-			get_item_raw( item_1.link );
-			return;
-		} else {
-
-			var seen_on_success = function( context_2 ) { 
-				
-				var event_2 = context_2.event;
-				var item_2 = InDB.cursor.value( event_2 );
-
-				// Proceed if:
-				// 1) Item is unseen (isEmpty) but we want to get unseen (make_inverse = true)
-				// 2) Item is seen (!isEmpty) and we want to get seen
-				console.log('seen_on_success', item_2 );
-				if( ( !InDB.isEmpty( item_2 ) && true !== make_inverse ) || ( InDB.isEmpty( item_2 ) && true === make_inverse )  ) { 
-
-					if (jQuery("#" + item_1.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-
-						console.log('getting raw item in get_read() > ', item_1.link );
-						get_item_raw(item_1.link);
-
-					}
-
-				}
-
-			};
-
-			var seen_on_error = function( context_2 ) {
-
-			};
-			
-			InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item_1.link, 'on_success': seen_on_success, 'on_error': seen_on_error } );
-
+	var on_error_wrapper = function ( context ) {
+		if( !!Buleys.debug ) {
+			console.log( 'Error adding activity', context );
 		}
-
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context );
+		}
 	};
 
-	cursor_on_error = function ( event ) {
+	/* Shorthand Encoding */
 
-	};
-
-	/* Request */
-
-	if( !!make_inverse ) {	
-
-		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'categories', 'index': 'slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
-
-	} else {
-
-		InDB.trigger( 'InDB_do_cursor_get', { 'store': 'status', 'index': 'topic_slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
-
-	}
-
-}
-
-
-
-function mark_item_as_read( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('mark_item_as_read');
-	
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var add_on_success = function ( context ) {
-		console.log( 'mark_item_as_read() success', context );
-	};
-
-	var add_on_error = function ( context ) {
-		console.log( 'mark_item_as_read() error', context );
-	};
+	activity = Buleys.activity.shorthand_encode( activity );
 	
 	/* Request */
-
-	InDB.trigger( 'InDB_do_row_put', { 'store': 'status', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+	
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'activities', 'data': activity, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
 
 };
 
 
-function remove_item_from_read_database( item_url, item_slug, item_type ) {
+//removes an existing activity from database
+//on_error returns error, on_success returns nothing
+Buleys.activity.remove = function ( activity_id, on_success, on_error ) {
 
 	/* Action */
-	
-	jQuery(document).trigger('remove_item_from_read_database');
 
+	jQuery( document ).trigger( 'Buleys_activity_remove', { 'activity_id': activity_id } );
+	
 	/* Callbacks */
 
-	var add_on_success = function ( event ) {
-
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success( context );
+		}
 	};
 
-	var add_on_error = function ( e ) {
-
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context );
+		}
 	};
-	
+
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'status', 'key': item_url, 'on_success': add_on_success, 'on_error': add_on_error } );
+	InDB.trigger( 'InDB_do_row_delete', { 'store': 'activities', 'key': activity_id, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
 
-}
+};
 
-	
-function add_item_to_readstatus_database( item, status ) {
+
+//updates an existing activity or adds a new one
+//given an activity_id and data
+//data argument can be individual attributes or whole activities
+//activity_ids cannot be modified
+//on_success returns nothing
+//on_error returns error
+Buleys.activity.update = function ( activity_id, data, on_success, on_error ) {
 
 	/* Action */
 
-	jQuery(document).trigger('add_item_to_readstatus_database');
-
-	/* Defaults */
-
-	if (typeof status == 'undefined') {
-		status = "unread";
-	}
-
-	/* Setup */
-
-	var data = {
-		"link": item.link,
-		"status": status,
-		"modified": new Date().getTime()
-	};
-
+	jQuery( document ).trigger( 'Buleys_activity_update', { 'activity_id': activity_id, 'data': data } );
+	
 	/* Callbacks */
 
-	var add_on_success = function ( event ) {
-
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success();
+		}
+		
 	};
 
-	var add_on_error = function ( e ) {
-
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context.error );
+		}
 	};
-	
+
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'status', 'data': data, 'on_success': add_on_success, 'on_error': add_on_error } );
+	// Success callback
+	var check_success = function( context ) {
 
-}
+		// Get row value
+		var result = InDB.row.value( context.event );
 
-/**
- * Seen.js
- **/
+		// If item exists
+		if( !InDB.isEmpty( result ) ) { 	
 
+			/* Shorthand Encoding */
 
-function get_seen( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
+			result = Buleys.activity.shorthand_encode( result );
+			data = Buleys.activity.shorthand_encode( data );
 
-	/* Debug */
-
-	if( !!InDB.debug ) {
-		console.log( 'get_seen', type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse );
-	}
-
-	/* Action */
-
-	jQuery(document).trigger('get_seen');
-
-	/* Defaults */
-
-	if (typeof make_inverse == "undefined") {
-		make_inverse = false;
-	}
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
-		begin_date = 0
-	} else {
-		begin_date = parseInt(begin_timeframe);
-	}
-
-	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt(end_timeframe);
-	}
-
-	/* Callbacks */
-
-	var on_success = function ( context_1 ) {
-
-		/* Setup */
-
-		var event_1 = context_1.event;
-		var result = event_1.target.result;
-		var item = result.value;
-
-		/* Callbacks */
-
-		var item_on_success = function ( context_2 ) {
-
-			var event_2 = context_2.event;
-			if (typeof event_2.target.result !== 'undefined' && make_inverse !== true) {
-
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item( item.link );
+			// Update any attributes
+			for( var x in data ) {
+				if( Buleys.shorthand[ 'id' ] !== x ) {
+					result[ x ] = data[ x ];
 				}
-
-			} else if (typeof event_2.target.result == 'undefined' && make_inverse == true) {
-
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item( item.link );
-				}
-
 			}
 
-		};
-		
-		var item_on_error = function( context_2 ) {
-			console.log( 'error in get_seen', context_2 );
-		}		
+			//Put with on_success_wrapper() and on_error_wrapper()
+			InDB.trigger( 'InDB_do_row_put', { 'store': 'activities', 'data': data, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
 
-		/* Request */
-
-		InDB.trigger( 'InDB_do_row_get', { 'store': 'items', 'key': item.link, 'on_success': item_on_success, 'on_error': item_on_error } );
+		} // End if item exists
 
 	};
 
-	var on_error = function( context ) {
-		console.log('Failure in get_seen()', context );
-	}
+	// Get error callback
+	var check_error = function( context ) {
 
-	/* Request */
+		// Call other callbacks
+		on_error_wrapper( context.error );
 
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'status', 'index': 'topic_slug', 'keyRange': InDB.range.only( slug_filter ), 'on_success': on_success, 'on_error': on_error } );
+	};
+
+	// InDB row get
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': check_success, 'on_error': check_error } );
+
+};
+
+
+//replaces an existing activity or adds a new one
+//given an activity_id and data
+//data argument cannot replace individual attributes, for that use Buleys.activity.update
+//data must be a complete activity object, including any required attributes such as id
+//activity_ids cannot be modified
+//on_success returns nothing
+//on_error returns error
+Buleys.activity.replace = function ( activity_id, data, on_success, on_error ) {
+
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_replace', { 'activity_id': activity_id, 'data': data } );
 	
-}
-
-
-
-function mark_item_as_seen( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('mark_item_as_seen');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
-		"modified": new Date().getTime()
-	};
-
 	/* Callbacks */
 
-	var on_success = function ( context ) {
-
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+			on_success();
+		}		
 	};
 
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'seen', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-//TODO: two vars are gratuitous	
-function mark_item_as_unseen( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('mark_item_as_unseen');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-
-	};
-
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'seen', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function add_item_as_seen( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_item_as_seen');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-
-	};
-
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'seen', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-//TODO: Function name really descriptive of method
-function check_if_item_is_seen( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('check_if_item_is_seen');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		var item_request = context.event;
-		if (typeof item_request.result != 'undefined') {
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('seen');
-		} else {
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('unseen');
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context.error );
 		}
 	};
 
-	var on_error = function ( e ) {
+	/* Request */
+
+	// Success callback
+	var check_success = function( context ) {
+
+		// Get row value
+		var result = InDB.row.value( context.event );
+
+		/* Shorthand Encoding */
+
+		result = Buleys.activity.shorthand_encode( result );
+
+		// If item exists
+		if( !InDB.isEmpty( result ) ) { 	
+
+			//Put with on_success_wrapper() and on_error_wrapper()
+			InDB.trigger( 'InDB_do_row_put', { 'store': 'activities', 'data': data, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
+
+		} // End if item exists
+
+	};
+
+	// Error callback
+	var check_error = function( context ) {
+
+		// Error callbacks
+		on_error_wrapper( context.error );
+
+	};
+
+	// InDB row get
+
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': check_success, 'on_error': check_error } );
+
+};
+
+
+//gets an existing activity given an activity_id
+//on_success returns the row or null if the row doesn't exists or it exists but doesn't match the filter
+Buleys.activity.get = function ( activity_id, filter, on_success, on_error ) {
+
+	/* Action */
+
+	jQuery( document ).trigger( 'Buleys_activity_get', { 'activity_id': activity_id, 'filter': filter } );
 	
+	/* Callbacks */
+
+	// Out callback
+	var on_success_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_success ) {
+
+			var result = InDB.row.value( context.event );
+			
+			var matches_filter = true;
+			var x;
+			for( x in filter ) {
+				if ( filter[ x ] !== result[ Buleys.activity.shorthand( x ) ] ) {
+					matches_filter = false;
+					break;
+				}
+			} 
+
+			/* Shorthand Decoding */
+			
+			result = Buleys.activity.shorthand_decode( result );
+			console.log('matched?', matches_filter, true === matches_filter, true == matches_filter );	
+			//return result if it matches the filter	
+			//else return null
+			if( true === matches_filter ) {
+				on_success( result );
+			} else {
+				on_success( null );
+			}
+
+		}
+	};
+
+	var on_error_wrapper = function ( context ) {
+		if( 'undefined' !== typeof on_error ) {
+			on_error( context );
+		}
 	};
 
 	/* Request */
 
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'seen', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
+	InDB.trigger( 'InDB_do_row_get', { 'store': 'activities', 'key': activity_id, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
 
+};
+
+
+/* Published */
+
+//publish an activity given its activity_id
+//this makes an activity visibile
+Buleys.activity.publish = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'published': 'true' }, on_success, on_error );
+};
+
+
+//unpublish an activity given its activity_id
+//this removes an activity from visibility
+Buleys.activity.unpublish = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'published': 'false' }, on_success, on_error );
+};
+
+
+//verify trash status of an activity given an activity_id
+//this determines whether an activity is visible
+//returns true if item is archived, else returns false
+Buleys.activity.is_published = function( activity_id, on_success, on_error ) {
+
+	var on_success_wrapper = function( result ) {
+
+		if( isEmpty( result ) ) {
+			on_success( false );
+		} else {
+			on_success( true );
+		}
+
+	};
+
+	var on_error_wrapper = function( context ) {
+		on_error( context.error );
+	};
+
+	Buleys.activity.get( activity_id, { 'published': 'true' }, on_success_wrapper, on_error_wrapper );
+
+};
+
+
+
+/* Seen */
+
+
+//mark an activity as seen given its activity_id
+Buleys.activity.see = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'seen': 'true' }, on_success, on_error );
+};
+
+
+//mark an activity as unseen given its activity_id
+Buleys.activity.unsee = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'seen': 'false' }, on_success, on_error );
+};
+
+
+//verify seen status of an activity given an activity_id
+//returns true if item is archived, else returns false
+Buleys.activity.is_seen = function( activity_id, on_success, on_error ) {
+
+	var on_success_wrapper = function( result ) {
+
+		if( isEmpty( result ) ) {
+			on_success( false );
+		} else {
+			on_success( true );
+		}
+
+	};
+
+	var on_error_wrapper = function( context ) {
+		on_error( context.error );
+	};
+
+	Buleys.activity.get( activity_id, { 'seen': 'true' }, on_success_wrapper, on_error_wrapper );
+
+};
+
+
+/* Clicks */
+
+
+//mark an activity as clicked given its activity_id
+Buleys.activity.click = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'clicked': 'true' }, on_success, on_error );
+};
+
+
+//mark an activity as unclicked given its activity_id
+Buleys.activity.unclick = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'clicked': 'false' }, on_success, on_error );
+};
+
+
+//verify click status of an activity given an activity_id
+//returns true if item is archived, else returns false
+Buleys.activity.is_clicked = function( activity_id, on_success, on_error ) {
+
+	var on_success_wrapper = function( result ) {
+
+		if( isEmpty( result ) ) {
+			on_success( false );
+		} else {
+			on_success( true );
+		}
+
+	};
+
+	var on_error_wrapper = function( context ) {
+		on_error( context.error );
+	};
+
+	Buleys.activity.get( activity_id, { 'clicked': 'true' }, on_success_wrapper, on_error_wrapper );
+
+};
+
+
+/* Trash */
+
+
+//trash an activity given its activity_id
+Buleys.activity.trash = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'trashed': 'true' }, on_success, on_error );
+};
+
+
+//untrash an activity given its activity_id
+Buleys.activity.untrash = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'trashed': 'false' }, on_success, on_error );
+};
+
+
+//verify trash status of an activity given an activity_id
+//returns true if item is archived, else returns false
+Buleys.activity.is_trashed = function( activity_id, on_success, on_error ) {
+
+	var on_success_wrapper = function( result ) {
+
+		if( isEmpty( result ) ) {
+			on_success( false );
+		} else {
+			on_success( true );
+		}
+
+	};
+
+	var on_error_wrapper = function( context ) {
+		on_error( context.error );
+	};
+
+	Buleys.activity.get( activity_id, { 'trashed': 'true' }, on_success_wrapper, on_error_wrapper );
+
+};
+
+
+/* Archive */
+
+//archive an activity given its activity_id
+Buleys.activity.archive = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'archived': 'true' }, on_success, on_error );
+};
+
+//unarchive an activity given its activity_id
+Buleys.activity.unarchive = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'archived': 'false' }, on_success, on_error );
+};
+
+//verify archive status of an activity given an activity_id
+//returns true if item is archived, else returns false
+Buleys.activity.is_archived = function( activity_id, on_success, on_error ) {
+
+	var on_success_wrapper = function( result ) {
+
+		if( isEmpty( result ) ) {
+			on_success( false );
+		} else {
+			on_success( true );
+		}
+
+	};
+
+	var on_error_wrapper = function( context ) {
+		on_error( context.error );
+	};
+
+	Buleys.activity.get( activity_id, { 'archived': 'true' }, on_success_wrapper, on_error_wrapper );
+
+};
+
+
+/* Favorite */
+
+//favorite an activity given its activity_id
+Buleys.activity.favorite = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'favorited': 'true' }, on_success, on_error );
+};
+
+//unfavorite an activity given its activity_id
+Buleys.activity.unfavorite = function( activity_id, on_success, on_error ) {
+	Buleys.activity.update( activity_id, { 'favorited': 'true' }, on_success, on_error );
+};
+
+//determine favorite status of activity
+//returns true if activity is favorited, else false
+Buleys.activity.is_favorited = function( activity_id, on_success, on_error ) {
+
+	var on_success_wrapper = function( result ) {
+
+		if( isEmpty( result ) ) {
+			on_success( false );
+		} else {
+			on_success( true );
+		}
+
+	};
+
+	var on_error_wrapper = function( context ) {
+		on_error( context.error );
+	};
+
+	Buleys.activity.get( activity_id, { 'favorited': 'true' }, on_success_wrapper, on_error_wrapper );
+
+};
+
+
+
+
+/* Multi-activity methods */
+
+
+//gets all activities based on an existing index and value
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, index, value, left_bound, right_bound, includes_left_bound, includes_right_bound ) {
+
+	/* Actions */
+
+	jQuery(document).trigger('Buleys_activities_getAll');
+
+	/* Defaults */
+
+	if( !includes_left_bound ) {
+		includes_left_bound = false;
+	}
+	
+	if( !includes_right_bound ) {
+		includes_right_bound = false;
+	}
+	
+	var key_range = InDB.range.get( value, left_bound, right_bound, includes_left_bound, includes_right_bound );
+	
+	/* Callbacks */
+
+	var cursor_on_success = function ( context ) {
+
+		/* Setup */
+
+		var activity = InDB.cursor.value( context.event );
+
+		// Fire on_success() callback if items
+		// Else call on_complete() if cursor is exhausted
+		if( !!activity ) {
+			
+			/* Decode Shorthand */
+				
+			activity = Buleys.activity.shorthand_decode( activity );
+
+			/* Filter */
+
+			var matches_filter = true;
+			for( x in filter ) {
+				if ( filter[ x ] !== activity[ x ] ) {
+					matches_filter = false;
+				}
+			} 
+
+			if( true === matches_filter ) {
+				//Fire on_callback()
+				on_success( activity );
+			}
+
+		} else {
+
+			// Fire on_complete()
+			on_complete();
+
+		}
+
+	};
+
+	var cursor_on_error = function ( context ) {
+		on_error( context.error );
+	};
+	
+	var cursor_on_abort = function( context ) {
+
+	};
+
+	/* Request */
+	
+	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'activities', 'index': index, 'keyRange': key_range, 'on_success': cursor_on_success, 'on_error': cursor_on_error, 'on_abort': cursor_on_abort } );	
+
+};
+
+
+/* Helpers */
+
+
+/* Archive */
+
+
+//gets all archived activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getArchived = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'archived', true, null, null, null, null );
+};
+
+
+//gets all unarchived activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getUnarchived = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'archived', false, null, null, null, null );
+};
+
+
+/* Seen */
+
+
+//gets all seen activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getSeen = function ( filter, on_success, on_erorr, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'seen', true, null, null, null, null );
 }
 
-function add_item_to_seens_database( item_url, item_slug, item_type ) {
 
+//gets all unseen activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getUnseen = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'seen', false, null, null, null, null );
+}
+
+
+/* Trash */
+
+
+//gets all trashed activities
+//depends on activities.getAll
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getTrashed = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'trashed', true, null, null, null, null );
+};
+
+
+//gets all untrashed activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getUntrashed = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'trashed', false, null, null, null, null );
+};
+
+
+/* Favorites */
+
+
+//gets all favorited activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getFavorited = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'favorited', true, null, null, null, null );
+};
+
+
+//gets all untrashed activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getUnfavorited = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false', 'published': 'true' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'favorited', false, null, null, null, null );
+};
+
+/* Published */
+
+
+//gets all published activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getPublished = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'published', true, null, null, null, null );
+};
+
+
+//gets all unpublished activities
+//depends on activities.getAll
+//on_success and on_error are only invoked on a per-transaction basis
+//on_complete is invoked after all activities have returned either an on_success or on_error
+Buleys.activities.getUnpublished = function ( filter, on_success, on_error, on_complete ) {
+	if( 'undefined' === typeof filter ) {
+		filter = { 'trashed': 'false' };
+	}
+	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'published', false, null, null, null, null );
+};
+
+
+/* Utilities */
+
+
+//helper function for adding activities in batch
+//takes an Array of Objects
+//on_success and on_error are only invoked on a per-transaction basis
+Buleys.activities.add = function( activities, on_success, on_error ) {
+	for( var i = 0; i <= activities.length; i++ ) {
+		Buleys.activity.add( activities[ i ], on_success, on_error );
+	}
+};
+
+
+//helper function for removing activities in batch
+//takes an Array of activity_id Strings
+//on_success and on_error are only invoked on a per-transaction basis
+Buleys.activities.remove  = function( activities, on_success, on_error ) {
+	for( var i = 0; i <= activities.length; i++ ) {
+		Buleys.activity.remove( activities[ i ], on_success, on_error );
+	}
+};
+
+
+//helper function for updating activites in bulk
+//takes an Array of activity objects
+//on_success and on_error are only invoked on a per-transaction basis
+Buleys.activities.update = function( activities, on_success, on_error ) {
+	for( var i = 0; i <= activities.length; i++ ) {
+		Buleys.activity.update( activities[ i ], on_success, on_error );
+	}
+};
+
+
+
+Buleys.activity.add_to_result = function( activity, prepend ) {
+	
+	/* Debug */
+
+	if( true === Buleys.debug ) {
+		console.log("activities.js > add_activity_to_results()", activity );
+	}
+	
 	/* Action */
 
-	jQuery(document).trigger('add_item_to_seens_database');	
+	jQuery(document).trigger('add_activity_to_results');
 
 	/* Setup */
-	
-	var data = {
-		"item_link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
-		"modified": new Date().getTime()
-	};
 
-	/* Callbacks */
+	var id = activity.id;
 
-	var on_success = function ( event ) {
+	/* UI */
 
-	};
+	if (!(jQuery("#" + id).length)) {
 
-	var on_error = function ( e ) {
-	
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'seen', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-//TODO: two gratuitious args	
-function remove_item_from_seens_database( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_item_from_seens_database');
-
-	/* Callbacks */
-
-	var on_success = function ( event ) {
-	
-	};
-
-	var on_error = function (  ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'seen', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-	//	Buleys.settings = {};
-	//  ^ declared in loader.js
-	
-	function new_settings_transaction(  ) {
-	jQuery(document).trigger('new_settings_transaction');
-
-	    try {
-	        var transaction = Buleys.db.transaction(["settings"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function ( e ) {
-
-	            delete Buleys.objectStore;
-	        };
-	        transaction.onabort = function ( e ) {
-
-	        };
-	        Buleys.objectStore = transaction.objectStore("settings");
-	    } catch (e) {
-	        var request = Buleys.db.setVersion( parseInt(Buleys.version) );
-	        request.onsuccess = function ( e ) {
-
-	            Buleys.objectStore = Buleys.db.createObjectStore("settings", {
-	                "keyPath": "option_name"
-	            }, true);
-	            Buleys.objectStore.createIndex("option_value", "option_value", {
-	                unique: false
-	            });
-	        };
-	        request.onerror = function ( e ) {
-
-	        };
-	    };
-	}
-	
+		var content = "<li class='activity' modified= '" + activity.object.modified + "' published-date= '" + activity.published_date + "' id='" + activity.id + "'><a href='" + activity.object.url + "'>" + activity.object.summary + "</a><a class='examine_item magnify_icon' href='#'></a></li>";
 		
-	function get_settings(  ) {
-	jQuery(document).trigger('get_settings');
+		if( true === prepend ) {
+			jQuery( content ).hide().prependTo("#results").fadeIn('slow');
+		} else {
+			jQuery( content ).hide().appendTo("#results").fadeIn('slow');
+		}
 
-	
-	    console.log("get_settings(): ");
-	    Buleys.view.loaded = "settings";
-	    get_settings();
-	
-	    var session_id = get_local_storage("session_id");
-	    if (typeof session_id == "undefined" || session_id == null || session_id == "") {
-	        jQuery("#main").append('<div id="account"><input id="password" type="password" value="p4s5w0rd" name="password" /><br/><br/><a href="#" id="update_settings_button" class="update_settings">Update</a> or <a href="#" id="clear_form_button" class="clear_form">Clear</a></div></div></div>');
-	    } else {
-	        jQuery("#main").append("<div id='account'>Already logged in with session id <code>" + session_id + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");
-	    }
-		
-		 jQuery("#main").append('<input type="number" min="0" max="10" step="2" value="6"> <input type="number" min="0" max="10" step="2" value="6">');
-		 
-	
 	}
-	
-	function get_settings_old(  ) {
-	jQuery(document).trigger('get_settings_old');
-
-	
-	    try {
-	
-	        new_settings_transaction();
-	        Buleys.index = Buleys.objectStore.index("option_name");
-	
-	        var cursorRequest = Buleys.index.openCursor();
-	        cursorRequest.onsuccess = function ( event ) {
-
-	            var objectCursor = cursorRequest.result;
-	            if (!objectCursor) {
-	                return;
-	            }
-
-	            if (objectCursor.length >= 0) {
-	                Buleys.view.type = "settings";
-	                jQuery.each(objectCursor, function ( k, item ) {
-
-	                    console.log("get_settings(): " + item);
-	                });
-	            }
-	
-	        };
-	        request.onerror = function ( event ) {
-
-	
-	        };
-	
-	    } catch (e) {
-	
-	
-	    }
-	
-	
-	}
-	
-	
-		
-	function save_settings(  ) {
-	jQuery(document).trigger('save_settings');
-
-	
-	    add_or_update_setting("hotkeys", Buleys.settings);
-//	    add_or_update_setting("profile", Buleys.profile);
-	
-	}
-
-
-	
-	function load_settings_into_dom(  ) {
-	jQuery(document).trigger('load_settings_into_dom');
-
-	
-	    new_settings_transaction();
-	
-	    Buleys.index = Buleys.objectStore.index();
-	
-	
-	    var cursorRequest = Buleys.objectStore.openCursor();
-	    cursorRequest.onsuccess = function ( event ) {
-
-	
-	        new_settings_transaction();
-	
-	        var objectCursor = cursorRequest.result;
-	        if (!objectCursor) {
-	
-	            return;
-	        }
-	
-	
-	
-	
-	        if (objectCursor.length >= 0) {
-	            jQuery.each(objectCursor, function ( k, item ) {
-
-	
-	                Buleys.settings[k] = item;
-	
-	            });
-	        }
-	
-	    };
-	    request.onerror = function ( event ) {
-
-	
-	    };
-	
-	
-	}
-	
-
-	
-	function remove_setting( option_name ) {
-	jQuery(document).trigger('remove_setting');
-
-	
-	    new_settings_transaction();
-	
-	    var request = Buleys.objectStore["delete"](option_name);
-	    request.onsuccess = function ( event ) {
-
-	
-	        delete Buleys.objectId;
-	    };
-	    request.onerror = function (  ) {
-
-	
-	    };
-	}
-	
-	function load_all_settings_into_dom(  ) {
-	jQuery(document).trigger('load_all_settings_into_dom');
-
-	
-	    new_settings_transaction();
-	
-	
-	    var item_request = Buleys.objectStore.openCursor();
-	
-	    item_request.onsuccess = function ( event ) {
-
-	        if (typeof item_request.result !== 'undefined') {
-	
-	
-	            if (item_request.result.length >= 0) {
-	                jQuery.each(item_request.result, function ( k, item ) {
-
-	
-	                    Buleys.settings[item.option_name] = item.option_value;
-	
-	                });
-	            }
-	
-	        } else {
-	
-	        }
-	    };
-	
-	    item_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	function add_or_update_setting( option_name, option_value ) {
-	jQuery(document).trigger('add_or_update_setting');
-
-	
-	    new_settings_transaction();
-	    if (typeof option_value == 'undefined') {
-	        option_value = '';
-	    }
-	
-	    var item_request = Buleys.objectStore.get(option_name);
-	
-	    item_request.onsuccess = function ( event ) {
-
-	
-	
-	
-	        if (typeof item_request.result == 'undefined') {
-	
-	            add_setting_to_settings_database(option_name, option_value);
-	        } else {
-	
-	            update_setting_in_settings_database(option_name, option_value);
-	        }
-	    };
-	
-	    item_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	function add_setting_to_settings_database( option_name, option_value ) {
-	jQuery(document).trigger('add_setting_to_settings_database');
-
-	
-	
-	    new_settings_transaction();
-	
-	    var data = {
-	        "option_name": option_name,
-	        "option_value": option_value,
-	        "modified": new Date().getTime()
-	    };
-	
-	
-	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function ( event ) {
-
-	
-	        Buleys.objectId = add_data_request.result;
-	    };
-	    add_data_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-	function update_setting_in_settings_database( option_name, option_value ) {
-	jQuery(document).trigger('update_setting_in_settings_database');
-
-	
-	
-	    new_settings_transaction();
-	
-	    var data = {
-	        "option_name": option_name,
-	        "option_value": option_value,
-	        "modified": new Date().getTime()
-	    };
-	
-	
-	    var add_data_request = Buleys.objectStore.put(data);
-	    add_data_request.onsuccess = function ( event ) {
-
-	
-	        Buleys.objectId = add_data_request.result;
-	    };
-	    add_data_request.onerror = function ( e ) {
-
-	
-	
-	    };
-	
-	}
-	
-function get_settings_page(  ) {
-	jQuery(document).trigger('get_settings_page');
-
-    var session_id = get_local_storage("session_id");
-    if( typeof session_id === "undefined" || session_id === null ) {
-    	jQuery("#main").append("<div od='login_prompt'>Logged in with session id <code>" +  + "</code>.<br/><br/><a href='#' class='do_logout'>Click here</a> to log out.</div>");
-    } else {
-    	jQuery("#main").append("<div id='configuration_panel'><h3>Configuration</h3><p><input type='range' min='0' max='10' step='2' value='6'></p><p><input type='number' min='0' max='10' step='2' value='6'></p></div>");
-    }
 
 }
 
-function get_setting_type( setting_to_get ) {
-	jQuery(document).trigger('get_setting_type');
+Buleys.socket = Buleys.socket || {};
+Buleys.websocket = Buleys.websocket || {};
 
-    return get_local_storage("setting_type_" + setting_to_get)
-}
-
-function set_setting_type( setting_to_set, setting_value ) {
-	jQuery(document).trigger('set_setting_type');
-
-    return set_local_storage("setting_type_" + setting_to_set, setting_value)
-}
-
-function get_setting( setting_to_get ) {
-	jQuery(document).trigger('get_setting');
-
-    return get_local_storage("setting_type_" + setting_to_get)
-}
-
-function set_setting( setting_to_set, setting_value ) {
-	jQuery(document).trigger('set_setting');
-
-    return set_local_storage("setting_type_" + setting_to_set, setting_value)
-}
-
-
-
-    $('.get_settings').live('click', function ( event ) {
-
-        event.preventDefault();
-        console.log(location.pathname);
-        console.log("view_settings clicked")
-        var stateObj = {
-            "page": Buleys.view.page,
-            "slug": Buleys.view.slug,
-            "type": Buleys.view.type,
-            "time": new Date().getTime()
-        };
-        var urlString = 'http://www.buleys.com/settings';
-        console.log(history);
-        history.pushState(stateObj, "settings", urlString);
-        reload_results();
-    });
-
-	function new_social_transaction(    ) {
-	jQuery(document).trigger('new_social_transaction');
-
-	jQuery(document).trigger('new_social_transaction');
-
-	    try {
-	        var transaction = Buleys.db.transaction(["social"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function (  e  ) {
-
-
-	
-	            delete Buleys.objectStore;
-	        };
-	        transaction.onabort = function (  e  ) {
-
-
-	
-	        };
-	        Buleys.objectStore = transaction.objectStore("social");
-	
-	    } catch (e) {
-	
-	
-	
-	
-	        var request = Buleys.db.setVersion( parseInt(Buleys.version, 10 ) );
-	        request.onsuccess = function (  e  ) {
-
-
-	
-	            Buleys.objectStore = Buleys.db.createObjectStore("social", {
-	                "keyPath": "link"
-	            }, true);
-	
-	            Buleys.objectStore.createIndex("source", "source", {
-	                unique: false
-	            });
-	            Buleys.objectStore.createIndex("type", "type", {
-	                unique: false
-	            });
-	            Buleys.objectStore.createIndex("modified", "modified", {
-	                unique: false
-	            });
-	
-	
-	
-	        };
-	        request.onerror = function (  e  ) {
-
-
-	
-	        };
-	
-	
-	    };
-	}
-	
-Buleys.socket = io.connect('http://localhost:8080');
+Buleys.socket = io.connect('http://api.buleys.com');
 
 Buleys.socket.on('connect',function() {
-	socket_login();
+	Buleys.websocket.login();
 });
 
 Buleys.socket.on('disconnect',function() {
 
 });
 
-Buleys.socket.on( 'data', function( data ) {
-	data= jQuery.parseJSON( data );
-	console.log( 'topic',data.topic );
-	console.log( 'score', data.score );
-	console.log( 'mess', data.data );
+Buleys.socket.on( 'authorized', function( data ) {
+	//data= jQuery.parseJSON( data );
+	console.log('PROFILE DATA', data );
 });
 
 
-function socket_login() {
+Buleys.websocket.cache = {};
+
+Buleys.socket.on( 'data', function( response ) {
+	
+	if( response == Buleys.websocket.cache ) {
+		return;
+	} else {
+		Buleys.websocket.cache = response;
+	}
+	
+	response = JSON.parse( response );
+//	console.log('DATA type', response.type );
+
+	if( 'tweet' === response.type || 'news' === response.type ) {
+
+		var on_success = function( activity_id ) {
+			console.log( 'Buleys.socket.on data success', activity_id );
+		};
+	
+		var on_error = function( error ) {
+			console.log( 'Buleys.socket.on data error', error );
+		};
+
+		Buleys.activity.add( response.data, on_success, on_error );
+	} 
+	
+} );
+
+
+Buleys.websocket.login = function() {
+
 	var oauth_access_token = get_local_storage( 'twitter_oauth_access_token' );
 	var oauth_access_secret = get_local_storage( 'twitter_oauth_access_token_secret' );
 
-	Buleys.socket.emit( 'connect', { 'topics': [ 'none', 'company_amzn', 'company_msft', 'company_goog', 'company_aapl' ], 'twitter_enabled': true, 'twitter_access_token': oauth_access_token, 'twitter_access_token_secret': oauth_access_secret } );
+	Buleys.socket.emit( 'connect', { 'topics': [ 'place_chicago', 'place_milwaukee', 'company_csco', 'company_jnpr', 'company_ebay', 'place_miami', 'place_los_angeles', 'place_hollywood', 'place_sacramento', 'company_amzn', 'company_msft', 'company_goog', 'company_aapl', 'company_nflx', 'company_yhoo', 'company_aol', 'place_new_york', 'place_san_francisco', 'place_austin', 'place_nashville' ], 'twitter_enabled': true, 'twitter_access_token': oauth_access_token, 'twitter_access_token_secret': oauth_access_secret } );
 	
-}
+};
 
 function set_local_storage( set_key, set_value ) {
 	jQuery(document).trigger('set_local_storage');
@@ -9326,245 +4290,6 @@ function delete_local_storage_batch( keys ) {
 		delete_local_storage( keys[ i ] );
 	}
 }
-	function getURLSlug( rough ) {
-	jQuery(document).trigger('getURLSlug');
-
-	    var type = typeof rough;
-	    if (type != 'object') {
-	        if (rough != null && rough != "undefined" && rough != '') {
-	            var itemID = '';
-	            rough.toLowerCase();
-	            itemID = rough;
-	
-	            itemID = itemID.replace(/ - /g, "_");
-	            itemID = itemID.replace(/ /g, "_");
-	            itemID = itemID.replace(/\'s/g, "");
-	            itemID = itemID.replace(/ - /g, "_");
-	            itemID = itemID.replace(/-/g, "_");
-	            itemID = itemID.replace('/%20/g', "_");
-	            itemID = itemID.replace(/&/, "and");
-	            itemID = itemID.replace('/%26/g', "and");
-	            itemID = itemID.replace('.', "");
-	
-	            return itemID;
-	        }
-	    }
-	}
-	
-	
-	function new_subscriptions_transaction(  ) {
-	jQuery(document).trigger('new_subscriptions_transaction');
-
-	    try {
-	        var transaction = Buleys.db.transaction(["subscriptions"], IDBTransaction.READ_WRITE /*Read-Write*/ , 1000 /*Time out in ms*/ );
-	        transaction.oncomplete = function ( e ) {
-
-	            delete Buleys.objectStore;
-	        };
-	        transaction.onabort = function ( e ) {
-
-	        };
-	        Buleys.objectStore = transaction.objectStore("subscriptions");
-	    } catch (e) {
-	        var request = Buleys.db.setVersion(parseInt(Buleys.version, 10 ) );
-	        request.onsuccess = function ( e ) {
-
-	            Buleys.objectStore = Buleys.db.createObjectStore("subscriptions", {
-	                "keyPath": "key"
-	            }, true);
-	            Buleys.objectStore.createIndex("modified", "modified", {
-	                unique: false
-	            });
-	        };
-	        request.onerror = function ( e ) {
-
-	        };
-	    };
-	}
-	
-	function add_subscription_to_subscriptions_database( the_type, the_key ) {
-	jQuery(document).trigger('add_subscription_to_subscriptions_database');
-
-	    new_subscriptions_transaction();
-	    var data = {
-	        "key": the_type + "_" + the_key,
-	        "modified": new Date().getTime()
-	    };
-	    var add_data_request = Buleys.objectStore.add(data);
-	    add_data_request.onsuccess = function ( event ) {
-
-	        Buleys.objectId = add_data_request.result;
-	    };
-	    add_data_request.onerror = function ( e ) {
-
-	    };
-	}
-	
-	function get_page_subscription_status( the_type, the_key ) {
-	jQuery(document).trigger('get_page_subscription_status');
-
-	    new_subscriptions_transaction();
-	    var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
-	    item_request.onsuccess = function ( event ) {
-
-	        if (typeof item_request.result == 'undefined' || item_request.result == "") {
-	            jQuery("#page_subscription_status").html("<div class='subscribe_topic empty_mail_icon'></div>");
-	        } else {
-	            jQuery("#page_subscription_status").html("<div class='unsubscribe_topic mail_icon'></div>");
-	        }
-	    };
-	    item_request.onerror = function ( e ) {
-
-	    };
-	}
-	
-	function remove_subscription( the_type, the_key ) {
-	jQuery(document).trigger('remove_subscription');
-
-	
-	
-	    new_subscriptions_transaction();
-	
-	    var request = Buleys.objectStore["delete"](the_type + "_" + the_key);
-	    request.onsuccess = function ( event ) {
-
-	
-	        delete Buleys.objectId;
-	    };
-	    request.onerror = function (  ) {
-
-	
-	    };
-	
-	
-	}
-	
-	function add_subscription_if_doesnt_exist( the_type, the_key ) {
-	jQuery(document).trigger('add_subscription_if_doesnt_exist');
-
-	
-	    if (typeof the_type !== 'undefined' && typeof the_key !== 'undefined') {
-	        new_subscriptions_transaction();
-	
-	        var item_request = Buleys.objectStore.get(the_type + "_" + the_key);
-	
-	        item_request.onsuccess = function ( event ) {
-
-	
-	
-	
-	            if (typeof item_request.result == 'undefined') {
-	
-	                add_subscription_to_subscriptions_database(the_type, the_key);
-	            } else {
-	
-	            }
-	        };
-	
-	        item_request.onerror = function ( e ) {
-
-	
-	
-	        };
-	    }
-	
-	}
-
-
-	function get_subscriptions(  ) {
-	jQuery(document).trigger('get_subscriptions');
-
-	
-	    new_subscriptions_transaction();
-	
-	    try {
-	
-	        new_categories_transaction();
-	        Buleys.index = Buleys.objectStoreCategories.index("id");
-	
-	        var cursorRequest = Buleys.index.openCursor();
-	        cursorRequest.onsuccess = function ( event ) {
-
-	            var objectCursor = cursorRequest.result;
-	            if (!objectCursor) {
-	                return;
-	            }
-	
-	
-	
-	
-	            if (objectCursor.length >= 0) {
-	                jQuery.each(objectCursor, function ( k, item ) {
-
-	
-	                });
-	            }
-	
-	        };
-	        request.onerror = function ( event ) {
-
-	
-	        };
-	
-	    } catch (e) {
-	
-	
-	    }
-	
-	
-	}
-	
-
-    $('.subscribe_topic').live('click', function ( event ) {
-
-        event.preventDefault();
-        var the_key = $(this).attr('key');
-        var the_type = $(this).attr('type');
-
-        if (typeof the_key == 'undefined' || the_key == "" ) {
-            the_key = Buleys.view.slug;
-        } else {
-            the_key = the_key;
-        }
-        if (typeof the_type == 'undefined' || the_type == "") {
-            the_type = Buleys.view.type;
-        } else {
-            the_type = the_type;
-        }
-        add_subscription_if_doesnt_exist(the_type, the_key);
-        post_feedback('subscribe', "", the_key, the_type);
-
-        $(this).removeClass('empty_mail_icon').addClass('mail_icon');
-        $(this).removeClass('subscribe_topic');
-        $(this).addClass('unsubscribe_topic');
-    });
-
-    $('.unsubscribe_topic').live('click', function ( event ) {
-
-        event.preventDefault();
-        var the_key = $(this).attr('key');
-        var the_type = $(this).attr('type');
-
-        if (typeof the_key == 'undefined' || the_key == "" ) {
-            the_key = Buleys.view.slug;
-        } else {
-            the_key = the_key;
-        }
-        if (typeof the_type == 'undefined' || the_type == "") {
-            the_type = Buleys.view.type;
-        } else {
-            the_type = the_type;
-        }
-
-        remove_subscription(the_type, the_key);
-        post_feedback('unsubscribe', "", the_key, the_type);
-
-        $(this).removeClass('mail_icon').addClass('empty_mail_icon');
-        $(this).removeClass('unsubscribe_topic');
-        $(this).addClass('subscribe_topic');
-    });
-
-	
 
 
 	$(window).bind("popstate", function ( e ) {
@@ -9787,605 +4512,6 @@ function get_url_vars() {
 	return vars;
 }
 
-	/*not mine*/
-	
-	function minutes_ago( time ) {
-	jQuery(document).trigger('minutes_ago');
-
-	
-	    var d = Date.parse(time);
-	    var dateFunc = new Date();
-	    var timeSince = dateFunc.getTime() - d;
-	    var inSeconds = timeSince / 1000;
-	    var inMinutes = timeSince / 1000 / 60;
-	    var inHours = timeSince / 1000 / 60 / 60;
-	    var inDays = timeSince / 1000 / 60 / 60 / 24;
-	    var inYears = timeSince / 1000 / 60 / 60 / 24 / 365;
-	
-	    return inMinutes;
-	
-	}
-	
-
-/**
- *  Topic.js
- **/
-
-
-function parse_single_topic( topic_slug ) {
-
-	/* Action */
-
-	jQuery(document).trigger('parse_single_topic');
-
-	/* Setup */
-
-	var split_string = topic_slug.split("_");
-	var type_to_get = split_string[0];
-	var company_to_get = split_string[1];
-	var item = Buleys.queues.pending_crawls.slice(0, 1);
-	
-	/* Work */
-
-	Buleys.queues.pending_crawls.push( topic_slug );
-
-}
-
-
-function update_topic_in_topics_database( topic_key, topic ) {
-
-	/* Action */
-
-	jQuery(document).trigger('update_topic_in_topics_database');
-
-	/* Setup */
-
-	topic.topic_key = topic_key;
-
-	/* Defaults */
-
-	topic.modified = new Date();
-
-	if (typeof topic.last_updated != 'undefined') {
-	    topic.last_updated = new Date(parseInt(topic.last_updated) * 1000);
-	}
-	if (typeof topic.updated != 'undefined') {
-	    topic.updated = new Date(parseInt(topic.updated) * 1000);
-	}
-	if (typeof topic.last_attempt != 'undefined') {
-	    topic.last_attempt = new Date(parseInt(topic.last_attempt) * 1000);
-	}
-
-	/* Requests */
-
-	InDB.trigger( 'InDB_row_put', { 'store': 'topic', 'data': topic, 'on_success': on_success, 'on_failure': on_failure } );
-
-}
-
-
-
-function get_page_topic_info( the_type, the_key ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_page_topic_info');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-
-	    if (typeof context.event.result !== 'undefined') {
-			load_page_title_info( context.event.result);	
-			// TODO: Use or lose the commented code below
-			/*
-			if (typeof item_request.result.name != 'undefined') {
-			    jQuery("#page_title").html("<a href='/" + item_request.result.type + "/" + item_request.result.key + "' class='topic_name'>" + item_request.result.name + "</a>");
-			    window.document.title = window.document.title.replace(/[|\s]*?Buley's/, "");
-			    window.document.title = window.document.title + item_request.result.name + " | Buley's";
-
-			} else {
-				jQuery("#page_title").html("");
-			}
-
-			if (typeof item_request.result.subsector != 'undefined') {
-			    jQuery("#subtitle_1").html("<a href='/sector/" + getURLSlug(item_request.result.subsector).toLowerCase() + "' class='sector_name'>" + item_request.result.subsector + "</a>");
-			} else {
-				jQuery("#subtitle_1").html("");
-			}
-
-			if (typeof item_request.result.sector != 'undefined') {
-			    jQuery("#subtitle_2").html("<a href='/sector/" + getURLSlug(item_request.result.sector).toLowerCase() + "' class='subsector_name'>" + item_request.result.sector + "</a>");
-			} else {
-				jQuery("#subtitle_2").html("");
-			}
-			*/	
-
-	    }
-	};
-
-	var on_error = function ( e ) {
-		console.log('error getting topic', e );
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'topics', 'key': ( the_type + "_" + the_key ), 'index': null, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function get_topics( ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_topics');
-
-	/* Callbacks */
-
-	var on_success = function( context ) {
-		console.log( InDB.row.value( context.event ) );
-	}
-
-	var on_error = function( context ) {
-		console.log( 'There was an error in get_topics()' );
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_cursor_get', { 'store': 'topics', 'index': 'topic_key', 'keyRange': InDB.transaction.left_open( '0' ) /* Everything */ } );	
-
-}
-
-
-function remove_topic( topic_key ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_topic');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-			console.log( 'Removed topic successfully', context );
-	};
-
-	var on_error = function ( context ) {
-		console.log( 'There was an error removing the topic', context );
-	};
-
-	/* Request */
-	
-	InDB.trigger( 'InDB_row_delete', { 'store': topic, 'key': topic_key, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function add_or_update_topic( topic ) {
-
-	/* Action */
-	
-	jQuery(document).trigger('add_or_update_topic');
-
-	/* Defaults */
-
-	if (typeof topic == 'undefined') {
-		topic = {};
-	}
-
-	/* Callbacks */
-	
-	var on_success = function( context ) {
-		console.log( 'Topic added or updated', context );
-	}
-
-	var on_error = function( context ) {
-		console.log( 'There was an error adding or updating the topic', context );
-	}
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_put', { 'store': 'topics', 'data': topic, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function add_topic_to_topics_database( topic_key, topic ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_topic_to_topics_database');
-
-	/* Setup */
-
-	topic.topic_key = topic_key;
-
-	/* Defaults */
-
-	if (typeof topic == "undefined") {
-		var topic = {};
-	}
-
-	topic.modified = new Date();
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		
-		/* Debug */
-	
-		if( !!Buleys.debug ) {
-			console.log( 'topic.js > add_topic_to_topics_database() > on_success', context );
-		}
-	
-	};
-
-	var on_error = function ( context ) {
-
-	};
-	
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'topics', 'data': topic, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-/** 
- * Trash.js
- **/
-
-function get_deleted( type_filter, slug_filter, begin_timeframe, end_timeframe, make_inverse ) {
-	
-	/* Action */
-
-	jQuery(document).trigger('get_deleted', { "type_filter": type_filter, "slug_filter": slug_filter, "begin_timeframe":begin_timeframe, "end_timestamp":end_timeframe, "make_inverse": make_inverse } );
-
-	/* Default */
-
-	if (typeof make_inverse == "undefined") {
-		make_inverse = false;
-	}
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
-		begin_date = 0
-	} else {
-		begin_date = parseInt(begin_timeframe);
-	}
-
-	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt(end_timeframe);
-	}
-
-	/* Request */
-
-	var cursor_on_success = function ( context_1 ) {
-
-		var result = context_1.event.target.result;
-		var item = result.value;
-		
-		var deleted_on_success = function ( context_2 ) {
-
-			/* Setup */
-
-			var event_2 = context_2.event;
-
-			if( typeof event_2.target.result !== 'undefined' ) {
-
-				/* Setup */
-
-				var on_success_2, on_error_2;
-
-				/* Work */
-
-				// TODO: These don't actually handle asc/desc
-				if( make_inverse !== true) {
-					on_success_2 = function ( event ) {
-						if (typeof event.target.result !== 'undefined' && make_inverse !== true) {
-							if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-								get_item_raw_no_trash(event.target.result.link);
-							}
-						} 
-					};
-	
-				} else {
-					on_success_2 = function ( event ) {
-						if (typeof event.target.result !== 'undefined' && make_inverse !== true) {
-							if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-								get_item_raw_no_trash(event.target.result.link);
-							}
-						} 
-					};
-				}
-
-				on_error_2 = function( context ) {
-
-				}
-
-				InDB.trigger( 'InDB_do_row_get', { 'context': 'deleted', 'key': item.link, 'on_success': on_success_2, 'on_error': on_error_2 } );
-
-			}
-
-		}
-
-		var deleted_on_error = function ( context ) {
-
-		}
-	
-		/* Request */
-
-		InDB.trigger( 'InDB_do_row_put', { 'context': 'deleted', 'key': item.link, 'on_success': deleted_on_success, 'on_error': deleted_on_error } );
-
-	};
-
-	var cursor_on_error = function ( context ) {
-	
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_cursor_get', { 'context': 'categories', 'keyRange': InDB.range.only( slug_filter ), 'index': 'slug', 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
-	
-}
-
-function mark_item_as_deleted( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('mark_item_as_deleted');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var on_success = function ( event ) {
-	
-	};
-
-	var on_error = function ( e ) {
-
-	};
-	
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_put', { 'context': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function mark_item_as_undeleted( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('mark_item_as_undeleted');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		recreate_item( item_url );	
-	};
-
-	var on_error = function ( context ) {
-
-	};
-	
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'context': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function delete_item( item_url, the_type, the_slug ) {
-
-	/* Action */
-
-	jQuery(document).trigger('delete_item');
-
-	/* Setup */
-
-	var data = {
-		"link": item_url,
-		"modified": new Date().getTime()
-	};
-
-	/* Request */
-
-	var on_success = function ( event ) {
-		//commenting this out allows for item restoration
-		//remove_item_from_items_database(item_url, the_type, the_slug);
-		remove_item_from_favorites_database(item_url, the_type, the_slug);
-		remove_item_from_categories_database(item_url, the_type, the_slug);
-		remove_item_from_archives_database(item_url, the_type, the_slug);
-		remove_item_from_seens_database(item_url, the_type, the_slug);
-		remove_item_from_read_database(item_url, the_type, the_slug);
-	};
-
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'context': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function undelete_item( item_url, the_type, the_slug ) {
-	
-	/* Action */
-
-	jQuery(document).trigger('undelete_item');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		recreate_item( item_url );	
-	};
-
-	var on_error = function ( context ) {
-
-	};
-	
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'context': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-	
-}
-
-
-function check_if_item_is_deleted( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger( 'check_if_item_is_deleted', { "item_url": item_url } );
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		var item_request = context.event;
-		if (typeof item_request.result != 'undefined') {
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='delete_status'><a href='" + item_url + "' class='fav_link star_icon'></a></span>");
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).addClass('deleted');
-		} else {
-			jQuery("#" + item_url.replace(/[^a-zA-Z0-9-_]+/g, "")).prepend("<span class='delete_status'><a href='" + item_url + "' class='unfav_link empty_star_icon'></a></span>");
-		}
-	};
-
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-	
-	InDB.trigger( 'InDB_do_row_add', { 'context': 'deleted', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-
-function add_item_to_deletes_database( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_item_to_deletes_database');
-
-	/* Setup */
-
-	var data = {
-		"item_link": item_url,
-		"topic_slug": item_slug,
-		"topic_type": item_type,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-
-	}
-
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'context': 'deleted', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-	
-}
-
-
-function remove_item_from_deletes_database( item_url, item_slug, item_type ) {
-
-	/* Action */
-
-	jQuery(document).trigger('remove_item_from_deletes_database');
-
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-
-	}
-
-	var on_error = function ( context ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'context': 'deleted', 'key': item_url, 'on_success': on_success, 'on_error': on_error } );
-
-}
-$('body').bind('favorite', function ( event ) {
-
-    event.preventDefault();
-    if (!is_in_cursor_mode()) {
-        $.each($('.selected'), function ( i, item_to_mark ) {
-
-            jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('empty_star_icon').addClass('star_icon');
-            jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-            jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-            jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-            jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-            add_item_to_favorites_database($(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            post_feedback('star', $(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            send_to_console("<p>item favorited</p>");
-            setTimeout('fade_console_message()', 1000);
-        });
-    } else {
-        jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('empty_star_icon').addClass('star_icon');
-        jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-        jQuery("#" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-        jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('empty_star_icon').addClass('star_icon');
-        jQuery("#favorite_" + jQuery('.cursor a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.fav_link').removeClass('fav_link').addClass('unfav_link');
-        add_item_to_favorites_database($('.cursor a').attr('href'), Buleys.view.slug, Buleys.view.type);
-        post_feedback('star', $('.cursor a').attr('href'), Buleys.view.slug, Buleys.view.type);
-        send_to_console("<p>item favorited</p>");
-        setTimeout('fade_console_message()', 1000);
-    }
-
-});
-
-$('body').bind('favorite', function ( event ) {
-
-    event.preventDefault();
-    if (!is_in_cursor_mode()) {
-        $.each($('.selected'), function ( i, item_to_mark ) {
-
-            jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
-            jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-            jQuery("#" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-            jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-            jQuery("#favorite_" + jQuery(item_to_mark).children('a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-            remove_item_from_favorites_database($(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            post_feedback('unstar', $(item_to_mark).children('a').attr('href'), Buleys.view.slug, Buleys.view.type);
-            send_to_console("<p>item removed from favorites</p>");
-            setTimeout('fade_console_message()', 1000);
-        });
-    } else {
-        jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('star_icon').addClass('empty_star_icon');
-        jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').parent().removeClass('unfavorited').addClass('favorited');
-        jQuery("#" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.favorite_status').children('div').removeClass('unfav_link');
-        jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('star_icon').addClass('empty_star_icon');
-        jQuery("#favorite_" + jQuery('.cursor > a').attr('href').replace(/[^a-zA-Z0-9-_]+/g, "")).children('.unfav_link').removeClass('unfav_link').addClass('fav_link');
-        remove_item_from_favorites_database($('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-        post_feedback('unstar', $('.cursor > a').attr('href'), Buleys.view.slug, Buleys.view.type);
-        send_to_console("<p>item removed from favorites</p>");
-        setTimeout('fade_console_message()', 1000);
-    }
-});
-
 function twitter_request( type, data, on_success, on_error ) {
 
 	/* Actions */
@@ -10425,16 +4551,16 @@ function twitter_request( type, data, on_success, on_error ) {
 	/* Request */
 
 	jQuery.ajax( {
-			'type': 'POST',
-			'url': "http://api.buleys.com/twitter",
-			'data': data_to_send,
-			'success': function ( data ) {
-					on_success( data );
-			},
-			'error': function( data ) {
-					on_error( data );
-			},
-			'dataType': 'json'
+		'type': 'POST',
+		'url': "http://api.buleys.com/twitter",
+		'data': data_to_send,
+		'success': function ( data ) {
+				on_success( data );
+		},
+		'error': function( data ) {
+				on_error( data );
+		},
+		'dataType': 'json'
 	} );
 
 }
@@ -10460,11 +4586,22 @@ function add_tweets( items ) {
 	$.each( items, function ( i, item ) {
 
 		if( true === Buleys.debug ) {
-			//console.log('items.js > add_items > each', item );
+			console.log('twitter.js > add_tweets > each', item );
 		}
 
 		add_tweet_to_items_database( item );
+		console.log('doing entities');
 
+		var splitted = item.topic.split('_');
+		item.entities = [{
+			'slug': splitted[1],
+			'type': splitted[0],
+			'display': null
+		}];
+		console.log('ENTITIES', item.entities );
+		add_categories_to_categories_database(item.link, item.entities );
+
+		send_to_console("<p>Added: <a href='" + item.link + "'>" + item.title + "</a></p>");
 	});
 
 }
@@ -10496,12 +4633,12 @@ function add_tweet_to_items_database( item ) {
 
 	/* Action */
 
-	jQuery(document).trigger('add_item_to_items_database');
+	jQuery(document).trigger('add_tweet_to_items_database');
 
 	/* Setup */
 
 	var data = get_data_object_for_tweet(item);
-
+	console.log('adding twitt',data );
 	/* Callbacks */
 
 	var add_on_success = function ( context_2 ) {
@@ -10510,11 +4647,10 @@ function add_tweet_to_items_database( item ) {
 
 		var event2 = context_2.event;
 
-
 		/* Debug */
 		
 		if( true === Buleys.debug ) {
-			console.log("items.js > add_item_to_items_database() > item.entities > ", item.entities );
+			console.log("items.js > add_tweet_to_items_database() > item.entities > ", item.entities );
 		}
 
 		// Qualify the view
@@ -10522,7 +4658,7 @@ function add_tweet_to_items_database( item ) {
 		if ( ( Buleys.view.type === "home" || typeof Buleys.view.slug === "undefined" || typeof Buleys.view.slug === "" ) && ( typeof page === "undefined" || ( page !== "favorites" && page !== "seen" && page !== "read" && page !== "archive" && page !== "trash" ) ) ) {
 
 			// Add the item to the results
-			prepend_item_to_results(get_data_object_for_item(item));
+			prepend_item_to_results( data );
 
 		}
 
@@ -10538,404 +4674,3 @@ function add_tweet_to_items_database( item ) {
 
 }
 
-
-
-
-/**
- * Items.js
- **/
-
-
-function check_item_vote_status_for_overlay( item_url ) {
-
-	/* Action */
-
-	jQuery(document).trigger('check_item_vote_status_for_overlay');
-
-	/* Callbacks */
-	var on_success = function ( context_1 ) {
-
-		/* Setup */
-
-		var event = context_1.event;
-
-		/* UI */
-
-		if (typeof event.target.result !== 'undefined') {
-			console.log("VOTE VALUE", event.target.result, event.target.result.vote_value );
-			if (event.target.result.vote_value == -1) {
-				jQuery("#overlay_left").prepend('<div class="vote_context voted"><div class="vote_up empty_thumb_up_icon" alt="' + Buleys.view.slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '"></div><div class="vote_down vote thumb_icon" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '" alt="' + Buleys.view.slug + '" ></div></div>');
-			} else if (event.target.result.vote_value == 1) {
-				jQuery("#overlay_left").prepend('<div class="vote_context voted"><div class="vote_up vote thumb_up_icon" alt="' + Buleys.view.slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '"></div><div class="vote_down empty_thumb_icon" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '" alt="' + Buleys.view.slug + '" ></div></div>');
-			} else {
-				jQuery("#overlay_left").prepend('<div class="vote_context"><div class="vote_up empty_thumb_up_icon" alt="' + Buleys.view.slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '"></div><div href="#" class="vote_down empty_thumb_icon" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '" alt="' + Buleys.view.slug + '" ></div></div>');
-			}
-
-			jQuery("#overlay_left").parent().addClass('voted');
-
-		} else {
-
-			jQuery("#overlay_left").prepend('<div class="vote_context"><div class="vote_up empty_thumb_up_icon" alt="' + Buleys.view.slug + '" id="overlay_upvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '"></div><div href="#" class="vote_down empty_thumb_icon" id="overlay_downvote_' + item_url.replace(/[^a-zA-Z0-9-_]+/g, "") + '" link="' + item_url + '" alt="' + Buleys.view.slug + '" ></div></div>');
-
-			jQuery("#overlay_left").parent().addClass('unvoted');
-
-		}
-
-	};
-
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_get', { 'store': 'votes', 'key': item_url.replace(/[^a-zA-Z0-9-_]+/g, ""), 'on_success': on_success, 'on_error': on_error } );
-	
-}
-
-function get_vote_info( the_url, the_type, the_key ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_vote_info');
-
-	/* Setup */
-
-	var vote_key = the_url.replace(/[^a-zA-Z0-9-_]+/g, "") + the_type.toLowerCase() + the_key.toLowerCase();
-
-	/* Callbacks */
-	
-	var on_success = function ( context ) {
-
-		/* Setup */
-
-		var item_request = context.event;
-
-		/* UI */
-
-		if ( typeof item_request.result !== 'undefined' && item_request.result !== "") {
-
-			if (item_request.result.vote_value == 0) {
-				jQuery("#" + vote_key).addClass("voted downvoted");
-			} else if (item_request.result.vote_value == 1) {
-				jQuery("#" + vote_key).addClass("voted upvoted");
-			}
-
-		}
-	};
-
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'votes', 'key': vote_key, 'on_success': on_success, 'on_error': on_error } );
-	
-}
-
-// TODO: Do timeframes do anything?
-function get_voted( type_filter, slug_filter, vote_value, begin_timeframe, end_timeframe, make_inverse ) {
-
-	/* Action */
-
-	jQuery(document).trigger('get_voted');
-
-	/* Defaults */
-
-	var keyRange;
-	if( !!vote_value ) {
-		keyRange = InDB.range.left_open( '0' ); // Everything
-	} else {
-		keyRange = InDB.range.only( vote_value );
-	}
-
-	if (typeof make_inverse == "undefined") {
-		make_inverse = false;
-	}
-
-	/* Setup */
-
-	var begin_date = 0;
-	var end_date = 0;
-
-	if (typeof begin_timeframe == "undefined" || begin_timeframe == null) {
-		begin_date = 0
-	} else {
-		begin_date = parseInt(begin_timeframe);
-	}
-
-	if (typeof end_timeframe == "undefined" || end_timeframe == null) {
-		end_date = new Date().getTime();
-	} else {
-		end_date = parseInt(end_timeframe);
-	}
-
-	/* Callbacks */
-
-	cursor_on_success = function ( context_1 ) {
-
-		var event_1 = context_1.event;
-		var item = InDB.cursor.value( event_1 );
-	
-		if( !InDB.isEmpty( InDB.cursor.value( event_1 ) ) ) { 
-
-			if ( make_inverse !== true) {
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw( item.link );
-				}
-			} else { 
-				if (jQuery("#" + item.link.replace(/[^a-zA-Z0-9-_]+/g, "")).length <= 0) {
-					get_item_raw( item.link );
-				}
-			}
-		}
-
-	};
-
-	cursor_on_error = function ( event ) {
-
-	};
-
-	/* Request */
-	
-	InDB.trigger( 'InDB_do_cursor_get', { 'store': 'voted', 'index': 'vote_value', 'keyRange': keyRange, 'on_success': cursor_on_success, 'on_error': cursor_on_error } );
-
-}
-
-
-function remove_vote( vote_key ) {
-	
-	/* Action */
-
-	jQuery( document ).trigger('remove_vote');
-	
-	/* Callbacks */
-
-	var on_success = function ( event ) {
-
-	};
-	
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_delete', { 'store': 'votes', 'key': vote_key, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function add_or_update_vote( vote_key, vote_value ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_or_update_vote');
-
-	/* Defaults */
-	
-	if (typeof vote_value == 'undefined') {
-		vote_value = '';
-	}
-
-	/* Setup */
-
-	var data = {
-		'vote_key': vote_key,
-		'vote_value': vote_value,
-		"modified": new Date().getTime()
-	};
-	
-	/* Callbacks */
-
-	var on_success = function ( context ) {
-		console.log('Successfully updated vote', context );	
-	};
-	
-	var on_error = function ( context ) {
-		console.log('Failed to update vote', context );
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_put', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function add_vote_to_votes_database( vote_key, vote_value ) {
-
-	/* Action */
-
-	jQuery(document).trigger('add_vote_to_votes_database');
-
-	/* Setup */
-
-	var data = {
-		"vote_key": vote_key,
-		"vote_value": vote_value,
-		"modified": new Date().getTime()
-	};
-	
-	/* Callbacks */
-
-	var on_success = function ( event ) {
-
-	};
-	
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-function update_vote_in_votes_database( vote_key, vote_value ) {
-
-	/* Action */
-
-	jQuery(document).trigger('update_vote_in_votes_database');
-
-	/* Setup */
-
-	var data = {
-		"vote_key": vote_key,
-		"vote_value": vote_value,
-		"modified": new Date().getTime()
-	};
-
-	/* Callbacks */
-
-	var on_success = function ( event ) {
-
-	};
-	
-	var on_error = function ( e ) {
-
-	};
-
-	/* Request */
-
-	InDB.trigger( 'InDB_do_row_put', { 'store': 'votes', 'data': data, 'on_success': on_success, 'on_error': on_error } );
-
-}
-
-$('.vote_up').live('click', function ( event ) {
-
-	event.preventDefault();
-
-	/* Setup */
-
-	var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
-	var the_url_slug = the_url.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-	/* UI */
-
-	if (jQuery("#overlay_upvote_" + the_url_slug).hasClass('vote')) {
-
-		/* UI */
-
-		jQuery("#overlay_upvote_" + the_url_slug).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
-
-		$('.vote').removeClass('vote');
-		$(this).parent().removeClass('voted');
-
-		/* Work */
-
-		post_feedback('item_remove_upvote', the_url, Buleys.view.type, Buleys.view.slug);
-
-		remove_vote(the_url);
-
-	} else {
-	
-		/* UI */
-
-		jQuery("#overlay_downvote_" + the_url_slug).removeClass('thumb_icon').addClass('empty_thumb_icon');
-		jQuery("#overlay_upvote_" + the_url_slug).removeClass('empty_thumb_up_icon').addClass('thumb_up_icon');
-
-		$('.vote').removeClass('vote');
-		$(this).parent().addClass('voted');
-		$(this).addClass('vote');
-
-		/* Work */
-
-		post_feedback('item_upvote', the_url, Buleys.view.type, Buleys.view.slug);
-
-		add_or_update_vote(the_url, 1);
-
-	}
-});
-
-
-$('.vote_down').live('click', function ( event ) {
-
-	event.preventDefault();
-	
-	/* Setup */
-
-	var the_url = $(this).attr('link').replace(/[^a-zA-Z0-9-_]+/g, "");
-	var the_url_slug = the_url.replace(/[^a-zA-Z0-9-_]+/g, "");
-
-	/* UI */
-
-	if (jQuery("#overlay_downvote_" + the_url_slug).hasClass('vote')) {
-
-		jQuery("#overlay_downvote_" + the_url_slug).removeClass('thumb_icon').addClass('empty_thumb_icon');
-
-		$('.vote').removeClass('vote');
-		$(this).parent().removeClass('voted');
-
-		post_feedback('item_remove_downvote', the_url, Buleys.view.type, Buleys.view.slug);
-		
-		remove_vote(the_url);
-
-	} else {
-
-		jQuery("#overlay_downvote_" + the_url_slug).removeClass('empty_thumb_icon').addClass('thumb_icon');
-		jQuery("#overlay_upvote_" + the_url_slug).removeClass('thumb_up_icon').addClass('empty_thumb_up_icon');
-
-		$('.vote').removeClass('vote');
-		$(this).parent().addClass('voted');
-		$(this).addClass('vote');
-
-		post_feedback('item_downvote', the_url, Buleys.view.type, Buleys.view.slug);
-
-		add_or_update_vote(the_url, -1);
-
-	}
-
-});
-var results = [];
-
-function resultReceiver( event ) {
-	jQuery(document).trigger('resultReceiver');
-
-  results.push(parseInt(event.data));
-  if (results.length == 2) {
-    postMessage(results[0] + results[1]);
-  }
-}
-
-function errorReceiver( event ) {
-	jQuery(document).trigger('errorReceiver');
-
-  throw event.data;
-}
-
-onmessage = function(event) {
-  var n = parseInt(event.data);
-
-  if (n == 0 || n == 1) {
-    postMessage(n);
-    return;
-  }
-
-  for (var i = 1; i <= 2; i++) {
-    var worker = new Worker("worker.js");
-    worker.onmessage = resultReceiver;
-    worker.onerror = errorReceiver;
-    worker.postMessage(n - i);
-  }
- };

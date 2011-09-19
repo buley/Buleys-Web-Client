@@ -38,7 +38,9 @@ Buleys.activity.shorthand_map = {
 	'actor_updated': 'a_up',
 	'actor_upstream_duplicates': 'a_ud',
 	'actor_url': 'a_u',
+	'clicked': 'cl',
 	'content': 'c',
+	'entities': 'e', //extension
 	'favorited': 'f',
         'generator': 'g',
         'generator_attachments': 'g_at',
@@ -61,6 +63,10 @@ Buleys.activity.shorthand_map = {
 	'icon_width': 'ic_w',
 	'icon_url': 'ic_u',
 	'id': 'i',
+	'image': 'im',
+	'image_height': 'ih',
+	'image_url': 'iu',
+	'image_width': 'iw',
 	'object': 'o',
 	'object_attachments': 'o_at',
 	'object_content': 'o_c',
@@ -93,6 +99,7 @@ Buleys.activity.shorthand_map = {
 	'provider_upstream_duplicates': 'p_ud',
 	'provider_url': 'p_u',
 	'published': 'pu',
+	'score': 'sc', //extension
 	'seen': 's',
 	'target': 't',
 	'target_attachments': 't_at',
@@ -110,6 +117,7 @@ Buleys.activity.shorthand_map = {
 	'target_updated': 't_up',
 	'target_upstream_duplicates': 't_ud',
 	'target_url': 't_u',
+	'topic': 'to', //extension
 	'title': 'ti',
 	'trashed': 'tr',
 	'updated': 'up',
@@ -127,50 +135,59 @@ Buleys.activity.shorthand = function ( key ) {
 
 
 Buleys.activity.shorthand_reverse = function ( key ) {
-
-	var reversed;
-	for( item in shorthand_map ) {
-		if( shorthand_map.hasOwnProperty( item ) ) {
-			reversed[ shorthand_map[ item ] ] = item;
+	var k = key;
+	var reversed = {};
+	for( var item in Buleys.activity.shorthand_map ) {
+		if( Buleys.activity.shorthand_map.hasOwnProperty( item ) ) {
+			reversed[ Buleys.activity.shorthand_map[ item ] ] = item;
 		}
 	}
-
-	if( 'undefined' !== typeof reversed[ key ] ) {
-		return reversed[ key ];
+	if( 'undefined' !== typeof reversed[ k ] ) {
+		return reversed[ k ];
 	} else {
-		return key;
+		return k;
 	}
 }
 
 //recursive
 Buleys.activity.shorthand_decode = function( object ) {
 	var encoded = {};
-	for( item in object ) {
-		if( object.hasOwnProperty( item ) ) {
+	var total = 0;
+	for( var itemobj in object ) {
+		if( 'undefined' !== typeof itemobj && object.hasOwnProperty( itemobj ) ) {
 			//recursive case: object value
 			//base case: string value
-			if( 'object' === typeof object[ item ] ) {
-				encoded[ item ] = Buleys.activity.shorthand_decode( object[ item ] );	
+			var value = object[ itemobj ];
+			if( 'object' === typeof value ) {
+				encoded[ Buleys.activity.shorthand_reverse( itemobj ) ] = Buleys.activity.shorthand_decode( value );
+				delete value;
 			} else { 
-				encoded[ item ] = Buleys.activity.shorthand_reverse( object[ item ] );
+				encoded[ Buleys.activity.shorthand_reverse( itemobj ) ] = value;
+				delete value;
 			}
 		}
+		total++;
 	}
-	return encoded;
+	if( total > 0 ) {
+		return encoded;
+	} else {
+		return {};
+	}
 }
 
 
 //recursive
 Buleys.activity.shorthand_encode = function( object ) {
 	var encoded = {};
-	for( item in object ) {
+	for( var item in object ) {
 		if( object.hasOwnProperty( item ) ) {
 			//recursive case: object value
 			//base case: string value
+
 			if( 'object' === typeof object[ item ] ) {
-				encoded[ item ] = Buleys.activity.shorthand_encode( object[ item ] );	
+				encoded[ Buleys.activity.shorthand( item ) ] = Buleys.activity.shorthand_encode( object[ item ] );	
 			} else { 
-				encoded[ item ] = Buleys.activity.shorthand( object[ item ] );
+				encoded[ Buleys.activity.shorthand( item ) ] = object[ item ];
 			}
 		}
 	}
@@ -181,23 +198,35 @@ Buleys.activity.shorthand_encode = function( object ) {
 Buleys.activity.install = function ( ) {
 
         var activities = {
-                'activities': { 'key': Buleys.activity.shorthand[ 'id' ], 'incrementing_key': false, 'unique': true }
+                'activities': { 'key': Buleys.activity.shorthand( 'id' ), 'incrementing_key': false, 'unique': true }
         }
 
         var activities_idxs = {
-                'activities': {}
+                'activities': {
+			'actor_id': {},
+			'object_id': {},
+			'object_url': {},
+			'object_published': {},
+			'verb': {},
+			'seen': {},
+			'clicked': {},
+			'trashed': {},
+			'archived': {},
+			'favorited': {}
+		}
 	}
 
-	activities.activities[ Buleys.activity.shorthand( 'actor_id' ).replace( '_', '.' ) ] = { 'actor_id': true };
-	activities.activities[ Buleys.activity.shorthand( 'object_id' ).replace( '_', '.' ) ] = { 'object_id': true };
-	activities.activities[ Buleys.activity.shorthand( 'object_url' ).replace( '_', '.' ) ] = { 'object_url': false };
-	activities.activities[ Buleys.activity.shorthand( 'object_published' ).replace( '_', '.' ) ] = { 'object_published': false };
-	activities.activities[ Buleys.activity.shorthand( 'verb' ) ] = { 'verb': true };
-	activities.activities[ Buleys.activity.shorthand( 'seen' ) ] = { 'seen': true };
-	activities.activities[ Buleys.activity.shorthand( 'clicked' ) ] = { 'clicked': true };
-	activities.activities[ Buleys.activity.shorthand( 'trashed' ) ] = { 'trashed': true };
-	activities.activities[ Buleys.activity.shorthand( 'archived' ) ] = { 'archived': true };
-	activities.activities[ Buleys.activity.shorthand( 'favorited' ) ] = { 'favorited': true };
+
+	activities_idxs.activities[ 'actor_id' ][ Buleys.activity.shorthand( 'object_id' ).replace( '_', '.' ) ] =  'true';
+	activities_idxs.activities[ 'object_id' ][ Buleys.activity.shorthand( 'object_id' ).replace( '_', '.' ) ] = 'true';
+	activities_idxs.activities[ 'object_url' ][ Buleys.activity.shorthand( 'object_url' ).replace( '_', '.' ) ] = 'false';
+	activities_idxs.activities[ 'object_published' ][ Buleys.activity.shorthand( 'object_published' ).replace( '_', '.' ) ] = 'false';
+	activities_idxs.activities[ 'verb' ][ Buleys.activity.shorthand( 'verb' ) ] = 'true';
+	activities_idxs.activities[ 'seen' ][ Buleys.activity.shorthand( 'seen' ) ] = 'true';
+	activities_idxs.activities[ 'clicked' ][ Buleys.activity.shorthand( 'clicked' ) ] = 'true';
+	activities_idxs.activities[ 'trashed' ][ Buleys.activity.shorthand( 'trashed' ) ] = 'true';
+	activities_idxs.activities[ 'archived' ][ Buleys.activity.shorthand( 'archived' ) ] = 'true';
+	activities_idxs.activities[ 'favorited' ][ Buleys.activity.shorthand( 'favorited' ) ] = 'true';
 
 	console.log( 'Buleys_activity_install', activities, activities_idxs );
 
@@ -225,27 +254,27 @@ Buleys.activity.add = function ( activity, on_success, on_error ) {
 	/* Defaults */
 
 	if( !activity.trashed ) {
-		activity.trashed = false;
+		activity.trashed = "false";
 	}
 
 	if( !activity.seen ) {
-		activity.seen = false;
+		activity.seen = "false";
 	}
 
 	if( !activity.clicked ) {
-		activity.clicked = false;
+		activity.clicked = "false";
 	}
 
 	if( !activity.archived ) {
-		activity.archived = false;
+		activity.archived = "false";
 	}
 
-	if( !activity.favorites ) {
-		activity.favorites = false;
+	if( !activity.favorited ) {
+		activity.favorited = "false";
 	}
 
 	if( !activity.published ) {
-		activity.published = true;
+		activity.published = "true";
 	}
 
 	/* Assertions */
@@ -255,12 +284,18 @@ Buleys.activity.add = function ( activity, on_success, on_error ) {
 	/* Callbacks */
 
 	var on_success_wrapper = function ( context ) {
+		if( !!Buleys.debug ) {
+			console.log( 'Activity added successfully', context );
+		}
 		if( 'undefined' !== typeof on_success ) {
 			on_success( context );
 		}
 	};
 
 	var on_error_wrapper = function ( context ) {
+		if( !!Buleys.debug ) {
+			console.log( 'Error adding activity', context );
+		}
 		if( 'undefined' !== typeof on_error ) {
 			on_error( context );
 		}
@@ -268,11 +303,11 @@ Buleys.activity.add = function ( activity, on_success, on_error ) {
 
 	/* Shorthand Encoding */
 
-	activity = Buleys.activities.shorthand_encode( activity );
-
+	activity = Buleys.activity.shorthand_encode( activity );
+	
 	/* Request */
-
-	InDB.trigger( 'InDB_do_row_add', { 'store': 'activities', 'data': data, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
+	
+	InDB.trigger( 'InDB_do_row_add', { 'store': 'activities', 'data': activity, 'on_success': on_success_wrapper, 'on_error': on_error_wrapper } );
 
 };
 
@@ -459,16 +494,18 @@ Buleys.activity.get = function ( activity_id, filter, on_success, on_error ) {
 			var result = InDB.row.value( context.event );
 			
 			var matches_filter = true;
+			var x;
 			for( x in filter ) {
-				if ( filter[ x ] !== result[ Buleys.reverse_shorthand( x ) ] ) {
+				if ( filter[ x ] !== result[ Buleys.activity.shorthand( x ) ] ) {
 					matches_filter = false;
+					break;
 				}
 			} 
 
 			/* Shorthand Decoding */
-
+			
 			result = Buleys.activity.shorthand_decode( result );
-
+			console.log('matched?', matches_filter, true === matches_filter, true == matches_filter );	
 			//return result if it matches the filter	
 			//else return null
 			if( true === matches_filter ) {
@@ -498,14 +535,14 @@ Buleys.activity.get = function ( activity_id, filter, on_success, on_error ) {
 //publish an activity given its activity_id
 //this makes an activity visibile
 Buleys.activity.publish = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'published': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'published': 'true' }, on_success, on_error );
 };
 
 
 //unpublish an activity given its activity_id
 //this removes an activity from visibility
 Buleys.activity.unpublish = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'published': false }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'published': 'false' }, on_success, on_error );
 };
 
 
@@ -528,7 +565,7 @@ Buleys.activity.is_published = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, { 'published': true }, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'published': 'true' }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -539,13 +576,13 @@ Buleys.activity.is_published = function( activity_id, on_success, on_error ) {
 
 //mark an activity as seen given its activity_id
 Buleys.activity.see = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'seen': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'seen': 'true' }, on_success, on_error );
 };
 
 
 //mark an activity as unseen given its activity_id
 Buleys.activity.unsee = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'seen': false }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'seen': 'false' }, on_success, on_error );
 };
 
 
@@ -567,7 +604,7 @@ Buleys.activity.is_seen = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, { 'seen': true }, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'seen': 'true' }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -577,13 +614,13 @@ Buleys.activity.is_seen = function( activity_id, on_success, on_error ) {
 
 //mark an activity as clicked given its activity_id
 Buleys.activity.click = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'clicked': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'clicked': 'true' }, on_success, on_error );
 };
 
 
 //mark an activity as unclicked given its activity_id
 Buleys.activity.unclick = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'clicked': false }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'clicked': 'false' }, on_success, on_error );
 };
 
 
@@ -605,7 +642,7 @@ Buleys.activity.is_clicked = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, { 'clicked': true }, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'clicked': 'true' }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -615,13 +652,13 @@ Buleys.activity.is_clicked = function( activity_id, on_success, on_error ) {
 
 //trash an activity given its activity_id
 Buleys.activity.trash = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'trashed': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'trashed': 'true' }, on_success, on_error );
 };
 
 
 //untrash an activity given its activity_id
 Buleys.activity.untrash = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'trashed': false }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'trashed': 'false' }, on_success, on_error );
 };
 
 
@@ -643,7 +680,7 @@ Buleys.activity.is_trashed = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, { 'trashed': true }, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'trashed': 'true' }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -652,12 +689,12 @@ Buleys.activity.is_trashed = function( activity_id, on_success, on_error ) {
 
 //archive an activity given its activity_id
 Buleys.activity.archive = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'archived': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'archived': 'true' }, on_success, on_error );
 };
 
 //unarchive an activity given its activity_id
 Buleys.activity.unarchive = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'archived': false }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'archived': 'false' }, on_success, on_error );
 };
 
 //verify archive status of an activity given an activity_id
@@ -678,7 +715,7 @@ Buleys.activity.is_archived = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, { 'archived': true }, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'archived': 'true' }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -687,12 +724,12 @@ Buleys.activity.is_archived = function( activity_id, on_success, on_error ) {
 
 //favorite an activity given its activity_id
 Buleys.activity.favorite = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'favorited': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'favorited': 'true' }, on_success, on_error );
 };
 
 //unfavorite an activity given its activity_id
 Buleys.activity.unfavorite = function( activity_id, on_success, on_error ) {
-	Buleys.activity.update( activity_id, { 'favorited': true }, on_success, on_error );
+	Buleys.activity.update( activity_id, { 'favorited': 'true' }, on_success, on_error );
 };
 
 //determine favorite status of activity
@@ -713,7 +750,7 @@ Buleys.activity.is_favorited = function( activity_id, on_success, on_error ) {
 		on_error( context.error );
 	};
 
-	Buleys.activity.get( activity_id, { 'favorited': true }, on_success_wrapper, on_error_wrapper );
+	Buleys.activity.get( activity_id, { 'favorited': 'true' }, on_success_wrapper, on_error_wrapper );
 
 };
 
@@ -734,6 +771,14 @@ Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, 
 
 	/* Defaults */
 
+	if( !includes_left_bound ) {
+		includes_left_bound = false;
+	}
+	
+	if( !includes_right_bound ) {
+		includes_right_bound = false;
+	}
+	
 	var key_range = InDB.range.get( value, left_bound, right_bound, includes_left_bound, includes_right_bound );
 	
 	/* Callbacks */
@@ -742,15 +787,21 @@ Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, 
 
 		/* Setup */
 
-		var activity = InDB.row.value( context.event );
+		var activity = InDB.cursor.value( context.event );
 
 		// Fire on_success() callback if items
 		// Else call on_complete() if cursor is exhausted
 		if( !!activity ) {
 			
+			/* Decode Shorthand */
+				
+			activity = Buleys.activity.shorthand_decode( activity );
+
+			/* Filter */
+
 			var matches_filter = true;
 			for( x in filter ) {
-				if ( filter[ x ] !== activity[ Buleys.reverse_shorthand( x ) ] ) {
+				if ( filter[ x ] !== activity[ x ] ) {
 					matches_filter = false;
 				}
 			} 
@@ -796,7 +847,7 @@ Buleys.activities.getAll = function( filter, on_success, on_error, on_complete, 
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getArchived = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'archived', true, null, null, null, null );
 };
@@ -808,7 +859,7 @@ Buleys.activities.getArchived = function ( filter, on_success, on_error, on_comp
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getUnarchived = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'archived', false, null, null, null, null );
 };
@@ -823,7 +874,7 @@ Buleys.activities.getUnarchived = function ( filter, on_success, on_error, on_co
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getSeen = function ( filter, on_success, on_erorr, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'seen', true, null, null, null, null );
 }
@@ -835,7 +886,7 @@ Buleys.activities.getSeen = function ( filter, on_success, on_erorr, on_complete
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getUnseen = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'seen', false, null, null, null, null );
 }
@@ -849,7 +900,7 @@ Buleys.activities.getUnseen = function ( filter, on_success, on_error, on_comple
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getTrashed = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'trashed', true, null, null, null, null );
 };
@@ -861,7 +912,7 @@ Buleys.activities.getTrashed = function ( filter, on_success, on_error, on_compl
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getUntrashed = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'trashed', false, null, null, null, null );
 };
@@ -876,7 +927,7 @@ Buleys.activities.getUntrashed = function ( filter, on_success, on_error, on_com
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getFavorited = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'favorited', true, null, null, null, null );
 };
@@ -888,7 +939,7 @@ Buleys.activities.getFavorited = function ( filter, on_success, on_error, on_com
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getUnfavorited = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false, 'published': true };
+		filter = { 'trashed': 'false', 'published': 'true' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'favorited', false, null, null, null, null );
 };
@@ -902,7 +953,7 @@ Buleys.activities.getUnfavorited = function ( filter, on_success, on_error, on_c
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getPublished = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false };
+		filter = { 'trashed': 'false' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'published', true, null, null, null, null );
 };
@@ -914,7 +965,7 @@ Buleys.activities.getPublished = function ( filter, on_success, on_error, on_com
 //on_complete is invoked after all activities have returned either an on_success or on_error
 Buleys.activities.getUnpublished = function ( filter, on_success, on_error, on_complete ) {
 	if( 'undefined' === typeof filter ) {
-		filter = { 'trashed': false };
+		filter = { 'trashed': 'false' };
 	}
 	Buleys.activities.getAll( filter, on_success, on_error, on_complete, 'published', false, null, null, null, null );
 };
@@ -968,7 +1019,7 @@ Buleys.activity.add_to_result = function( activity, prepend ) {
 
 	/* Setup */
 
-	var id = activity.link.replace(/[^a-zA-Z0-9-_]+/g, "");
+	var id = activity.id;
 
 	/* UI */
 

@@ -16,11 +16,21 @@ Buleys.socket.on( 'authorized', function( data ) {
 	console.log('PROFILE DATA', data );
 });
 
+
+Buleys.websocket.cache = {};
+
 Buleys.socket.on( 'data', function( response ) {
+	
+	if( response == Buleys.websocket.cache ) {
+		return;
+	} else {
+		Buleys.websocket.cache = response;
+	}
+	
+	response = JSON.parse( response );
+//	console.log('DATA type', response.type );
 
-	console.log('DATA', response );
-
-	if( 'tweet' === response.object.object_type || 'news' === response.object.object_type ) {
+	if( 'tweet' === response.type || 'news' === response.type ) {
 
 		var on_success = function( activity_id ) {
 			console.log( 'Buleys.socket.on data success', activity_id );
@@ -30,7 +40,7 @@ Buleys.socket.on( 'data', function( response ) {
 			console.log( 'Buleys.socket.on data error', error );
 		};
 
-		Buleys.activity.add( response, on_success, on_error );
+		Buleys.activity.add( response.data, on_success, on_error );
 	} 
 	
 } );

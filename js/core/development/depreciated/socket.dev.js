@@ -16,11 +16,11 @@ Buleys.socket.on( 'authorized', function( data ) {
 
 Buleys.socket.on( 'data', function( activity ) {
 	console.log('DATA', activity );
-	//response = jQuery.parseJSON( response );
+	activity = jQuery.parseJON( activity );
 	console.log('JSON!!', activity.verb, activity );
 	if( 'publish' === activity.verb || 'tweet' === activity.verb ) {
 		console.log( 'new ' + activity.verb + '!', activity );
-		Buleys.activity.add( activity );
+		Buleys.activity.add( activity.data );
 	} 
 	
 });

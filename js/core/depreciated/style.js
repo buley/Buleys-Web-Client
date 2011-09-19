@@ -1,0 +1,1 @@
+function getURLSlug(b){jQuery(document).trigger("getURLSlug");if(typeof b!="object")if(b!=null&&b!="undefined"&&b!=""){var a="";b.toLowerCase();a=b.replace(/ - /g,"_");a=a.replace(/ /g,"_");a=a.replace(/\'s/g,"");a=a.replace(/ - /g,"_");a=a.replace(/-/g,"_");a=a.replace("/%20/g","_");a=a.replace(/&/,"and");a=a.replace("/%26/g","and");return a=a.replace(".","")}};

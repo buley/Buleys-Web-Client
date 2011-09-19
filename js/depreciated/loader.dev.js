@@ -2,11 +2,12 @@ var Buleys = {};
 /* IndexedDB */
 Buleys.db = {};
 Buleys.version = 7;
-Buleys.database_name = "Buleys-330";
+Buleys.database_name = "Buleys-324";
 Buleys.database_description = "Database for www.buleys.com";
 Buleys.on_complete = function( e ) { console.log( "indexeddb request completed" ); console.log( e ); }
 Buleys.on_error = function( e ) { console.log( "indexeddb request errored" ); console.log( e ); }
 Buleys.on_abort = function( e ) { console.log( "indexeddb request aborted" ); console.log( e ); }
+
 
 Buleys.queues = {};
 Buleys.settings = {};
@@ -47,10 +48,6 @@ Buleys.session.database_is_open = false;
 Buleys.activity = {};
 Buleys.activities = {};
 
-Buleys.socket = {};
-Buleys.sockets = {};
-
-
 var session_token = '';
 var debug;
 //webkitIDBCursor
@@ -63,8 +60,9 @@ $(document).ready(function() {
 		InDB.fixBrowser();
 	}
 
-	//set_page_vars();
-	//check_login_status();
+	set_page_vars();
+	check_login_status();
+
 
 	if ( isEmpty( Buleys.view ) ) {
 		twitter_authentication_detect();
@@ -102,7 +100,7 @@ jQuery( InDB ).bind( 'InDB_database_created', function( event, parameters ) {
 Buleys.install_stores = function() {
 
 	/*  Activities */
-	/*
+
 	var activities = {
 		'activities': { 'key': 'id', 'incrementing_key': false, 'unique': true }	
 	}
@@ -129,8 +127,8 @@ Buleys.install_stores = function() {
 			console.log( 'Activities store loaded', context2 );
 		} } );	
 	} } );
-	*/
-	
+
+
 
 	/* Archive */
 
