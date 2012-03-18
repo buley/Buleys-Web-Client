@@ -1,7 +1,7 @@
 Buleys.socket = Buleys.socket || {};
 Buleys.websocket = Buleys.websocket || {};
 
-Buleys.socket = io.connect('http://api.buleys.com');
+Buleys.socket = io.connect('https://api.buleys.com');
 
 Buleys.socket.on('connect',function() {
 	Buleys.websocket.login();
@@ -28,7 +28,7 @@ Buleys.socket.on( 'data', function( response ) {
 	}
 	
 	response = JSON.parse( response );
-//	console.log('DATA type', response.type );
+	//console.log('DATA type', response.type );
 
 	if( 'tweet' === response.type || 'news' === response.type ) {
 
@@ -40,13 +40,20 @@ Buleys.socket.on( 'data', function( response ) {
 			console.log( 'Buleys.socket.on data error', error );
 		};
 
+		//visual display		
+		Buleys.activity.add_to_result( response.data );
+
 		Buleys.activity.add( response.data, on_success, on_error );
+
 	} 
 	
 } );
 
 
 Buleys.websocket.login = function() {
+
+	//var oauth_access_token = "12576412-4v0AZ9lnbXWEMCkvYWoaoxwPgyslwicfuuLY04r7o";
+	//var oauth_access_secret = "3vUOX6IifYqRZGOwZHF2AdC6RjXoPf9cdIZ1WVjtmM";
 
 	var oauth_access_token = get_local_storage( 'twitter_oauth_access_token' );
 	var oauth_access_secret = get_local_storage( 'twitter_oauth_access_token_secret' );

@@ -1025,7 +1025,7 @@ Buleys.activity.add_to_result = function( activity, prepend ) {
 
 	if (!(jQuery("#" + id).length)) {
 
-		var content = "<li class='activity' modified= '" + activity.object.modified + "' published-date= '" + activity.published_date + "' id='" + activity.id + "'><a href='" + activity.object.url + "'>" + activity.object.summary + "</a><a class='examine_item magnify_icon' href='#'></a></li>";
+		var content = "<li class='activity' modified= '" + activity.object.modified + "' published-date= '" + activity.published_date + "' id='" + activity.id + "'><a href='" + activity.object.url + "'>" + activity.object.content + "</a><a class='examine_item magnify_icon' href='#'></a></li>";
 		
 		if( true === prepend ) {
 			jQuery( content ).hide().prependTo("#results").fadeIn('slow');
